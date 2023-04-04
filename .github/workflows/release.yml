@@ -1,0 +1,129 @@
+name: Release
+on:
+  push:
+   tags:
+     - 'v*'
+
+jobs:
+  prepare-artifacts:
+    name: Prepare release artifacts
+    # if: github.ref == 'refs/heads/main'
+    runs-on: '${{ matrix.os }}'
+    strategy:
+      matrix:
+        include:
+          - os: self-hosted
+            target: aarch64-apple-darwin
+            rust: stable
+            suffix: ''
+            archive_ext: zip
+    steps:
+      - name: Rust install
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: Cache crates from crates.io
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+             ~/.cargo/bin/
+             ~/.cargo/registry/index/
+             ~/.cargo/registry/cache/
+             ~/.cargo/git/db/
+             target/
+          key: '${{ runner.os }}-${{ matrix.target }}-cargo-${{ matrix.rust }}-hash-${{ hashFiles(''**/Cargo.lock'') }}'
+
+      - name: Build Release
+        run: cargo build --release
+
+      - name: Compress to zip (macOS)
+        if: ${{ matrix.os == 'self-hosted' }}
+        run:
+          zip -A ${{ github.event.repository.name }}-${{ matrix.target }}.${{ matrix.archive_ext }} target/release/${{ github.event.repository.name }}
+
+      - name: List files
+        run: |
+          ls -alF .
+          ls -alF target/release/
+        shell: bash
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ github.event.repository.name }}-${{ matrix.target }}.${{ matrix.archive_ext }}
+          path: ${{ github.event.repository.name }}-${{ matrix.target }}.${{ matrix.archive_ext }}
+
+  release:
+    name: Create a GitHub Release
+    # if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    needs:
+      - prepare-artifacts
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+        with:
+          # convco needs all history to create the changelog
+          fetch-depth: 0
+
+      - name: Extract version
+        id: extract-version
+        run: |
+          printf "::set-output name=%s::%s\n" tag-name "${GITHUB_REF#refs/tags/}"
+
+      - name: Download convco
+        run: |
+          git show-ref
+          curl -sSfLO https://github.com/convco/convco/releases/latest/download/convco-macos.zip
+          unzip convco-macos.zip
+          chmod +x convco
+
+      - name: Use convco to create the changelog
+        run: |
+          ./convco changelog --max-versions 1 --include-hidden-sections > CHANGELOG.md
+          rm convco convco-macos.zip
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: ${{ github.event.repository.name }}-aarch64-apple-darwin.zip
+
+      - uses: ncipollo/release-action@v1
+        with:
+          artifacts: "*.zip,*.tar.xz"
+          bodyFile: "CHANGELOG.md"
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  homebrew:
+    name: Bump Homebrew formula
+    # if: github.ref == 'refs/heads/main'
+    runs-on: self-hosted
+    needs:
+      - release
+    steps:
+      - name: Extract version
+        id: extract-version
+        run: |
+          printf "::set-output name=%s::%s\n" tag-name "${GITHUB_REF#refs/tags/}"
+
+      - uses: mislav/bump-homebrew-formula-action@v2
+        if: "!contains(github.ref, '-')" # skip prereleases
+        with:
+          formula-name: pumas
+          homebrew-tap: graelo/homebrew-tap
+          # base-branch: main
+          create-pullrequest: true
+          download-url: https://github.com/graelo/pumas/archive/refs/tags/${{ steps.extract-version.outputs.tag-name }}.tar.gz
+          commit-message: |
+            {{formulaName}} {{version}}
+
+            Created by https://github.com/mislav/bump-homebrew-formula-action
+        env:
+          COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}

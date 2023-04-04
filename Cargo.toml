@@ -1,0 +1,66 @@
+[package]
+name = "pumas"
+version = "0.0.1"
+edition = "2021"
+rust-version = "1.64.0"
+description = "A power usage monitor for Apple Silicon."
+readme = "README.md"
+
+license = "MIT"
+authors = ["graelo <graelo@grael.cc>"]
+repository = "https://github.com/graelo/pumas"
+homepage = "https://github.com/graelo/pumas"
+documentation = "https://docs.rs/pumas"
+
+keywords = ["mac", "power-usage", "monitor", "command-line"]
+categories = ["command-line-utilities"]
+exclude = ["/.github", "./images"]
+
+[[bin]]
+name = "pumas"
+path = "src/bin/pumas.rs"
+
+[dependencies]
+clap = { version = "4.2.1", features = ["derive", "env"] }
+clap_complete = "4.2.0"
+
+thiserror = "1"
+
+plist = { version = "1", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+# regex = "1.7"
+si-scale = "0.2"
+
+# ui
+termion = "2"
+ratatui = { version = "0.20", default-features = false, features = ['termion'] }
+
+[dev-dependencies]
+assert_approx_eq = "1.1.0"
+
+[build-dependencies]
+clap = { version = "4.2.1", features = ["derive"] }
+clap_complete = "4.2.0"
+
+[profile.release]
+# Enable link-time optimization (LTO). It’s a kind of whole-program or
+# inter-module optimization as it runs as the very last step when linking the
+# different parts of your binary together. You can think of it as allowing
+# better inlining across dependency boundaries (but it’s of course more
+# complicated that that).
+#
+# Rust can use multiple linker flavors, and the one we want is “optimize across
+# all crates”, which is called “fat”. To set this, add the lto flag to your
+# profile:
+lto = "fat"
+
+# To speed up compile times, Rust tries to split your crates into small chunks
+# and compile as many in parallel as possible. The downside is that there’s
+# less opportunities for the compiler to optimize code across these chunks. So,
+# let’s tell it to do one chunk per crate:
+codegen-units = 1
+
+# Rust by default uses stack unwinding (on the most common platforms). That
+# costs performance, so let’s skip stack traces and the ability to catch panics
+# for reduced code size and better cache usage:
+panic = "abort"
