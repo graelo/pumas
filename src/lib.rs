@@ -6,6 +6,7 @@
 //!
 //! ## Features
 //!
+//! ![Screenshot](./images/screenshot.png)
 //! TODO
 //!
 //! ## License

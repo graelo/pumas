@@ -62,7 +62,7 @@ jobs:
   release:
     name: Create a GitHub Release
     # if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions:
       contents: write
     needs:
