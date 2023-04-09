@@ -1,6 +1,15 @@
 //! Hold the application state.
 
-use crate::parser::{powermetrics::PowerMetrics, soc::Soc};
+use std::collections::HashMap;
+
+use crate::{
+    parser::{powermetrics::PowerMetrics, soc::Soc},
+    signal,
+};
+
+const HISTORY_CAPACITY: usize = 100;
+
+pub(crate) type History = HashMap<String, signal::Signal<f32>>;
 
 pub(crate) struct TabsState<'a> {
     pub(crate) titles: Vec<&'a str>,
@@ -40,6 +49,9 @@ pub(crate) struct App<'a> {
 
     /// System-on-chip information.
     pub(crate) soc: Soc,
+
+    /// Store the history of all signals (u64 needed for `Sparkline`).
+    pub(crate) history: History,
 }
 
 impl<'a> App<'a> {
@@ -51,6 +63,7 @@ impl<'a> App<'a> {
             last_update: std::time::Instant::now(),
             metrics: None,
             soc: soc_info,
+            history: HashMap::new(),
         }
     }
 
@@ -81,8 +94,54 @@ impl<'a> App<'a> {
 
     /// Update the app state.
     pub fn on_metrics(&mut self, metrics: PowerMetrics) {
-        self.metrics = Some(metrics);
         self.last_update = std::time::Instant::now();
-        // println!("on_metrics: {:?}", metrics.e_clusters.len());
+
+        self.history
+            .entry("package_w".to_string())
+            .or_insert(signal::Signal::with_capacity(
+                HISTORY_CAPACITY,
+                /* max */ self.soc.max_package_w as f32,
+            ))
+            .push(metrics.package_w);
+
+        for e_cluster in &metrics.e_clusters {
+            let sig_name = format!("{}_active_ratio", e_cluster.name);
+            self.history
+                .entry(sig_name)
+                .or_insert(signal::Signal::with_capacity(
+                    HISTORY_CAPACITY,
+                    /* max */ 100.0,
+                ))
+                .push(100.0 * e_cluster.active_ratio as f32);
+        }
+
+        for p_cluster in &metrics.p_clusters {
+            let sig_name = format!("{}_active_ratio", p_cluster.name);
+            self.history
+                .entry(sig_name)
+                .or_insert(signal::Signal::with_capacity(
+                    HISTORY_CAPACITY,
+                    /* max */ 100.0,
+                ))
+                .push(100.0 * p_cluster.active_ratio as f32);
+        }
+
+        self.history
+            .entry("gpu_active_ratio".to_string())
+            .or_insert(signal::Signal::with_capacity(
+                HISTORY_CAPACITY,
+                /* max */ 100.0,
+            ))
+            .push(100.0 * metrics.gpu.active_ratio as f32);
+
+        self.history
+            .entry("ane_active_ratio".to_string())
+            .or_insert(signal::Signal::with_capacity(
+                HISTORY_CAPACITY,
+                /* max */ 100.0,
+            ))
+            .push(100.0 * metrics.ane_w / self.soc.max_ane_w as f32);
+
+        self.metrics = Some(metrics);
     }
 }

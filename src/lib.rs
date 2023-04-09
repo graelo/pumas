@@ -26,6 +26,7 @@ pub mod config;
 pub mod error;
 pub mod monitor;
 mod parser;
+mod signal;
 mod ui;
 mod units;
 

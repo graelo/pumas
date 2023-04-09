@@ -13,13 +13,13 @@ use ratatui::{
 };
 
 use crate::{
-    app::App,
+    app::{App, History},
     parser::powermetrics::{ClusterMetrics, PowerMetrics},
     parser::soc::Soc,
     units,
 };
 
-const SPARKLINE_HEIGHT: u16 = 4;
+const SPARKLINE_HEIGHT: u16 = 3;
 const GAUGE_HEIGHT: u16 = 2;
 const PKG_TEXT_HEIGHT: u16 = 1;
 
@@ -55,9 +55,9 @@ where
     let gpu_area = vertical_chunks[1];
     let pkg_area = vertical_chunks[2];
 
-    draw_cpu_clusters_usage_block(f, metrics, cpu_area);
-    draw_gpu_ane_usage_block(f, metrics, &app.soc, gpu_area);
-    draw_package_power_block(f, metrics, pkg_area);
+    draw_cpu_clusters_usage_block(f, metrics, &app.history, cpu_area);
+    draw_gpu_ane_usage_block(f, metrics, &app.soc, &app.history, gpu_area);
+    draw_package_power_block(f, metrics, &app.history, pkg_area);
 }
 
 /// Draw the CPU clusters usage block.
@@ -68,8 +68,12 @@ where
 ///
 /// In this block, for each CPU, we draw both the efficiency cluster metrics and the performance
 /// cluster metrics.
-fn draw_cpu_clusters_usage_block<B>(f: &mut Frame<B>, metrics: &PowerMetrics, area: Rect)
-where
+fn draw_cpu_clusters_usage_block<B>(
+    f: &mut Frame<B>,
+    metrics: &PowerMetrics,
+    history: &History,
+    area: Rect,
+) where
     B: Backend,
 {
     let num_cluster_pairs = metrics.e_clusters.len();
@@ -94,7 +98,7 @@ where
         &*cpu_cluster_chunks,
         zip(&metrics.e_clusters, &metrics.p_clusters),
     ) {
-        draw_cluster_pair_overall_metrics(f, e_cluster, p_cluster, *clu_area);
+        draw_cluster_pair_overall_metrics(f, e_cluster, p_cluster, history, *clu_area);
     }
 }
 
@@ -105,6 +109,7 @@ fn draw_cluster_pair_overall_metrics<B>(
     f: &mut Frame<B>,
     e_cluster: &ClusterMetrics,
     p_cluster: &ClusterMetrics,
+    history: &History,
     area: Rect,
 ) where
     B: Backend,
@@ -165,13 +170,13 @@ fn draw_cluster_pair_overall_metrics<B>(
     f.render_widget(gauge, top_left_area);
 
     // Efficiency cores Sparklines.
+    let sig_name = format!("{}_active_ratio", e_cluster.name);
+    let sig = history.get(&sig_name).unwrap();
     let sparkline = Sparkline::default()
-        .block(Block::default().title("Usage:"))
         .style(Style::default().fg(Color::Green))
         .bar_set(symbols::bar::NINE_LEVELS)
-        // .data(&app.sparkline.points)
-        .data(&[1, 2, 3, 4])
-        .max(10);
+        .data(sig.as_slice_last_n(bottom_left_area.width as usize))
+        .max(sig.max as u64);
     f.render_widget(sparkline, bottom_left_area);
 
     // Performance cores Usage Gauge.
@@ -185,23 +190,27 @@ fn draw_cluster_pair_overall_metrics<B>(
         .block(Block::default().title(title))
         .gauge_style(Style::default().fg(Color::Green).bg(Color::Gray))
         .ratio(p_cluster.active_ratio);
-
     f.render_widget(gauge, top_right_area);
 
     // Performance cores Sparklines.
+    let sig_name = format!("{}_active_ratio", p_cluster.name);
+    let sig = history.get(&sig_name).unwrap();
     let sparkline = Sparkline::default()
-        .block(Block::default().title("Usage:"))
         .style(Style::default().fg(Color::Green))
         .bar_set(symbols::bar::NINE_LEVELS)
-        // .data(&app.sparkline.points)
-        .data(&[1, 2, 3, 4])
-        .max(10);
+        .data(sig.as_slice_last_n(bottom_right_area.width as usize))
+        .max(sig.max as u64);
     f.render_widget(sparkline, bottom_right_area);
 }
 
 /// Draw the GPU & ANE usage block.
-fn draw_gpu_ane_usage_block<B>(f: &mut Frame<B>, metrics: &PowerMetrics, soc: &Soc, area: Rect)
-where
+fn draw_gpu_ane_usage_block<B>(
+    f: &mut Frame<B>,
+    metrics: &PowerMetrics,
+    soc: &Soc,
+    history: &History,
+    area: Rect,
+) where
     B: Backend,
 {
     let block = Block::default().title(" GPU & ANE ").borders(Borders::ALL);
@@ -255,13 +264,13 @@ where
     f.render_widget(gauge, top_left_area);
 
     // GPU Usage Sparklines.
+    // let sig_name = format!("{}_active_ratio", p_cluster.name);
+    let sig = history.get("gpu_active_ratio").unwrap();
     let sparkline = Sparkline::default()
-        .block(Block::default().title("Usage:"))
         .style(Style::default().fg(Color::Green))
         .bar_set(symbols::bar::NINE_LEVELS)
-        // .data(&app.sparkline.points)
-        .data(&[1, 2, 3, 4])
-        .max(10);
+        .data(sig.as_slice_last_n(bottom_left_area.width as usize))
+        .max(sig.max as u64);
     f.render_widget(sparkline, bottom_left_area);
 
     // Right: ANE.
@@ -282,19 +291,22 @@ where
     f.render_widget(gauge, top_right_area);
 
     // ANE Usage Sparklines.
+    let sig = history.get("ane_active_ratio").unwrap();
     let sparkline = Sparkline::default()
-        .block(Block::default().title("Usage:"))
         .style(Style::default().fg(Color::Green))
         .bar_set(symbols::bar::NINE_LEVELS)
-        // .data(&app.sparkline.points)
-        .data(&[1, 2, 3, 4])
-        .max(10);
+        .data(sig.as_slice_last_n(bottom_right_area.width as usize))
+        .max(sig.max as u64);
     f.render_widget(sparkline, bottom_right_area);
 }
 
 /// Draw the Package power block.
-fn draw_package_power_block<B>(f: &mut Frame<B>, metrics: &PowerMetrics, area: Rect)
-where
+fn draw_package_power_block<B>(
+    f: &mut Frame<B>,
+    metrics: &PowerMetrics,
+    history: &History,
+    area: Rect,
+) where
     B: Backend,
 {
     let block = Block::default().title(" Package ").borders(Borders::ALL);
@@ -308,17 +320,21 @@ where
     let title_area = vertical_chunks[0];
     let sparkline_area = vertical_chunks[1];
 
-    let title = format!("CPU+GPU+ANE: ⚡️{}", units::watts2(metrics.package_w));
+    let sig = history.get("package_w").unwrap();
+    let title = format!(
+        "CPU+GPU+ANE: ⚡️{} (peak: {})",
+        units::watts2(metrics.package_w),
+        units::watts2(sig.peak)
+    );
     let text = Paragraph::new(Text::from(title));
     f.render_widget(text, title_area);
 
     // Package Power Usage Sparklines.
     let sparkline = Sparkline::default()
-        .block(Block::default().title("Usage:"))
+        // .block(Block::default().title(title))
         .style(Style::default().fg(Color::Green))
         .bar_set(symbols::bar::NINE_LEVELS)
-        // .data(&app.sparkline.points)
-        .data(&[1, 2, 3, 4])
-        .max(10);
+        .data(sig.as_slice_last_n(sparkline_area.width as usize))
+        .max(sig.max as u64);
     f.render_widget(sparkline, sparkline_area);
 }
