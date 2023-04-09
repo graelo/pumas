@@ -29,6 +29,9 @@ pub(crate) struct Soc {
 
     /// Maximum ANE power consumption.
     pub(crate) max_ane_w: f64,
+
+    /// Max Package power consumption.
+    pub(crate) max_package_w: f64,
 }
 
 impl Soc {
@@ -55,6 +58,7 @@ impl Soc {
             max_cpu_w,
             max_gpu_w,
             max_ane_w,
+            max_package_w: max_cpu_w + max_gpu_w + max_ane_w,
             num_gpu_cores,
         })
     }

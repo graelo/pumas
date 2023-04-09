@@ -12,13 +12,13 @@ pub(crate) struct PowerMetrics {
     pub(crate) p_clusters: Vec<ClusterMetrics>,
     /// GPU metrics.
     pub(crate) gpu: GpuMetrics,
-    /// CPU power consumption in mW.
+    /// CPU power consumption in W.
     pub(crate) cpu_w: f32,
-    /// GPU power consumption in mW.
+    /// GPU power consumption in W.
     pub(crate) gpu_w: f32,
-    /// Apple Neural Engine power consumption in mW.
+    /// Apple Neural Engine power consumption in W.
     pub(crate) ane_w: f32,
-    /// Package power consumption in mW.
+    /// Package power consumption in W.
     pub(crate) package_w: f32,
     /// Thermal pressure.
     pub(crate) thermal_pressure: String,

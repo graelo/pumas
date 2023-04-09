@@ -35,6 +35,8 @@ si-scale = "0.2"
 termion = "2"
 ratatui = { version = "0.20", default-features = false, features = ['termion'] }
 
+num-traits = "0.2"
+
 [dev-dependencies]
 assert_approx_eq = "1.1.0"
 
