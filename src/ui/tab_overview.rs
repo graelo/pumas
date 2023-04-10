@@ -7,7 +7,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     symbols,
-    text::Text,
+    text::{Span, Spans, Text},
     widgets::{Block, Borders, Gauge, Paragraph, Sparkline},
     Frame,
 };
@@ -22,6 +22,7 @@ use crate::{
 const SPARKLINE_HEIGHT: u16 = 3;
 const GAUGE_HEIGHT: u16 = 2;
 const PKG_TEXT_HEIGHT: u16 = 1;
+const THR_TEXT_HEIGHT: u16 = 1;
 
 /// Draw the Overview tab.
 ///
@@ -38,6 +39,7 @@ where
     let cpu_block_height = GAUGE_HEIGHT + SPARKLINE_HEIGHT;
     let gpu_block_height = GAUGE_HEIGHT + SPARKLINE_HEIGHT;
     let pkg_block_height = PKG_TEXT_HEIGHT + SPARKLINE_HEIGHT;
+    let thr_block_height = THR_TEXT_HEIGHT;
 
     let vertical_chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -46,6 +48,7 @@ where
                 Constraint::Length(2 + cpu_block_height * num_clusters as u16), // Borders & CPU clusters blocks
                 Constraint::Length(2 + gpu_block_height), // Borders & GPU ANE block
                 Constraint::Length(2 + pkg_block_height), // Borders & Package block
+                Constraint::Length(2 + thr_block_height), // Borders & Thermal block
                 Constraint::Min(0),
             ]
             .as_ref(),
@@ -54,10 +57,12 @@ where
     let cpu_area = vertical_chunks[0];
     let gpu_area = vertical_chunks[1];
     let pkg_area = vertical_chunks[2];
+    let thr_area = vertical_chunks[3];
 
     draw_cpu_clusters_usage_block(f, metrics, &app.history, cpu_area);
     draw_gpu_ane_usage_block(f, metrics, &app.soc, &app.history, gpu_area);
     draw_package_power_block(f, metrics, &app.history, pkg_area);
+    draw_thermal_pressure_block(f, metrics, thr_area);
 }
 
 /// Draw the CPU clusters usage block.
@@ -282,10 +287,7 @@ fn draw_gpu_ane_usage_block<B>(
     );
     let gauge = Gauge::default()
         .block(Block::default().title(title))
-        .gauge_style(
-            Style::default().fg(Color::Green).bg(Color::Gray),
-            // .add_modifier(Modifier::ITALIC | Modifier::BOLD),
-        )
+        .gauge_style(Style::default().fg(Color::Green).bg(Color::Gray))
         .ratio(ane_active_ratio);
 
     f.render_widget(gauge, top_right_area);
@@ -331,10 +333,27 @@ fn draw_package_power_block<B>(
 
     // Package Power Usage Sparklines.
     let sparkline = Sparkline::default()
-        // .block(Block::default().title(title))
         .style(Style::default().fg(Color::Green))
         .bar_set(symbols::bar::NINE_LEVELS)
         .data(sig.as_slice_last_n(sparkline_area.width as usize))
         .max(sig.max as u64);
     f.render_widget(sparkline, sparkline_area);
+}
+
+/// Draw the Thermal Pressure block.
+fn draw_thermal_pressure_block<B>(f: &mut Frame<B>, metrics: &PowerMetrics, area: Rect)
+where
+    B: Backend,
+{
+    let color = match metrics.thermal_pressure.as_str() {
+        "Nominal" => Color::Green,
+        _ => Color::Yellow,
+    };
+    let text = Spans::from(vec![
+        Span::raw("Thermal Pressure: "),
+        Span::styled(&metrics.thermal_pressure, Style::default().fg(color)),
+    ]);
+    let paragraph =
+        Paragraph::new(text).block(Block::default().title(" Thermals ").borders(Borders::ALL));
+    f.render_widget(paragraph, area);
 }
