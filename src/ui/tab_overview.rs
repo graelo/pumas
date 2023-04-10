@@ -7,7 +7,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     symbols,
-    text::Text,
+    text::{Span, Spans, Text},
     widgets::{Block, Borders, Gauge, Paragraph, Sparkline},
     Frame,
 };
@@ -20,11 +20,40 @@ use crate::{
 };
 
 const SPARKLINE_HEIGHT: u16 = 3;
+const SPARKLINE_MAX_OVERSHOOT: f32 = 1.05;
 const GAUGE_HEIGHT: u16 = 2;
 const PKG_TEXT_HEIGHT: u16 = 1;
+const THR_TEXT_HEIGHT: u16 = 1;
 
 /// Draw the Overview tab.
 ///
+/// Pumas v0.0.3                                                  Apple M1 (cores: 4E+4P+8GPU)
+/// ┌─────────────────────────────────────────────────────────────────────────────────────────┐
+/// │ Overview │ CPU │ GPU │ SoC                                                              │
+/// └─────────────────────────────────────────────────────────────────────────────────────────┘
+/// ┌ CPU: 160.13 mW ─────────────────────────────────────────────────────────────────────────┐
+/// │E-Cluster: 28.9 % @ 1043 MHz                  P-Cluster: 8.7 % @ 1891 MHz                │
+/// │                    29%                                           9%                     │
+/// │▆▃▅▆▆▅▂▄  ▆▂▅▂▄▄▃▄▄▅ ▄▄▄▅  ▄▄ ▅▃                                                         │
+/// │████████▆▃██████████▆████▇███▇██▂▁                                           ▆           │
+/// │██████████████████████████████████▅▅▄▄▄▆▇▆▆▆  ▃▃▂▂▃▂▂▁▂▂▅▃▃▂▃▃▂▃▃▄▃▁▂▃▁▁▁▂▃▃▁█▅▁▂▂▁▂▂▃▂▂▁│
+/// └─────────────────────────────────────────────────────────────────────────────────────────┘
+/// ┌ GPU & ANE ──────────────────────────────────────────────────────────────────────────────┐
+/// │GPU Usage: 1.6 % @ 717 MHz ⚡️16.80 mW         ANE Usage: 0.0 % ⚡️0.00 W                  │
+/// │                     2%                                           0%                     │
+/// │                                                                                         │
+/// │                                                                                         │
+/// │▂▂▃        ▂▁▁ ▃    ▄    ▁      ▁                                                        │
+/// └─────────────────────────────────────────────────────────────────────────────────────────┘
+/// ┌ Package ────────────────────────────────────────────────────────────────────────────────┐
+/// │CPU+GPU+ANE: ⚡️176.93 mW (peak: 1.58 W)                                                  │
+/// │                                                                                         │
+/// │                                                                                         │
+/// │                                                                                         │
+/// └─────────────────────────────────────────────────────────────────────────────────────────┘
+/// ┌ Thermals ───────────────────────────────────────────────────────────────────────────────┐
+/// │Thermal Pressure: Nominal                                                                │
+/// └─────────────────────────────────────────────────────────────────────────────────────────┘
 pub(crate) fn draw_overview_tab<B>(f: &mut Frame<B>, app: &mut App, area: Rect)
 where
     B: Backend,
@@ -38,6 +67,7 @@ where
     let cpu_block_height = GAUGE_HEIGHT + SPARKLINE_HEIGHT;
     let gpu_block_height = GAUGE_HEIGHT + SPARKLINE_HEIGHT;
     let pkg_block_height = PKG_TEXT_HEIGHT + SPARKLINE_HEIGHT;
+    let thr_block_height = THR_TEXT_HEIGHT;
 
     let vertical_chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -46,6 +76,7 @@ where
                 Constraint::Length(2 + cpu_block_height * num_clusters as u16), // Borders & CPU clusters blocks
                 Constraint::Length(2 + gpu_block_height), // Borders & GPU ANE block
                 Constraint::Length(2 + pkg_block_height), // Borders & Package block
+                Constraint::Length(2 + thr_block_height), // Borders & Thermal block
                 Constraint::Min(0),
             ]
             .as_ref(),
@@ -54,10 +85,12 @@ where
     let cpu_area = vertical_chunks[0];
     let gpu_area = vertical_chunks[1];
     let pkg_area = vertical_chunks[2];
+    let thr_area = vertical_chunks[3];
 
     draw_cpu_clusters_usage_block(f, metrics, &app.history, cpu_area);
     draw_gpu_ane_usage_block(f, metrics, &app.soc, &app.history, gpu_area);
     draw_package_power_block(f, metrics, &app.history, pkg_area);
+    draw_thermal_pressure_block(f, metrics, thr_area);
 }
 
 /// Draw the CPU clusters usage block.
@@ -68,6 +101,15 @@ where
 ///
 /// In this block, for each CPU, we draw both the efficiency cluster metrics and the performance
 /// cluster metrics.
+///
+/// ┌ CPU: 124.32 mW ─────────────────────────────────────────────────────────────────────────┐
+/// │E-Cluster: 25.6 % @ 1027 MHz                  P-Cluster: 7.0 % @ 1729 MHz                │
+/// │------------------- 26% --------------------  ------------------- 7% --------------------│
+/// │   ▄▃▅▆▂▁ ▆▇▇▃▄▅▅▅▆  ▆▃                                                                  │
+/// │▁▂▄██████▇█████████▇▃███▄▂▁█   █                                                         │
+/// │████████████████████████████▇▅▆█▆▄▅▅▆▄▆▅▅▇▇▅  ▂▄▃▂▄▃▂▂▁▃▃▁▂▁▂▂▂▃▂ ▂▁▃▂▂▂▂▁ ▂▁▁▁  ▁▁▁▁▁▁▁▁│
+/// └─────────────────────────────────────────────────────────────────────────────────────────┘
+
 fn draw_cpu_clusters_usage_block<B>(
     f: &mut Frame<B>,
     metrics: &PowerMetrics,
@@ -105,6 +147,13 @@ fn draw_cpu_clusters_usage_block<B>(
 /// Draw the overall metrics for a CPU cluster pair.
 ///
 /// The efficiency cluster is on the left, the performance cluster on the right.
+///
+/// E-Cluster: 26.3 % @ 1009 MHz                  P-Cluster: 12.1 % @ 1873 MHz
+/// ------------------- 26% --------------------  ------------------- 12% -------------------
+///
+///  ▁ ▄▅▄ ▁    ▂   ▃▃                                          ▃   ▅
+/// ██▅█████▄▆▄▅█▄▆███▆▇▅▇▅▅▅█▆█▃▅▃▅▄▅▅▅▅█▄▅▃▅▅▆  ▃▄▁▂▁▄▃▁▇▃▂▃▁▆█▂▃▆█▂▂▂▂▂▃▁▂▁▁ ▂▂▂▂▂▃▂▁▁▂▂▃▂
+
 fn draw_cluster_pair_overall_metrics<B>(
     f: &mut Frame<B>,
     e_cluster: &ClusterMetrics,
@@ -176,7 +225,7 @@ fn draw_cluster_pair_overall_metrics<B>(
         .style(Style::default().fg(Color::Green))
         .bar_set(symbols::bar::NINE_LEVELS)
         .data(sig.as_slice_last_n(bottom_left_area.width as usize))
-        .max(sig.max as u64);
+        .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
     f.render_widget(sparkline, bottom_left_area);
 
     // Performance cores Usage Gauge.
@@ -199,11 +248,20 @@ fn draw_cluster_pair_overall_metrics<B>(
         .style(Style::default().fg(Color::Green))
         .bar_set(symbols::bar::NINE_LEVELS)
         .data(sig.as_slice_last_n(bottom_right_area.width as usize))
-        .max(sig.max as u64);
+        .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
     f.render_widget(sparkline, bottom_right_area);
 }
 
 /// Draw the GPU & ANE usage block.
+///
+/// ┌ GPU & ANE ────────────────────────────────────────────────────────────────────┐
+/// │GPU Usage: 4.5 % @ 711 MHz ⚡️12.84 mW    ANE Usage: 0.0 % ⚡️0.00 W             │
+/// │----------------- 4% -----------------   ----------------- 0% -----------------│
+/// │                                                                               │
+/// │                                                                               │
+/// │                  ▁          ▄▅▄▅▄▅▂ ▁                                         │
+/// └───────────────────────────────────────────────────────────────────────────────┘
+
 fn draw_gpu_ane_usage_block<B>(
     f: &mut Frame<B>,
     metrics: &PowerMetrics,
@@ -270,7 +328,7 @@ fn draw_gpu_ane_usage_block<B>(
         .style(Style::default().fg(Color::Green))
         .bar_set(symbols::bar::NINE_LEVELS)
         .data(sig.as_slice_last_n(bottom_left_area.width as usize))
-        .max(sig.max as u64);
+        .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
     f.render_widget(sparkline, bottom_left_area);
 
     // Right: ANE.
@@ -282,10 +340,7 @@ fn draw_gpu_ane_usage_block<B>(
     );
     let gauge = Gauge::default()
         .block(Block::default().title(title))
-        .gauge_style(
-            Style::default().fg(Color::Green).bg(Color::Gray),
-            // .add_modifier(Modifier::ITALIC | Modifier::BOLD),
-        )
+        .gauge_style(Style::default().fg(Color::Green).bg(Color::Gray))
         .ratio(ane_active_ratio);
 
     f.render_widget(gauge, top_right_area);
@@ -296,11 +351,19 @@ fn draw_gpu_ane_usage_block<B>(
         .style(Style::default().fg(Color::Green))
         .bar_set(symbols::bar::NINE_LEVELS)
         .data(sig.as_slice_last_n(bottom_right_area.width as usize))
-        .max(sig.max as u64);
+        .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
     f.render_widget(sparkline, bottom_right_area);
 }
 
 /// Draw the Package power block.
+///
+/// ┌ Package ────────────────────────────────────────────────────────────────────────────────┐
+/// │CPU+GPU+ANE: ⚡️95.48 mW (peak: 3.17 W)                                                   │
+/// │                                                                                         │
+/// │                                                                                         │
+/// │                                    ▁                                           ▁▁▁▁▁▁▁  │
+/// └─────────────────────────────────────────────────────────────────────────────────────────┘
+
 fn draw_package_power_block<B>(
     f: &mut Frame<B>,
     metrics: &PowerMetrics,
@@ -331,10 +394,32 @@ fn draw_package_power_block<B>(
 
     // Package Power Usage Sparklines.
     let sparkline = Sparkline::default()
-        // .block(Block::default().title(title))
         .style(Style::default().fg(Color::Green))
         .bar_set(symbols::bar::NINE_LEVELS)
         .data(sig.as_slice_last_n(sparkline_area.width as usize))
         .max(sig.max as u64);
     f.render_widget(sparkline, sparkline_area);
+}
+
+/// Draw the Thermal Pressure block.
+///
+/// ┌ Thermals ───────────────────────────────────────────────────────────────────────────────┐
+/// │Thermal Pressure: Nominal                                                                │
+/// └─────────────────────────────────────────────────────────────────────────────────────────┘
+
+fn draw_thermal_pressure_block<B>(f: &mut Frame<B>, metrics: &PowerMetrics, area: Rect)
+where
+    B: Backend,
+{
+    let color = match metrics.thermal_pressure.as_str() {
+        "Nominal" => Color::Green,
+        _ => Color::Yellow,
+    };
+    let text = Spans::from(vec![
+        Span::raw("Thermal Pressure: "),
+        Span::styled(&metrics.thermal_pressure, Style::default().fg(color)),
+    ]);
+    let paragraph =
+        Paragraph::new(text).block(Block::default().title(" Thermals ").borders(Borders::ALL));
+    f.render_widget(paragraph, area);
 }
