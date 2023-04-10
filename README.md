@@ -17,7 +17,15 @@ Version requirement: _rustc 1.64+_
 ## Features
 
 ![Screenshot](./images/screenshot.png)
-TODO
+
+This is a work in progress.
+
+Note: because this leverages the macOS `powermetrics` command, this only works on macOS running
+on Apple Silicon and requires you to run it with `sudo`:
+
+```sh
+sudo pumas run
+```
 
 ## License
 
