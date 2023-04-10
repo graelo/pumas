@@ -20,6 +20,7 @@ use crate::{
 };
 
 const SPARKLINE_HEIGHT: u16 = 3;
+const SPARKLINE_MAX_OVERSHOOT: f32 = 1.05;
 const GAUGE_HEIGHT: u16 = 2;
 const PKG_TEXT_HEIGHT: u16 = 1;
 const THR_TEXT_HEIGHT: u16 = 1;
@@ -181,7 +182,7 @@ fn draw_cluster_pair_overall_metrics<B>(
         .style(Style::default().fg(Color::Green))
         .bar_set(symbols::bar::NINE_LEVELS)
         .data(sig.as_slice_last_n(bottom_left_area.width as usize))
-        .max(sig.max as u64);
+        .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
     f.render_widget(sparkline, bottom_left_area);
 
     // Performance cores Usage Gauge.
@@ -204,11 +205,20 @@ fn draw_cluster_pair_overall_metrics<B>(
         .style(Style::default().fg(Color::Green))
         .bar_set(symbols::bar::NINE_LEVELS)
         .data(sig.as_slice_last_n(bottom_right_area.width as usize))
-        .max(sig.max as u64);
+        .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
     f.render_widget(sparkline, bottom_right_area);
 }
 
 /// Draw the GPU & ANE usage block.
+///
+/// ┌ GPU & ANE ────────────────────────────────────────────────────────────────────┐
+/// │GPU Usage: 4.5 % @ 711 MHz ⚡️12.84 mW    ANE Usage: 0.0 % ⚡️0.00 W             │
+/// │----------------- 4% -----------------   ----------------- 0% -----------------│
+/// │                                                                               │
+/// │                                                                               │
+/// │                  ▁          ▄▅▄▅▄▅▂ ▁                                         │
+/// └───────────────────────────────────────────────────────────────────────────────┘
+
 fn draw_gpu_ane_usage_block<B>(
     f: &mut Frame<B>,
     metrics: &PowerMetrics,
@@ -275,7 +285,7 @@ fn draw_gpu_ane_usage_block<B>(
         .style(Style::default().fg(Color::Green))
         .bar_set(symbols::bar::NINE_LEVELS)
         .data(sig.as_slice_last_n(bottom_left_area.width as usize))
-        .max(sig.max as u64);
+        .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
     f.render_widget(sparkline, bottom_left_area);
 
     // Right: ANE.
@@ -298,7 +308,7 @@ fn draw_gpu_ane_usage_block<B>(
         .style(Style::default().fg(Color::Green))
         .bar_set(symbols::bar::NINE_LEVELS)
         .data(sig.as_slice_last_n(bottom_right_area.width as usize))
-        .max(sig.max as u64);
+        .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
     f.render_widget(sparkline, bottom_right_area);
 }
 
