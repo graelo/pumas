@@ -14,7 +14,7 @@ documentation = "https://docs.rs/pumas"
 
 keywords = ["mac", "power-usage", "monitor", "command-line"]
 categories = ["command-line-utilities"]
-exclude = ["/.github", "./images"]
+exclude = ["/.github", "./images", "./assets"]
 
 [[bin]]
 name = "pumas"
