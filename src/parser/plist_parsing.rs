@@ -12,12 +12,12 @@ pub(crate) struct Metrics {
     pub(crate) elapsed_ns: u64,
     /// Metrics for the CPU, and energy consumption of the ANE, CPU and GPU (weird grouping
     /// indeed).
-    pub(crate) processor: Processor,
+    pub(crate) processor: ProcessorMetrics,
     /// Thermal pressure, one of "Nominal", "Light", "Moderate", "Heavy" or "Critical".
     /// These enum variants are handled at a higher level in `powermetrics.rs`.
     pub(crate) thermal_pressure: String,
     /// Basic metrics for the GPU.
-    pub(crate) gpu: Gpu,
+    pub(crate) gpu: GpuMetrics,
 }
 
 /// Processor metrics, including energy consumption of the ANE, CPU and GPU.
@@ -26,8 +26,8 @@ pub(crate) struct Metrics {
 ///
 /// The energy consumption of the ANE is the only way to estimate its activity.
 #[derive(Debug, Deserialize)]
-pub(crate) struct Processor {
-    pub(crate) clusters: Vec<Cluster>,
+pub(crate) struct ProcessorMetrics {
+    pub(crate) clusters: Vec<ClusterMetrics>,
 
     /// Energy consumed by the ANE in mJ over the sampling period.
     #[serde(rename = "ane_energy")]
@@ -46,7 +46,7 @@ pub(crate) struct Processor {
 /// Metrics for a single CPU cluster. The metrics are averaged over the sampling period and all
 /// CPUs of the cluster.
 #[derive(Debug, Deserialize)]
-pub(crate) struct Cluster {
+pub(crate) struct ClusterMetrics {
     /// Name of the cluster, usually "E-Cluster" or "P-Cluster".
     pub(crate) name: String,
     /// Average frequency of the cluster in Hz.
@@ -59,7 +59,7 @@ pub(crate) struct Cluster {
     pub(crate) cpus: Vec<Cpu>,
 }
 
-impl Cluster {
+impl ClusterMetrics {
     /// Average frequency of the cluster in MHz.
     pub(crate) fn freq_mhz(&self) -> f64 {
         self.freq_hz / 1e6
@@ -97,7 +97,7 @@ impl Cpu {
 
 /// Metrics for the GPU. The metrics are averaged over the sampling period and all the GPU cores.
 #[derive(Debug, Deserialize)]
-pub(crate) struct Gpu {
+pub(crate) struct GpuMetrics {
     /// Average frequency of the GPU in Hz.
     #[serde(rename = "freq_hz")]
     pub(crate) freq_mhz: f64,
@@ -107,7 +107,7 @@ pub(crate) struct Gpu {
     pub(crate) dvfm_states: Vec<DvfmState>,
 }
 
-impl Gpu {
+impl GpuMetrics {
     /// Average frequency of the GPU in MHz.
     pub(crate) fn active_ratio(&self) -> f64 {
         1.0 - self.idle_ratio
@@ -121,7 +121,8 @@ pub(crate) struct DvfmState {
     #[serde(rename = "freq")]
     pub(crate) freq_mhz: u16,
     /// Average active ratio of the state.
-    pub(crate) used_ratio: f64,
+    #[serde(rename = "used_ratio")]
+    pub(crate) active_ratio: f64,
 }
 
 #[cfg(test)]
@@ -144,15 +145,15 @@ mod tests {
         assert_eq!(c0.active_ratio(), 1.0 - 0.772993);
         // cluster dvfm_states.
         assert_eq!(c0.dvfm_states[0].freq_mhz, 600);
-        assert_eq!(c0.dvfm_states[0].used_ratio, 0.0);
+        assert_eq!(c0.dvfm_states[0].active_ratio, 0.0);
         assert_eq!(c0.dvfm_states[1].freq_mhz, 972);
-        assert_eq!(c0.dvfm_states[1].used_ratio, 0.919834);
+        assert_eq!(c0.dvfm_states[1].active_ratio, 0.919834);
         assert_eq!(c0.dvfm_states[2].freq_mhz, 1332);
-        assert_eq!(c0.dvfm_states[2].used_ratio, 0.043774);
+        assert_eq!(c0.dvfm_states[2].active_ratio, 0.043774);
         assert_eq!(c0.dvfm_states[3].freq_mhz, 1704);
-        assert_eq!(c0.dvfm_states[3].used_ratio, 0.0128986);
+        assert_eq!(c0.dvfm_states[3].active_ratio, 0.0128986);
         assert_eq!(c0.dvfm_states[4].freq_mhz, 2064);
-        assert_eq!(c0.dvfm_states[4].used_ratio, 0.0234935);
+        assert_eq!(c0.dvfm_states[4].active_ratio, 0.0234935);
 
         assert_eq!(c0.cpus[0].cpu_id, 0);
         assert_eq!(c0.cpus[1].cpu_id, 1);
@@ -168,11 +169,11 @@ mod tests {
         assert_eq!(c0.cpus[3].active_ratio(), 1.0 - 0.946967);
         // cpu dvfm_states.
         assert_eq!(c0.cpus[0].dvfm_states[0].freq_mhz, 600);
-        assert_eq!(c0.cpus[0].dvfm_states[0].used_ratio, 0.0);
+        assert_eq!(c0.cpus[0].dvfm_states[0].active_ratio, 0.0);
         assert_eq!(c0.cpus[0].dvfm_states[1].freq_mhz, 972);
-        assert_eq!(c0.cpus[0].dvfm_states[1].used_ratio, 0.078834);
+        assert_eq!(c0.cpus[0].dvfm_states[1].active_ratio, 0.078834);
         assert_eq!(c0.cpus[0].dvfm_states[2].freq_mhz, 1332);
-        assert_eq!(c0.cpus[0].dvfm_states[2].used_ratio, 0.00913338);
+        assert_eq!(c0.cpus[0].dvfm_states[2].active_ratio, 0.00913338);
 
         let c1 = &pm.processor.clusters[1];
         assert_eq!(&c1.name[..], "P-Cluster");
@@ -199,16 +200,16 @@ mod tests {
         assert_approx_eq!(pm.gpu.active_ratio(), 1_f64 - 0.983341, 1e-5_f64);
         // cpu dvfm_states.
         assert_eq!(pm.gpu.dvfm_states[0].freq_mhz, 396);
-        assert_eq!(pm.gpu.dvfm_states[0].used_ratio, 0.000265531);
+        assert_eq!(pm.gpu.dvfm_states[0].active_ratio, 0.000265531);
         assert_eq!(pm.gpu.dvfm_states[1].freq_mhz, 528);
-        assert_eq!(pm.gpu.dvfm_states[1].used_ratio, 0.0);
+        assert_eq!(pm.gpu.dvfm_states[1].active_ratio, 0.0);
         assert_eq!(pm.gpu.dvfm_states[2].freq_mhz, 720);
-        assert_eq!(pm.gpu.dvfm_states[2].used_ratio, 0.0163933);
+        assert_eq!(pm.gpu.dvfm_states[2].active_ratio, 0.0163933);
         assert_eq!(pm.gpu.dvfm_states[3].freq_mhz, 924);
-        assert_eq!(pm.gpu.dvfm_states[3].used_ratio, 0.0);
+        assert_eq!(pm.gpu.dvfm_states[3].active_ratio, 0.0);
         assert_eq!(pm.gpu.dvfm_states[4].freq_mhz, 1128);
-        assert_eq!(pm.gpu.dvfm_states[4].used_ratio, 0.0);
+        assert_eq!(pm.gpu.dvfm_states[4].active_ratio, 0.0);
         assert_eq!(pm.gpu.dvfm_states[5].freq_mhz, 1278);
-        assert_eq!(pm.gpu.dvfm_states[5].used_ratio, 0.0);
+        assert_eq!(pm.gpu.dvfm_states[5].active_ratio, 0.0);
     }
 }

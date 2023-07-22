@@ -133,7 +133,8 @@ impl From<plist_parsing::Metrics> for PowerMetrics {
 
 /// Metrics for a single cluster.
 pub(crate) struct ClusterMetrics {
-    /// Cluster name.
+    /// Cluster name: usually "E-Cluster" or "P-Cluster", or "E0-Cluster", "E1-Cluster", etc on
+    /// Ultra chips.
     pub(crate) name: String,
     /// Cluster frequency (max of all CPUs) in MHz.
     pub(crate) freq_mhz: f64,
@@ -145,8 +146,8 @@ pub(crate) struct ClusterMetrics {
     pub(crate) cpus: Vec<CpuMetrics>,
 }
 
-impl From<&plist_parsing::Cluster> for ClusterMetrics {
-    fn from(value: &plist_parsing::Cluster) -> Self {
+impl From<&plist_parsing::ClusterMetrics> for ClusterMetrics {
+    fn from(value: &plist_parsing::ClusterMetrics) -> Self {
         Self {
             name: value.name.clone(),
             freq_mhz: value.freq_mhz(),
@@ -190,8 +191,8 @@ pub(crate) struct GpuMetrics {
     pub(crate) dvfm_states: Vec<DvfmState>,
 }
 
-impl From<&plist_parsing::Gpu> for GpuMetrics {
-    fn from(value: &plist_parsing::Gpu) -> Self {
+impl From<&plist_parsing::GpuMetrics> for GpuMetrics {
+    fn from(value: &plist_parsing::GpuMetrics) -> Self {
         Self {
             freq_mhz: value.freq_mhz,
             active_ratio: value.active_ratio(),
@@ -211,7 +212,7 @@ impl From<&plist_parsing::DvfmState> for DvfmState {
     fn from(value: &plist_parsing::DvfmState) -> Self {
         Self {
             freq_mhz: value.freq_mhz,
-            active_ratio: value.used_ratio,
+            active_ratio: value.active_ratio,
         }
     }
 }
