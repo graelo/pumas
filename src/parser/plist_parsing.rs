@@ -1,87 +1,126 @@
-///! Parse the plist output by `powermetrics`.
+//! Parse the plist output by `powermetrics`.
+
 use serde::Deserialize;
 
+/// The top-level struct of the plist reports metrics for the CPU, GPU, ANE and thermal pressure.
+///
+/// The fields correspond to the order of appearance in the plist.
 #[derive(Debug, Deserialize)]
 pub(crate) struct Metrics {
     // pub(crate) hw_model: String,
+    /// Sampling period in nanoseconds.
     pub(crate) elapsed_ns: u64,
+    /// Metrics for the CPU, and energy consumption of the ANE, CPU and GPU (weird grouping
+    /// indeed).
     pub(crate) processor: Processor,
+    /// Thermal pressure, one of "Nominal", "Light", "Moderate", "Heavy" or "Critical".
+    /// These enum variants are handled at a higher level in `powermetrics.rs`.
     pub(crate) thermal_pressure: String,
+    /// Basic metrics for the GPU.
     pub(crate) gpu: Gpu,
 }
 
+/// Processor metrics, including energy consumption of the ANE, CPU and GPU.
+///
+/// # Note
+///
+/// The energy consumption of the ANE is the only way to estimate its activity.
 #[derive(Debug, Deserialize)]
 pub(crate) struct Processor {
     pub(crate) clusters: Vec<Cluster>,
 
-    /// Energy consumed by the ANE in mJ.
+    /// Energy consumed by the ANE in mJ over the sampling period.
     #[serde(rename = "ane_energy")]
     pub(crate) ane_mj: u16,
-    /// Energy consumed by the CPU in mJ.
+    /// Energy consumed by the CPU in mJ over the sampling period.
     #[serde(rename = "cpu_energy")]
     pub(crate) cpu_mj: u16,
-    /// Energy consumed by the GPU in mJ.
+    /// Energy consumed by the GPU in mJ over the sampling period.
     #[serde(rename = "gpu_energy")]
     pub(crate) gpu_mj: u16,
-    /// Power consumed by the package in mW.
+    /// Average power consumed by the package in mW over the sampling period.
     #[serde(rename = "combined_power")]
     pub(crate) package_mw: f32,
 }
 
+/// Metrics for a single CPU cluster. The metrics are averaged over the sampling period and all
+/// CPUs of the cluster.
 #[derive(Debug, Deserialize)]
 pub(crate) struct Cluster {
+    /// Name of the cluster, usually "E-Cluster" or "P-Cluster".
     pub(crate) name: String,
+    /// Average frequency of the cluster in Hz.
     pub(crate) freq_hz: f64,
+    /// Average idle ratio of the cluster.
     pub(crate) idle_ratio: f64,
+    /// Average frequency states of the cluster.
     pub(crate) dvfm_states: Vec<DvfmState>,
+    /// Per-CPU metrics.
     pub(crate) cpus: Vec<Cpu>,
 }
 
 impl Cluster {
+    /// Average frequency of the cluster in MHz.
     pub(crate) fn freq_mhz(&self) -> f64 {
         self.freq_hz / 1e6
     }
+    /// Average active ratio of the cluster.
     pub(crate) fn active_ratio(&self) -> f64 {
         1.0 - self.idle_ratio
     }
 }
 
+/// Metrics for a single CPU. The metrics are averaged over the sampling period.
 #[derive(Debug, Deserialize)]
 pub(crate) struct Cpu {
+    /// ID of the CPU: from 0 to n-1.
     #[serde(rename = "cpu")]
     pub(crate) cpu_id: u16,
+    /// Average frequency of the CPU in Hz.
     pub(crate) freq_hz: f64,
+    /// Average idle ratio of the CPU.
     pub(crate) idle_ratio: f64,
+    /// Average frequency states of the CPU.
     pub(crate) dvfm_states: Vec<DvfmState>,
 }
 
 impl Cpu {
+    /// Average frequency of the CPU in MHz.
     pub(crate) fn freq_mhz(&self) -> f64 {
         self.freq_hz / 1e6
     }
+    /// Average active ratio of the CPU.
     pub(crate) fn active_ratio(&self) -> f64 {
         1.0 - self.idle_ratio
     }
 }
 
+/// Metrics for the GPU. The metrics are averaged over the sampling period and all the GPU cores.
 #[derive(Debug, Deserialize)]
 pub(crate) struct Gpu {
+    /// Average frequency of the GPU in Hz.
     #[serde(rename = "freq_hz")]
     pub(crate) freq_mhz: f64,
+    /// Average idle ratio of the GPU.
     pub(crate) idle_ratio: f64,
+    /// Average frequency states of the GPU.
     pub(crate) dvfm_states: Vec<DvfmState>,
 }
 
 impl Gpu {
+    /// Average frequency of the GPU in MHz.
     pub(crate) fn active_ratio(&self) -> f64 {
         1.0 - self.idle_ratio
     }
 }
 
+/// Frequency state of a CPU or GPU. The metrics are averaged over the sampling period.
 #[derive(Debug, Deserialize)]
 pub(crate) struct DvfmState {
+    /// Average frequency of the state in MHz.
     #[serde(rename = "freq")]
     pub(crate) freq_mhz: u16,
+    /// Average active ratio of the state.
     pub(crate) used_ratio: f64,
 }
 
