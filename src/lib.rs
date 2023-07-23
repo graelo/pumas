@@ -63,10 +63,11 @@
 //! Usage: pumas run [OPTIONS]
 //!
 //! Options:
-//!   -i, --sample-rate <SAMPLE_RATE_MS>  Rate at which metrics are sampled and displayed (milliseconds) [default: 1000]
-//!   -c, --color <COLOR>                 Choose display color (0~8) [default: 2]
-//!   -h, --help                          Print help
-//!   -V, --version                       Print version
+//!   -i, --sample-rate <SAMPLE_RATE_MS>     Update rate (milliseconds): min: 100 [default: 1000]
+//!       --accent-color <ACCENT_COLOR>      Accent color: ASCII code in 0~255 [default: 2]
+//!       --gauge-bg-color <GAUGE_BG_COLOR>  Gauge background color: ASCII code in 0~255 [default: 7]
+//!   -h, --help                             Print help (see more with '--help')
+//!   -V, --version                          Print version
 //! ```
 //!
 //! ## Details

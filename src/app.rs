@@ -41,6 +41,12 @@ pub(crate) struct App<'a> {
     /// Tabs and currently selected tab.
     pub(crate) tabs: TabsState<'a>,
 
+    /// Accent color, default: 2 (green).
+    accent_color_: u8,
+
+    /// Gauge background color, default: 7 (white).
+    gauge_bg_color_: u8,
+
     /// Time of last update.
     pub(crate) last_update: std::time::Instant,
 
@@ -56,10 +62,12 @@ pub(crate) struct App<'a> {
 
 impl<'a> App<'a> {
     /// Returns a new `App`.
-    pub fn new(soc_info: SocInfo) -> Self {
+    pub fn new(soc_info: SocInfo, accent_color: u8, gauge_bg_color: u8) -> Self {
         Self {
             should_quit: false,
             tabs: TabsState::new(vec!["Overview", "CPU", "GPU", "SoC"]),
+            accent_color_: accent_color,
+            gauge_bg_color_: gauge_bg_color,
             last_update: std::time::Instant::now(),
             metrics: None,
             soc_info,
@@ -143,5 +151,17 @@ impl<'a> App<'a> {
             .push(100.0 * metrics.ane_w / self.soc_info.max_ane_w as f32);
 
         self.metrics = Some(metrics);
+    }
+
+    fn color(code: u8) -> ratatui::style::Color {
+        ratatui::style::Color::Indexed(code)
+    }
+
+    pub(crate) fn accent_color(&self) -> ratatui::style::Color {
+        Self::color(self.accent_color_)
+    }
+
+    pub fn gauge_bg_color(&self) -> ratatui::style::Color {
+        Self::color(self.gauge_bg_color_)
     }
 }

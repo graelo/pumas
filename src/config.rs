@@ -34,11 +34,18 @@ pub enum Command {
 /// UI configuration.
 #[derive(Debug, clap::Args)]
 pub struct RunConfig {
-    /// Rate at which metrics are sampled and displayed (milliseconds).
-    #[arg(short='i', long="sample-rate", default_value = "1000", value_parser = clap::value_parser!(u16).range(100..))]
+    /// Update rate (milliseconds): min: 100.
+    ///
+    /// Rate at which metrics are sampled and displayed.
+    #[arg(short='i', long="sample-rate", default_value = "1000",
+        value_parser = clap::value_parser!(u16).range(100..))]
     pub sample_rate_ms: u16,
 
-    /// Choose display color (0~8).
-    #[arg(short, long, default_value = "2")]
-    pub color: u8,
+    /// Accent color: ASCII code in 0~255.
+    #[arg(long, default_value = "2")]
+    pub accent_color: u8,
+
+    /// Gauge background color: ASCII code in 0~255.
+    #[arg(long, default_value = "7")]
+    pub gauge_bg_color: u8,
 }

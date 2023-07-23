@@ -42,7 +42,7 @@ pub fn run(args: RunConfig) -> Result<()> {
     let mut terminal = Terminal::new(backend)?;
 
     let soc_info = SocInfo::new()?;
-    let app = App::new(soc_info);
+    let app = App::new(soc_info, args.accent_color, args.gauge_bg_color);
     run_app(
         &mut terminal,
         app,
