@@ -1,7 +1,5 @@
 //! Overview tab.
 
-use std::iter::zip;
-
 use ratatui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout, Rect},
@@ -54,6 +52,7 @@ const THR_TEXT_HEIGHT: u16 = 1;
 /// ┌ Thermals ───────────────────────────────────────────────────────────────────────────────┐
 /// │Thermal Pressure: Nominal                                                                │
 /// └─────────────────────────────────────────────────────────────────────────────────────────┘
+///
 pub(crate) fn draw_overview_tab<B>(f: &mut Frame<B>, app: &App, area: Rect)
 where
     B: Backend,
@@ -63,7 +62,10 @@ where
         None => return,
     };
 
-    let num_clusters = metrics.e_clusters.len();
+    // Number of horizontal blocks for the CPU clusters.
+    let num_clusters_blocks =
+        num_blocks_for(metrics.e_clusters.len()) + num_blocks_for(metrics.p_clusters.len());
+
     let cpu_block_height = GAUGE_HEIGHT + SPARKLINE_HEIGHT;
     let gpu_block_height = GAUGE_HEIGHT + SPARKLINE_HEIGHT;
     let pkg_block_height = PKG_TEXT_HEIGHT + SPARKLINE_HEIGHT;
@@ -73,7 +75,7 @@ where
         .direction(Direction::Vertical)
         .constraints(
             [
-                Constraint::Length(2 + cpu_block_height * num_clusters as u16), // Borders & CPU clusters blocks
+                Constraint::Length(2 + cpu_block_height * num_clusters_blocks as u16), // Borders & CPU clusters blocks
                 Constraint::Length(2 + gpu_block_height), // Borders & GPU ANE block
                 Constraint::Length(2 + pkg_block_height), // Borders & Package block
                 Constraint::Length(2 + thr_block_height), // Borders & Thermal block
@@ -103,13 +105,18 @@ where
 /// cluster metrics.
 ///
 /// ┌ CPU: 124.32 mW ─────────────────────────────────────────────────────────────────────────┐
-/// │E-Cluster: 25.6 % @ 1027 MHz                  P-Cluster: 7.0 % @ 1729 MHz                │
+/// │E0-Cluster: 25.6 % @ 1027 MHz                 E1-Cluster: 7.0 % @ 1729 MHz               │
+/// │------------------- 26% --------------------  ------------------- 7% --------------------│
+/// │   ▄▃▅▆▂▁ ▆▇▇▃▄▅▅▅▆  ▆▃                                                                  │
+/// │▁▂▄██████▇█████████▇▃███▄▂▁█   █                                                         │
+/// │████████████████████████████▇▅▆█▆▄▅▅▆▄▆▅▅▇▇▅  ▂▄▃▂▄▃▂▂▁▃▃▁▂▁▂▂▂▃▂ ▂▁▃▂▂▂▂▁ ▂▁▁▁  ▁▁▁▁▁▁▁▁│
+/// │P0-Cluster: 25.6 % @ 1027 MHz                 P1-Cluster: 7.0 % @ 1729 MHz               │
 /// │------------------- 26% --------------------  ------------------- 7% --------------------│
 /// │   ▄▃▅▆▂▁ ▆▇▇▃▄▅▅▅▆  ▆▃                                                                  │
 /// │▁▂▄██████▇█████████▇▃███▄▂▁█   █                                                         │
 /// │████████████████████████████▇▅▆█▆▄▅▅▆▄▆▅▅▇▇▅  ▂▄▃▂▄▃▂▂▁▃▃▁▂▁▂▂▂▃▂ ▂▁▃▂▂▂▂▁ ▂▁▁▁  ▁▁▁▁▁▁▁▁│
 /// └─────────────────────────────────────────────────────────────────────────────────────────┘
-
+///
 fn draw_cpu_clusters_usage_block<B>(
     f: &mut Frame<B>,
     metrics: &powermetrics::Metrics,
@@ -118,16 +125,17 @@ fn draw_cpu_clusters_usage_block<B>(
 ) where
     B: Backend,
 {
-    let num_cluster_pairs = metrics.e_clusters.len();
+    let num_cluster_blocks =
+        num_blocks_for(metrics.e_clusters.len()) + num_blocks_for(metrics.p_clusters.len());
 
-    let title = if num_cluster_pairs > 1 { "CPUs" } else { "CPU" };
+    let title = "CPU Clusters";
     let title_with_power = format!(" {title}: {} ", units::watts2(metrics.cpu_w));
     let block = Block::default()
         .title(title_with_power)
         .borders(Borders::ALL);
     f.render_widget(block, area);
 
-    let constraints = (0..num_cluster_pairs)
+    let constraints = (0..num_cluster_blocks)
         .map(|_| Constraint::Length(GAUGE_HEIGHT + SPARKLINE_HEIGHT)) // block height
         .collect::<Vec<_>>();
     let cpu_cluster_chunks = Layout::default()
@@ -136,28 +144,112 @@ fn draw_cpu_clusters_usage_block<B>(
         .margin(1)
         .split(area);
 
-    for (clu_area, (e_cluster, p_cluster)) in zip(
-        &*cpu_cluster_chunks,
-        zip(&metrics.e_clusters, &metrics.p_clusters),
-    ) {
-        draw_cluster_pair_overall_metrics(f, e_cluster, p_cluster, history, *clu_area);
+    let mut clu_area_iter = cpu_cluster_chunks.iter();
+
+    // TODO: refactor this.
+    // Draw the metrics for the Efficiency cluster (or clusters).
+    let area = clu_area_iter.next().unwrap();
+    if metrics.e_clusters.len() == 1 {
+        draw_cluster_overall_metrics(f, &metrics.e_clusters[0], history, *area);
+    } else {
+        draw_cluster_pair_overall_metrics(
+            f,
+            &metrics.e_clusters[0],
+            &metrics.e_clusters[1],
+            history,
+            *area,
+        );
     }
+
+    // Draw the metrics for the Performance cluster (or clusters).
+    let area = clu_area_iter.next().unwrap();
+    if metrics.p_clusters.len() == 1 {
+        draw_cluster_overall_metrics(f, &metrics.p_clusters[0], history, *area);
+    } else {
+        draw_cluster_pair_overall_metrics(
+            f,
+            &metrics.p_clusters[0],
+            &metrics.p_clusters[1],
+            history,
+            *area,
+        );
+    }
+    // for (clu_area, (e_cluster, p_cluster)) in zip(
+    //     &*cpu_cluster_chunks,
+    //     zip(&metrics.e_clusters, &metrics.p_clusters),
+    // ) {
+    //     draw_cluster_pair_overall_metrics(f, e_cluster, p_cluster, history, *clu_area);
+    // }
 }
 
-/// Draw the overall metrics for a CPU cluster pair.
+/// Draw the overall metrics for a single CPU cluster.
 ///
-/// The efficiency cluster is on the left, the performance cluster on the right.
+/// E0-Cluster: 26.3 % @ 1009 MHz
+/// ------------------------------------------- 26% -----------------------------------------
 ///
-/// E-Cluster: 26.3 % @ 1009 MHz                  P-Cluster: 12.1 % @ 1873 MHz
+///  ▁ ▄▅▄ ▁    ▂   ▃▃                                          ▃   ▅
+/// ██▅█████▄▆▄▅█▄▆███▆▇▅▇▅▅▅█▆█▃▅▃▅▄▅▅▅▅█▄▅▃▅▅▆█▅▃▄▁▂▁▄▃▁▇▃▂▃▁▆█▂▃▆█▂▂▂▂▂▃▁▂▁▁ ▂▂▂▂▂▃▂▁▁▂▂▃▂
+///
+fn draw_cluster_overall_metrics<B>(
+    f: &mut Frame<B>,
+    cluster: &powermetrics::ClusterMetrics,
+    history: &History,
+    area: Rect,
+) where
+    B: Backend,
+{
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(
+            [
+                Constraint::Length(GAUGE_HEIGHT),
+                Constraint::Length(SPARKLINE_HEIGHT),
+            ]
+            .as_ref(),
+        )
+        .split(area);
+    let top_area = chunks[0];
+    let bottom_area = chunks[1];
+
+    // Cluster cores Usage Gauge.
+    let title = format!(
+        "{}: {} @ {}",
+        cluster.name,
+        units::percent1(cluster.active_ratio() * 100.0),
+        units::mhz(cluster.freq_mhz),
+    );
+    let gauge = Gauge::default()
+        .block(Block::default().title(title))
+        .gauge_style(Style::default().fg(Color::Green).bg(Color::Gray))
+        .ratio(cluster.active_ratio() as f64);
+
+    f.render_widget(gauge, top_area);
+
+    // Cluster cores Sparklines.
+    let sig_name = format!("{}_active_ratio", cluster.name);
+    let sig = history.get(&sig_name).unwrap();
+    let sparkline = Sparkline::default()
+        .style(Style::default().fg(Color::Green))
+        .bar_set(symbols::bar::NINE_LEVELS)
+        .data(sig.as_slice_last_n(bottom_area.width as usize))
+        .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
+    f.render_widget(sparkline, bottom_area);
+}
+
+/// Draw the overall metrics for a pair of CPU clusters.
+///
+/// For instance:
+///
+/// E0-Cluster: 26.3 % @ 1009 MHz                 E1-Cluster: 12.1 % @ 1873 MHz
 /// ------------------- 26% --------------------  ------------------- 12% -------------------
 ///
 ///  ▁ ▄▅▄ ▁    ▂   ▃▃                                          ▃   ▅
 /// ██▅█████▄▆▄▅█▄▆███▆▇▅▇▅▅▅█▆█▃▅▃▅▄▅▅▅▅█▄▅▃▅▅▆  ▃▄▁▂▁▄▃▁▇▃▂▃▁▆█▂▃▆█▂▂▂▂▂▃▁▂▁▁ ▂▂▂▂▂▃▂▁▁▂▂▃▂
-
+///
 fn draw_cluster_pair_overall_metrics<B>(
     f: &mut Frame<B>,
-    e_cluster: &powermetrics::ClusterMetrics,
-    p_cluster: &powermetrics::ClusterMetrics,
+    left_cluster: &powermetrics::ClusterMetrics,
+    right_cluster: &powermetrics::ClusterMetrics,
     history: &History,
     area: Rect,
 ) where
@@ -204,22 +296,22 @@ fn draw_cluster_pair_overall_metrics<B>(
     let top_right_area = right_chunks[0];
     let bottom_right_area = right_chunks[1];
 
-    // Efficiency cores Usage Gauge.
+    // Left cluster cores Usage Gauge.
     let title = format!(
         "{}: {} @ {}",
-        e_cluster.name,
-        units::percent1(e_cluster.active_ratio() * 100.0),
-        units::mhz(e_cluster.freq_mhz),
+        left_cluster.name,
+        units::percent1(left_cluster.active_ratio() * 100.0),
+        units::mhz(left_cluster.freq_mhz),
     );
     let gauge = Gauge::default()
         .block(Block::default().title(title))
         .gauge_style(Style::default().fg(Color::Green).bg(Color::Gray))
-        .ratio(e_cluster.active_ratio() as f64);
+        .ratio(left_cluster.active_ratio() as f64);
 
     f.render_widget(gauge, top_left_area);
 
-    // Efficiency cores Sparklines.
-    let sig_name = format!("{}_active_ratio", e_cluster.name);
+    // Left cluster cores Sparklines.
+    let sig_name = format!("{}_active_ratio", left_cluster.name);
     let sig = history.get(&sig_name).unwrap();
     let sparkline = Sparkline::default()
         .style(Style::default().fg(Color::Green))
@@ -228,21 +320,21 @@ fn draw_cluster_pair_overall_metrics<B>(
         .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
     f.render_widget(sparkline, bottom_left_area);
 
-    // Performance cores Usage Gauge.
+    // Right cluster cores Usage Gauge.
     let title = format!(
         "{}: {} @ {}",
-        p_cluster.name,
-        units::percent1(p_cluster.active_ratio() * 100.0),
-        units::mhz(p_cluster.freq_mhz),
+        right_cluster.name,
+        units::percent1(right_cluster.active_ratio() * 100.0),
+        units::mhz(right_cluster.freq_mhz),
     );
     let gauge = Gauge::default()
         .block(Block::default().title(title))
         .gauge_style(Style::default().fg(Color::Green).bg(Color::Gray))
-        .ratio(p_cluster.active_ratio() as f64);
+        .ratio(right_cluster.active_ratio() as f64);
     f.render_widget(gauge, top_right_area);
 
-    // Performance cores Sparklines.
-    let sig_name = format!("{}_active_ratio", p_cluster.name);
+    // Right cluster cores Sparklines.
+    let sig_name = format!("{}_active_ratio", right_cluster.name);
     let sig = history.get(&sig_name).unwrap();
     let sparkline = Sparkline::default()
         .style(Style::default().fg(Color::Green))
@@ -261,7 +353,7 @@ fn draw_cluster_pair_overall_metrics<B>(
 /// │                                                                               │
 /// │                  ▁          ▄▅▄▅▄▅▂ ▁                                         │
 /// └───────────────────────────────────────────────────────────────────────────────┘
-
+///
 fn draw_gpu_ane_usage_block<B>(
     f: &mut Frame<B>,
     metrics: &powermetrics::Metrics,
@@ -363,7 +455,7 @@ fn draw_gpu_ane_usage_block<B>(
 /// │                                                                                         │
 /// │                                    ▁                                           ▁▁▁▁▁▁▁  │
 /// └─────────────────────────────────────────────────────────────────────────────────────────┘
-
+///
 fn draw_package_power_block<B>(
     f: &mut Frame<B>,
     metrics: &powermetrics::Metrics,
@@ -406,7 +498,7 @@ fn draw_package_power_block<B>(
 /// ┌ Thermals ───────────────────────────────────────────────────────────────────────────────┐
 /// │Thermal Pressure: Nominal                                                                │
 /// └─────────────────────────────────────────────────────────────────────────────────────────┘
-
+///
 fn draw_thermal_pressure_block<B>(f: &mut Frame<B>, metrics: &powermetrics::Metrics, area: Rect)
 where
     B: Backend,
@@ -422,4 +514,9 @@ where
     let paragraph =
         Paragraph::new(text).block(Block::default().title(" Thermals ").borders(Borders::ALL));
     f.render_widget(paragraph, area);
+}
+
+/// Compute the number of blocks for a given cluster.
+fn num_blocks_for(count: usize) -> usize {
+    (count as f32 / 2.0).ceil() as usize
 }
