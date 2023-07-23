@@ -13,29 +13,29 @@
 A nvtop-inspired command line tool for Apple Silicon Macs: aka M1, M2, ... This is basically a
 reimplemented version of [asitop] in Rust.
 
-Utilization info:
-
-- CPU (E-cluster and P-cluster), GPU
-- Frequency and utilization
-- ANE utilization (measured by power)
-
-Memory info:
-- RAM and swap, size and usage
-- (Apple removed memory bandwidth from powermetrics)
-
-Power info:
-- CPU power, GPU power (Apple removed package power from powermetrics)
-- Chart for CPU/GPU power
-- Peak power, rolling average display
+| Type        | Metrics                      | Available | Comments                                                  |
+| ---         | ---                          | ---       | ---                                                       |
+| Utilization | CPU Clusters, GPU, ANE       | ✅        | History & current values. ANE util. is measured via power |
+| Power       | CPU, GPU, ANE, total package | ✅        | History & current values                                  |
+| Frequency   | CPU Clusters, GPU            | ✅        | Current avg. values                                       |
+| Frequency   | CPU Clusters, GPU            | planned   | Residency distrib. histograms                             |
+| Memory      | RAM & swap: size and usage   | planned   | Apple removed memory bandwidth from powermetrics.         |
 
 Pumas uses the built-in `powermetrics` utility on macOS, which allows access to a
 variety of hardware performance counters. Note that it requires `sudo` to run due
-to powermetrics needing root access to run. Pumas is lightweight and has
+to `powermetrics` needing root access to run. Pumas is lightweight and has
 minimal performance impact.
 
 Pumas only works on Apple Silicon Macs on macOS Monterey and later.
 
 This is a work in progress.
+
+## Installation
+
+```sh
+cargo install pumas
+brew install graelo/tap/pumas
+```
 
 ## Quickstart
 
@@ -82,27 +82,29 @@ Options:
 
 `powermetrics` is used to measure the following:
 
-  - CPU/GPU utilization via active residency
-  - CPU/GPU frequency
-  - Package/CPU/GPU/ANE energy consumption
+ - ❌ CPU usage via `powermetrics` (removed: incorrect on M2)
+- GPU utilization via active residency
+- CPU & GPU frequency
+- Package/CPU/GPU/ANE energy consumption
 
-`psutil` is used to measure the following:
+`sysinfo` crate is used to measure the following:
 
-  - memory and swap usage
+- per-cluster CPU utilization
+- per-core CPU utilization (planned)
 
 `sysctl` is used to measure the following:
 
-  - CPU name
-  - CPU core counts
+- CPU name
+- CPU core counts
 
 `system_profiler` is used to measure the following:
 
-  - GPU core count
+- GPU core count
 
 Some information is guesstimate and hardcoded as there doesn't seem to be a official source for
 it on the system:
 
-  - CPU/GPU TDP
+- CPU, GPU & ANE max power draw
 
 ## License
 
