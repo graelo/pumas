@@ -23,7 +23,7 @@ use termion::{
 use crate::{
     app::App,
     config::RunConfig,
-    parser::{powermetrics::Metrics, soc::Soc},
+    parser::{powermetrics::Metrics, soc::SocInfo},
     ui, Result,
 };
 
@@ -41,7 +41,7 @@ pub fn run(args: RunConfig) -> Result<()> {
     let backend = TermionBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let soc_info = Soc::new()?;
+    let soc_info = SocInfo::new()?;
     let app = App::new(soc_info);
     run_app(
         &mut terminal,

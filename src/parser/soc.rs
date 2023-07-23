@@ -5,7 +5,7 @@ use std::process;
 use crate::{error::Error, Result};
 
 #[derive(Debug)]
-pub(crate) struct Soc {
+pub(crate) struct SocInfo {
     /// Brand name of the CPU, e.g. "Apple M1".
     pub(crate) cpu_brand_name: String,
 
@@ -34,8 +34,8 @@ pub(crate) struct Soc {
     pub(crate) max_package_w: f64,
 }
 
-impl Soc {
-    pub(crate) fn new() -> Result<Soc> {
+impl SocInfo {
+    pub(crate) fn new() -> Result<SocInfo> {
         let (cpu_brand_name, num_cpu_cores, num_efficiency_cores, num_performance_cores) =
             cpu_info()?;
 
@@ -50,7 +50,7 @@ impl Soc {
             _ => (20.0, 20.0, 8.0),
         };
 
-        Ok(Soc {
+        Ok(SocInfo {
             cpu_brand_name,
             num_cpu_cores,
             num_efficiency_cores,

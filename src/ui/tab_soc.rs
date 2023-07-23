@@ -19,20 +19,20 @@ where
     B: Backend,
 {
     let row_content = vec![
-        ("SoC brand name:", app.soc.cpu_brand_name.clone()),
-        ("CPU cores:", format!("{}", app.soc.num_cpu_cores)),
+        ("SoC brand name:", app.soc_info.cpu_brand_name.clone()),
+        ("CPU cores:", format!("{}", app.soc_info.num_cpu_cores)),
         (
             "- Efficiency cores:",
-            format!("{}", app.soc.num_efficiency_cores),
+            format!("{}", app.soc_info.num_efficiency_cores),
         ),
         (
             "- Performance cores:",
-            format!("{}", app.soc.num_performance_cores),
+            format!("{}", app.soc_info.num_performance_cores),
         ),
-        ("GPU cores:", format!("{}", app.soc.num_gpu_cores)),
-        ("Max CPU power:", units::watts(app.soc.max_cpu_w)),
-        ("Max GPU power:", units::watts(app.soc.max_gpu_w)),
-        ("Max ANE power:", units::watts(app.soc.max_ane_w)),
+        ("GPU cores:", format!("{}", app.soc_info.num_gpu_cores)),
+        ("Max CPU power:", units::watts(app.soc_info.max_cpu_w)),
+        ("Max GPU power:", units::watts(app.soc_info.max_gpu_w)),
+        ("Max ANE power:", units::watts(app.soc_info.max_ane_w)),
     ];
 
     let rows = row_content.iter().map(|(left, ref right)| {

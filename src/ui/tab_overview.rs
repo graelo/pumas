@@ -15,7 +15,7 @@ use ratatui::{
 use crate::{
     app::{App, History},
     parser::powermetrics,
-    parser::soc::Soc,
+    parser::soc::SocInfo,
     units,
 };
 
@@ -88,7 +88,7 @@ where
     let thr_area = vertical_chunks[3];
 
     draw_cpu_clusters_usage_block(f, metrics, &app.history, cpu_area);
-    draw_gpu_ane_usage_block(f, metrics, &app.soc, &app.history, gpu_area);
+    draw_gpu_ane_usage_block(f, metrics, &app.soc_info, &app.history, gpu_area);
     draw_package_power_block(f, metrics, &app.history, pkg_area);
     draw_thermal_pressure_block(f, metrics, thr_area);
 }
@@ -265,7 +265,7 @@ fn draw_cluster_pair_overall_metrics<B>(
 fn draw_gpu_ane_usage_block<B>(
     f: &mut Frame<B>,
     metrics: &powermetrics::Metrics,
-    soc: &Soc,
+    soc_info: &SocInfo,
     history: &History,
     area: Rect,
 ) where
@@ -332,7 +332,7 @@ fn draw_gpu_ane_usage_block<B>(
     f.render_widget(sparkline, bottom_left_area);
 
     // Right: ANE.
-    let ane_active_ratio = metrics.ane_w as f64 / soc.max_ane_w;
+    let ane_active_ratio = metrics.ane_w as f64 / soc_info.max_ane_w;
     let title = format!(
         "ANE Usage: {} ⚡️{}",
         units::percent1(ane_active_ratio * 100.0),

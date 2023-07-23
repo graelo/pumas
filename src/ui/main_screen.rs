@@ -38,10 +38,10 @@ pub(crate) fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
 
     let machine_desc = format!(
         " {} (cores: {}E+{}P+{}GPU) ",
-        app.soc.cpu_brand_name,
-        app.soc.num_efficiency_cores,
-        app.soc.num_performance_cores,
-        app.soc.num_gpu_cores
+        app.soc_info.cpu_brand_name,
+        app.soc_info.num_efficiency_cores,
+        app.soc_info.num_performance_cores,
+        app.soc_info.num_gpu_cores
     );
     let machine_desc_par = Paragraph::new(Span::styled(
         machine_desc,
