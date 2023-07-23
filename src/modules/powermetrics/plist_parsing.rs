@@ -51,8 +51,9 @@ pub(super) struct ClusterMetrics {
     pub(super) name: String,
     /// Average frequency of the cluster in Hz.
     pub(super) freq_hz: f64,
-    /// Average idle ratio of the cluster.
-    pub(super) idle_ratio: f64,
+    // /// Average idle ratio of the cluster.
+    // On M2 chips, powermetrics reports incorrect values.
+    // pub(super) idle_ratio: f64,
     /// Average frequency states of the cluster.
     pub(super) dvfm_states: Vec<DvfmState>,
     /// Per-CPU metrics.
@@ -64,10 +65,11 @@ impl ClusterMetrics {
     pub(super) fn freq_mhz(&self) -> f64 {
         self.freq_hz / 1e6
     }
-    /// Average active ratio of the cluster.
-    pub(super) fn active_ratio(&self) -> f64 {
-        1.0 - self.idle_ratio
-    }
+    // /// Average active ratio of the cluster.
+    // On M2 chips, powermetrics reports incorrect values.
+    // pub(super) fn active_ratio(&self) -> f64 {
+    //     1.0 - self.idle_ratio
+    // }
 }
 
 /// Metrics for a single CPU. The metrics are averaged over the sampling period.
@@ -142,7 +144,8 @@ mod tests {
         let c0 = &pm.processor.clusters[0];
         assert_eq!(&c0.name[..], "E-Cluster");
         assert_eq!(c0.freq_mhz(), 1022.87);
-        assert_eq!(c0.active_ratio(), 1.0 - 0.772993);
+        // assert_eq!(c0.active_ratio(), 1.0 - 0.772993);
+
         // cluster dvfm_states.
         assert_eq!(c0.dvfm_states[0].freq_mhz, 600);
         assert_eq!(c0.dvfm_states[0].active_ratio, 0.0);
@@ -178,7 +181,8 @@ mod tests {
         let c1 = &pm.processor.clusters[1];
         assert_eq!(&c1.name[..], "P-Cluster");
         assert_eq!(c1.freq_mhz(), 618.173);
-        assert_eq!(c1.active_ratio(), 1.0 - 0.983957);
+        // assert_eq!(c1.active_ratio(), 1.0 - 0.983957);
+
         // cluster dvfm_states.
         assert_eq!(c1.cpus[0].cpu_id, 4);
         assert_eq!(c1.cpus[1].cpu_id, 5);

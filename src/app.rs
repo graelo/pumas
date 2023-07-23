@@ -112,7 +112,7 @@ impl<'a> App<'a> {
                     HISTORY_CAPACITY,
                     /* max */ 100.0,
                 ))
-                .push(100.0 * e_cluster.active_ratio as f32);
+                .push(100.0 * e_cluster.active_ratio());
         }
 
         for p_cluster in &metrics.p_clusters {
@@ -123,7 +123,7 @@ impl<'a> App<'a> {
                     HISTORY_CAPACITY,
                     /* max */ 100.0,
                 ))
-                .push(100.0 * p_cluster.active_ratio as f32);
+                .push(100.0 * p_cluster.active_ratio());
         }
 
         self.history

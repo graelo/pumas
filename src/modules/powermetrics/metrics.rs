@@ -8,7 +8,15 @@ use std::str::FromStr;
 use super::plist_parsing;
 use crate::error::Error;
 
-/// powermetrics output.
+/// Reformulated metrics from the output of the `powermetrics` tool.
+///
+/// # Note
+///
+/// - Mx chips have a single E cluster and a single P cluster.
+/// - Mx Pro chips have one E cluster and two P clusters.
+/// - Mx Max chips have one E cluster and two P clusters.
+/// - Mx Ultra chips have multiple E clusters and multiple P clusters.
+///
 pub(crate) struct Metrics {
     /// Efficiency cluster metrics.
     pub(crate) e_clusters: Vec<ClusterMetrics>,
@@ -43,6 +51,44 @@ impl Metrics {
         let pm: plist_parsing::Metrics =
             plist::from_bytes(content).map_err(|e| Error::PlistParsingError(e.to_string()))?;
         Ok(Self::from(pm))
+    }
+
+    /// Total number of CPUs on the chip.
+    pub(crate) fn num_cpus(&self) -> usize {
+        let mut total = 0;
+        self.e_clusters.iter().for_each(|c| total += c.cpus.len());
+        self.p_clusters.iter().for_each(|c| total += c.cpus.len());
+        total
+    }
+
+    /// Override the CPU active ratio with the values provided by sysinfo.
+    ///
+    /// Yes this is ugly, but it's the only way to get the correct active ratio given that the
+    /// powermetrics tool reports incorrect values on M2 chips.
+    ///
+    /// # Note
+    ///
+    /// This can be improved by aligning the CPU ids between the two tools.
+    /// TODO: align CPU ids between powermetrics and sysinfo.
+    ///
+    pub(crate) fn patch_all_clusters_active_ratio(&mut self, active_ratios: &[f32]) {
+        assert_eq!(
+            self.num_cpus(),
+            active_ratios.len(),
+            "The number of active ratios (provided by sysinfo) must match the number of cpus."
+        );
+
+        let mut active_ratios = active_ratios.iter();
+        for e_cluster in &mut self.e_clusters {
+            for cpu in &mut e_cluster.cpus {
+                cpu.active_ratio = *active_ratios.next().unwrap() as f64;
+            }
+        }
+        for p_cluster in &mut self.p_clusters {
+            for cpu in &mut p_cluster.cpus {
+                cpu.active_ratio = *active_ratios.next().unwrap() as f64;
+            }
+        }
     }
 }
 
@@ -137,29 +183,28 @@ impl From<plist_parsing::Metrics> for Metrics {
 
 /// Metrics for a single cluster.
 pub(crate) struct ClusterMetrics {
-    /// Cluster name: usually "E-Cluster" or "P-Cluster", or "E0-Cluster", "E1-Cluster", etc on
-    /// Ultra chips.
+    /// Cluster name: e.g. "E-Cluster" or "P-Cluster", or "P0-Cluster", "P1-Cluster", etc.
     pub(crate) name: String,
     /// Cluster frequency (max of all CPUs) in MHz.
     pub(crate) freq_mhz: f64,
-    /// Cluster active ratio (mean of all CPU active ratios).
-    pub(crate) active_ratio: f64,
     /// Cluster dvfm states.
     pub(crate) dvfm_states: Vec<DvfmState>,
     /// Individual CPU metrics.
     pub(crate) cpus: Vec<CpuMetrics>,
 }
 
+impl ClusterMetrics {
+    /// Cluster active ratio (mean of all CPU active ratios).
+    pub(crate) fn active_ratio(&self) -> f32 {
+        self.cpus.iter().map(|c| c.active_ratio as f32).sum::<f32>() / self.cpus.len() as f32
+    }
+}
+
 impl From<&plist_parsing::ClusterMetrics> for ClusterMetrics {
     fn from(value: &plist_parsing::ClusterMetrics) -> Self {
-        // Average the active ratio of all CPUs in the cluster.
-        let active_ratio =
-            value.cpus.iter().map(|c| c.active_ratio()).sum::<f64>() / value.cpus.len() as f64;
-
         Self {
             name: value.name.clone(),
             freq_mhz: value.freq_mhz(),
-            active_ratio,
             dvfm_states: value.dvfm_states.iter().map(DvfmState::from).collect(),
             cpus: value.cpus.iter().map(CpuMetrics::from).collect(),
         }
@@ -242,7 +287,7 @@ mod tests {
 
         // E cluster 0.
         assert_eq!(powermetrics.e_clusters[0].freq_mhz, 1022.87);
-        assert_eq!(powermetrics.e_clusters[0].active_ratio, 1.0 - 0.772993);
+        // assert_eq!(powermetrics.e_clusters[0].active_ratio, 1.0 - 0.772993);
 
         // E cluster 0 DVFM states.
         assert_eq!(powermetrics.e_clusters[0].dvfm_states[0].freq_mhz, 600);
@@ -281,7 +326,7 @@ mod tests {
 
         // P cluster 0.
         assert_eq!(powermetrics.p_clusters[0].freq_mhz, 618.173);
-        assert_eq!(powermetrics.p_clusters[0].active_ratio, 1.0 - 0.983957);
+        // assert_eq!(powermetrics.p_clusters[0].active_ratio, 1.0 - 0.983957);
 
         // P cluster 0 DVFM states.
         assert_eq!(powermetrics.p_clusters[0].dvfm_states[0].freq_mhz, 600);

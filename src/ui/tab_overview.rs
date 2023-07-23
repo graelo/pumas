@@ -208,13 +208,13 @@ fn draw_cluster_pair_overall_metrics<B>(
     let title = format!(
         "{}: {} @ {}",
         e_cluster.name,
-        units::percent1(e_cluster.active_ratio * 100.0),
+        units::percent1(e_cluster.active_ratio() * 100.0),
         units::mhz(e_cluster.freq_mhz),
     );
     let gauge = Gauge::default()
         .block(Block::default().title(title))
         .gauge_style(Style::default().fg(Color::Green).bg(Color::Gray))
-        .ratio(e_cluster.active_ratio);
+        .ratio(e_cluster.active_ratio() as f64);
 
     f.render_widget(gauge, top_left_area);
 
@@ -232,13 +232,13 @@ fn draw_cluster_pair_overall_metrics<B>(
     let title = format!(
         "{}: {} @ {}",
         p_cluster.name,
-        units::percent1(p_cluster.active_ratio * 100.0),
+        units::percent1(p_cluster.active_ratio() * 100.0),
         units::mhz(p_cluster.freq_mhz),
     );
     let gauge = Gauge::default()
         .block(Block::default().title(title))
         .gauge_style(Style::default().fg(Color::Green).bg(Color::Gray))
-        .ratio(p_cluster.active_ratio);
+        .ratio(p_cluster.active_ratio() as f64);
     f.render_widget(gauge, top_right_area);
 
     // Performance cores Sparklines.

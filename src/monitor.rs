@@ -23,7 +23,7 @@ use termion::{
 use crate::{
     app::App,
     config::RunConfig,
-    modules::{powermetrics, soc::SocInfo},
+    modules::{powermetrics, soc::SocInfo, sysinfo},
     ui, Result,
 };
 
@@ -74,7 +74,7 @@ fn run_app<B: Backend>(
                 _ => {}
             },
             // Event::Tick => app.on_tick(),
-            Event::Metrics(metrics) => app.on_metrics(metrics),
+            Event::Metrics(power_metrics) => app.on_metrics(power_metrics),
         }
         if app.should_quit {
             return Ok(());
@@ -155,8 +155,10 @@ fn stream_powermetrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
     let stdout_lines = stdout_reader.lines();
 
     let mut buffer = powermetrics::Buffer::new();
+    let mut system_state = sysinfo::SystemState::new();
 
-    // Read the lines from powermetrics, one by one, for the entire duration of the app.
+    // Read the lines from powermetrics, one by one, for the entire duration of the app. When the
+    // last line of a plist message is read, build and send metrics to the event loop.
     for line in stdout_lines.flatten() {
         if line != "</plist>" {
             buffer.append_line(line);
@@ -164,7 +166,7 @@ fn stream_powermetrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
             buffer.append_last_line(line);
             let text = buffer.finalize();
 
-            let powermetrics = match powermetrics::Metrics::from_bytes(text.as_bytes()) {
+            let mut power_metrics = match powermetrics::Metrics::from_bytes(text.as_bytes()) {
                 Ok(metrics) => metrics,
                 Err(err) => {
                     eprintln!("{err}");
@@ -173,7 +175,16 @@ fn stream_powermetrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
                 }
             };
 
-            if let Err(err) = tx.send(Event::Metrics(powermetrics)) {
+            let sysinfo_metrics = system_state.latest_metrics();
+
+            let cpu_usage: Vec<f32> = sysinfo_metrics
+                .cpu_metrics
+                .iter()
+                .map(|m| m.active_ratio)
+                .collect();
+            power_metrics.patch_all_clusters_active_ratio(&cpu_usage[..]);
+
+            if let Err(err) = tx.send(Event::Metrics(power_metrics)) {
                 eprintln!("{err}");
                 cmd.kill().unwrap();
                 break;
