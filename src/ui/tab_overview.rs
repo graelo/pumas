@@ -89,10 +89,25 @@ where
     let pkg_area = vertical_chunks[2];
     let thr_area = vertical_chunks[3];
 
-    draw_cpu_clusters_usage_block(f, metrics, &app.history, cpu_area);
-    draw_gpu_ane_usage_block(f, metrics, &app.soc_info, &app.history, gpu_area);
-    draw_package_power_block(f, metrics, &app.history, pkg_area);
-    draw_thermal_pressure_block(f, metrics, thr_area);
+    draw_cpu_clusters_usage_block(
+        f,
+        metrics,
+        &app.history,
+        app.accent_color(),
+        app.gauge_bg_color(),
+        cpu_area,
+    );
+    draw_gpu_ane_usage_block(
+        f,
+        metrics,
+        &app.soc_info,
+        &app.history,
+        app.accent_color(),
+        app.gauge_bg_color(),
+        gpu_area,
+    );
+    draw_package_power_block(f, metrics, &app.history, app.accent_color(), pkg_area);
+    draw_thermal_pressure_block(f, metrics, app.accent_color(), thr_area);
 }
 
 /// Draw the CPU clusters usage block.
@@ -121,6 +136,8 @@ fn draw_cpu_clusters_usage_block<B>(
     f: &mut Frame<B>,
     metrics: &powermetrics::Metrics,
     history: &History,
+    accent_color: Color,
+    gauge_bg_color: Color,
     area: Rect,
 ) where
     B: Backend,
@@ -150,13 +167,22 @@ fn draw_cpu_clusters_usage_block<B>(
     // Draw the metrics for the Efficiency cluster (or clusters).
     let area = clu_area_iter.next().unwrap();
     if metrics.e_clusters.len() == 1 {
-        draw_cluster_overall_metrics(f, &metrics.e_clusters[0], history, *area);
+        draw_cluster_overall_metrics(
+            f,
+            &metrics.e_clusters[0],
+            history,
+            accent_color,
+            gauge_bg_color,
+            *area,
+        );
     } else {
         draw_cluster_pair_overall_metrics(
             f,
             &metrics.e_clusters[0],
             &metrics.e_clusters[1],
             history,
+            accent_color,
+            gauge_bg_color,
             *area,
         );
     }
@@ -164,22 +190,25 @@ fn draw_cpu_clusters_usage_block<B>(
     // Draw the metrics for the Performance cluster (or clusters).
     let area = clu_area_iter.next().unwrap();
     if metrics.p_clusters.len() == 1 {
-        draw_cluster_overall_metrics(f, &metrics.p_clusters[0], history, *area);
+        draw_cluster_overall_metrics(
+            f,
+            &metrics.p_clusters[0],
+            history,
+            accent_color,
+            gauge_bg_color,
+            *area,
+        );
     } else {
         draw_cluster_pair_overall_metrics(
             f,
             &metrics.p_clusters[0],
             &metrics.p_clusters[1],
             history,
+            accent_color,
+            gauge_bg_color,
             *area,
         );
     }
-    // for (clu_area, (e_cluster, p_cluster)) in zip(
-    //     &*cpu_cluster_chunks,
-    //     zip(&metrics.e_clusters, &metrics.p_clusters),
-    // ) {
-    //     draw_cluster_pair_overall_metrics(f, e_cluster, p_cluster, history, *clu_area);
-    // }
 }
 
 /// Draw the overall metrics for a single CPU cluster.
@@ -194,6 +223,8 @@ fn draw_cluster_overall_metrics<B>(
     f: &mut Frame<B>,
     cluster: &powermetrics::ClusterMetrics,
     history: &History,
+    accent_color: Color,
+    gauge_bg_color: Color,
     area: Rect,
 ) where
     B: Backend,
@@ -220,7 +251,7 @@ fn draw_cluster_overall_metrics<B>(
     );
     let gauge = Gauge::default()
         .block(Block::default().title(title))
-        .gauge_style(Style::default().fg(Color::Green).bg(Color::Gray))
+        .gauge_style(Style::default().fg(accent_color).bg(gauge_bg_color))
         .ratio(cluster.active_ratio() as f64);
 
     f.render_widget(gauge, top_area);
@@ -229,7 +260,7 @@ fn draw_cluster_overall_metrics<B>(
     let sig_name = format!("{}_active_ratio", cluster.name);
     let sig = history.get(&sig_name).unwrap();
     let sparkline = Sparkline::default()
-        .style(Style::default().fg(Color::Green))
+        .style(Style::default().fg(accent_color))
         .bar_set(symbols::bar::NINE_LEVELS)
         .data(sig.as_slice_last_n(bottom_area.width as usize))
         .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
@@ -251,6 +282,8 @@ fn draw_cluster_pair_overall_metrics<B>(
     left_cluster: &powermetrics::ClusterMetrics,
     right_cluster: &powermetrics::ClusterMetrics,
     history: &History,
+    accent_color: Color,
+    gauge_bg_color: Color,
     area: Rect,
 ) where
     B: Backend,
@@ -270,8 +303,22 @@ fn draw_cluster_pair_overall_metrics<B>(
     let left_area = horizontal_chunks[0];
     let right_area = horizontal_chunks[2];
 
-    draw_cluster_overall_metrics(f, left_cluster, history, left_area);
-    draw_cluster_overall_metrics(f, right_cluster, history, right_area);
+    draw_cluster_overall_metrics(
+        f,
+        left_cluster,
+        history,
+        accent_color,
+        gauge_bg_color,
+        left_area,
+    );
+    draw_cluster_overall_metrics(
+        f,
+        right_cluster,
+        history,
+        accent_color,
+        gauge_bg_color,
+        right_area,
+    );
 }
 
 /// Draw the GPU & ANE usage block.
@@ -289,6 +336,8 @@ fn draw_gpu_ane_usage_block<B>(
     metrics: &powermetrics::Metrics,
     soc_info: &SocInfo,
     history: &History,
+    accent_color: Color,
+    gauge_bg_color: Color,
     area: Rect,
 ) where
     B: Backend,
@@ -336,7 +385,7 @@ fn draw_gpu_ane_usage_block<B>(
     let gauge = Gauge::default()
         .block(Block::default().title(title))
         .gauge_style(
-            Style::default().fg(Color::Green).bg(Color::Gray),
+            Style::default().fg(accent_color).bg(gauge_bg_color),
             // .add_modifier(Modifier::ITALIC | Modifier::BOLD),
         )
         .ratio(gpu.active_ratio);
@@ -347,7 +396,7 @@ fn draw_gpu_ane_usage_block<B>(
     // let sig_name = format!("{}_active_ratio", p_cluster.name);
     let sig = history.get("gpu_active_ratio").unwrap();
     let sparkline = Sparkline::default()
-        .style(Style::default().fg(Color::Green))
+        .style(Style::default().fg(accent_color))
         .bar_set(symbols::bar::NINE_LEVELS)
         .data(sig.as_slice_last_n(bottom_left_area.width as usize))
         .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
@@ -362,7 +411,7 @@ fn draw_gpu_ane_usage_block<B>(
     );
     let gauge = Gauge::default()
         .block(Block::default().title(title))
-        .gauge_style(Style::default().fg(Color::Green).bg(Color::Gray))
+        .gauge_style(Style::default().fg(accent_color).bg(gauge_bg_color))
         .ratio(ane_active_ratio);
 
     f.render_widget(gauge, top_right_area);
@@ -370,7 +419,7 @@ fn draw_gpu_ane_usage_block<B>(
     // Sparklines for the ANE usage.
     let sig = history.get("ane_active_ratio").unwrap();
     let sparkline = Sparkline::default()
-        .style(Style::default().fg(Color::Green))
+        .style(Style::default().fg(accent_color))
         .bar_set(symbols::bar::NINE_LEVELS)
         .data(sig.as_slice_last_n(bottom_right_area.width as usize))
         .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
@@ -390,6 +439,7 @@ fn draw_package_power_block<B>(
     f: &mut Frame<B>,
     metrics: &powermetrics::Metrics,
     history: &History,
+    accent_color: Color,
     area: Rect,
 ) where
     B: Backend,
@@ -416,7 +466,7 @@ fn draw_package_power_block<B>(
 
     // Sparklines for the Package total usage.
     let sparkline = Sparkline::default()
-        .style(Style::default().fg(Color::Green))
+        .style(Style::default().fg(accent_color))
         .bar_set(symbols::bar::NINE_LEVELS)
         .data(sig.as_slice_last_n(sparkline_area.width as usize))
         .max(sig.max as u64);
@@ -429,12 +479,16 @@ fn draw_package_power_block<B>(
 /// │Thermal Pressure: Nominal                                                                │
 /// └─────────────────────────────────────────────────────────────────────────────────────────┘
 ///
-fn draw_thermal_pressure_block<B>(f: &mut Frame<B>, metrics: &powermetrics::Metrics, area: Rect)
-where
+fn draw_thermal_pressure_block<B>(
+    f: &mut Frame<B>,
+    metrics: &powermetrics::Metrics,
+    accent_color: Color,
+    area: Rect,
+) where
     B: Backend,
 {
     let color = match metrics.thermal_pressure.as_str() {
-        "Nominal" => Color::Green,
+        "Nominal" => accent_color,
         _ => Color::Yellow,
     };
     let text = Line::from(vec![

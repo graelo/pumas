@@ -3,7 +3,7 @@
 use ratatui::{
     backend::Backend,
     layout::{Alignment, Constraint, Layout, Rect},
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph, Tabs},
     Frame,
@@ -45,7 +45,7 @@ pub(crate) fn draw<B: Backend>(f: &mut Frame<B>, app: &App, area: Rect) {
     );
     let machine_desc_par = Paragraph::new(Span::styled(
         machine_desc,
-        Style::default().fg(Color::Green),
+        Style::default().fg(app.accent_color()),
     ))
     .alignment(Alignment::Right);
     f.render_widget(machine_desc_par, title_area);
@@ -57,14 +57,14 @@ pub(crate) fn draw<B: Backend>(f: &mut Frame<B>, app: &App, area: Rect) {
         .tabs
         .titles
         .iter()
-        .map(|t| Line::from(Span::styled(*t, Style::default().fg(Color::LightYellow))))
+        .map(|t| Line::from(Span::styled(*t, Style::default())))
         .collect();
     let tabs = Tabs::new(tab_titles)
         .block(Block::default().borders(Borders::ALL))
         // .title(title))
         .highlight_style(
             Style::default()
-                .fg(Color::Green)
+                .fg(app.accent_color())
                 .add_modifier(Modifier::BOLD),
         )
         .select(app.tabs.index);

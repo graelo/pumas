@@ -30,8 +30,8 @@ use crate::{
 /// Configures the UI, and launches powermetrics regularly to update the values.
 pub fn run(args: RunConfig) -> Result<()> {
     // println!(
-    //     "run: {}, {}, {}, {:?}",
-    //     args.sample_rate_ms, args.color, args.average, args.max_show_count
+    //     "run: {}, {}",
+    //     args.sample_rate_ms, args.color
     // );
 
     let stdout = io::stdout().into_alternate_screen()?.into_raw_mode()?;
@@ -42,7 +42,7 @@ pub fn run(args: RunConfig) -> Result<()> {
     let mut terminal = Terminal::new(backend)?;
 
     let soc_info = SocInfo::new()?;
-    let app = App::new(soc_info);
+    let app = App::new(soc_info, args.accent_color, args.gauge_bg_color);
     run_app(
         &mut terminal,
         app,
