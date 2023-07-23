@@ -33,7 +33,7 @@ si-scale = "0.2"
 
 # ui
 termion = "2"
-ratatui = { version = "0.20", default-features = false, features = ['termion'] }
+ratatui = { version = "0.22", default-features = false, features = ['termion'] }
 
 num-traits = "0.2"
 sysinfo = "0.29.6"
