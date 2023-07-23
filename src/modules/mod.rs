@@ -6,3 +6,4 @@
 
 pub(crate) mod powermetrics;
 pub(crate) mod soc;
+pub(crate) mod sysinfo;

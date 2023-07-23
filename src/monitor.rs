@@ -23,7 +23,7 @@ use termion::{
 use crate::{
     app::App,
     config::RunConfig,
-    modules::{powermetrics::Metrics, soc::SocInfo},
+    modules::{powermetrics, soc::SocInfo},
     ui, Result,
 };
 
@@ -85,7 +85,7 @@ fn run_app<B: Backend>(
 enum Event {
     Input(Key),
     // Tick,
-    Metrics(Metrics),
+    Metrics(powermetrics::Metrics),
 }
 
 /// Run event threads.
@@ -117,6 +117,18 @@ fn start_event_threads(tick_rate: Duration) -> mpsc::Receiver<Event> {
     rx
 }
 
+/// Stream metrics from the powermetrics tool and send them to the event loop.
+///
+/// This starts the powermetrics tool in streaming mode so that it outputs plists at each tick.
+/// This function will run in a separate thread and stream data for the entire duration of the app.
+///
+/// This function also gathers CPU usage from the sysinfo crate for more accurate per-core usage
+/// (powermetrics is half-broken on M2 chips).
+///
+/// # Note
+///
+/// Powermetrics outputs a plist file, but it is not valid XML, so we fix the issues before sending
+/// them to the plist parser.
 fn stream_powermetrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
     let sample_rate_ms = format!("{}", tick_rate.as_millis());
 
@@ -142,40 +154,17 @@ fn stream_powermetrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
     let stdout_reader = BufReader::new(stdout);
     let stdout_lines = stdout_reader.lines();
 
-    // A plist output from powermetrics typically contains 713 lines.
-    let num_lines = 714;
-    // Prepare a buffer to store the set of lines which correspond to a full output.
-    let mut buffer: Vec<String> = Vec::<String>::with_capacity(num_lines);
+    let mut buffer = powermetrics::Buffer::new();
 
+    // Read the lines from powermetrics, one by one, for the entire duration of the app.
     for line in stdout_lines.flatten() {
         if line != "</plist>" {
-            // Process all lines but the last.
-            if line.starts_with(char::from(0)) {
-                // Trim the leading null character if present (happens only on the 1st line).
-                let line = line.trim_start_matches(char::from(0)).to_string();
-                buffer.push(line);
-            } else {
-                buffer.push(line);
-            }
+            buffer.append_line(line);
         } else {
-            // Process the last line.
-            buffer.push(line);
+            buffer.append_last_line(line);
+            let text = buffer.finalize();
 
-            // Fix a powermetrics bug by removing the last `idle_ratio` line. This should be the
-            // (n-5)th line, so we only iterate over the last 10 lines.
-            let pos = buffer
-                .iter()
-                .rev()
-                .take(10)
-                .position(|line| line.starts_with("<key>idle_ratio</key>"));
-            if let Some(pos) = pos {
-                buffer.remove(buffer.len() - pos - 1);
-            }
-
-            let text = buffer.join("\n");
-            buffer.clear();
-
-            let powermetrics = match Metrics::from_bytes(text.as_bytes()) {
+            let powermetrics = match powermetrics::Metrics::from_bytes(text.as_bytes()) {
                 Ok(metrics) => metrics,
                 Err(err) => {
                     eprintln!("{err}");
@@ -183,6 +172,7 @@ fn stream_powermetrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
                     break;
                 }
             };
+
             if let Err(err) = tx.send(Event::Metrics(powermetrics)) {
                 eprintln!("{err}");
                 cmd.kill().unwrap();

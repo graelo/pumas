@@ -36,6 +36,7 @@ termion = "2"
 ratatui = { version = "0.20", default-features = false, features = ['termion'] }
 
 num-traits = "0.2"
+sysinfo = "0.29.6"
 
 [dev-dependencies]
 assert_approx_eq = "1.1.0"
