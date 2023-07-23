@@ -43,10 +43,14 @@ impl SocInfo {
 
         let (max_cpu_w, max_gpu_w, max_ane_w) = match cpu_brand_name.as_str() {
             "Apple M1" => (20.0, 20.0, 8.0),
-            "Apple M1 Max" => (30.0, 60.0, 8.0),
             "Apple M1 Pro" => (30.0, 30.0, 8.0),
+            "Apple M1 Max" => (30.0, 60.0, 8.0),
             "Apple M1 Ultra" => (60.0, 120.0, 8.0),
             "Apple M2" => (25.0, 15.0, 8.0),
+            // The following are guesses based on the M1.
+            "Apple M2 Pro" => (25.0, 35.0, 8.0),
+            "Apple M2 Max" => (28.0, 65.0, 8.0),
+            "Apple M2 Ultra" => (35.0, 48.0, 8.0),
             _ => (20.0, 20.0, 8.0),
         };
 
