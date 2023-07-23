@@ -54,7 +54,7 @@ const THR_TEXT_HEIGHT: u16 = 1;
 /// ┌ Thermals ───────────────────────────────────────────────────────────────────────────────┐
 /// │Thermal Pressure: Nominal                                                                │
 /// └─────────────────────────────────────────────────────────────────────────────────────────┘
-pub(crate) fn draw_overview_tab<B>(f: &mut Frame<B>, app: &mut App, area: Rect)
+pub(crate) fn draw_overview_tab<B>(f: &mut Frame<B>, app: &App, area: Rect)
 where
     B: Backend,
 {

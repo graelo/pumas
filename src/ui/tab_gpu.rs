@@ -11,7 +11,7 @@ use ratatui::{
 use crate::app::App;
 
 /// Draw the GPU tab.
-pub(crate) fn draw_gpu_tab<B>(f: &mut Frame<B>, _app: &mut App, area: Rect)
+pub(crate) fn draw_gpu_tab<B>(f: &mut Frame<B>, _app: &App, area: Rect)
 where
     B: Backend,
 {

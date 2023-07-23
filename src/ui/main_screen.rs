@@ -14,7 +14,7 @@ use crate::app::App;
 use super::{tab_cpu, tab_gpu, tab_overview, tab_soc};
 
 /// Draw the main UI.
-pub(crate) fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
+pub(crate) fn draw<B: Backend>(f: &mut Frame<B>, app: &App, area: Rect) {
     let chunks = Layout::default()
         .constraints(
             [

@@ -14,7 +14,7 @@ use crate::{app::App, units};
 /// Draw the SoC tab.
 ///
 /// A simple table with the SoC's name, number of cores, etc.
-pub(crate) fn draw_soc_tab<B>(f: &mut Frame<B>, app: &mut App, area: Rect)
+pub(crate) fn draw_soc_tab<B>(f: &mut Frame<B>, app: &App, area: Rect)
 where
     B: Backend,
 {
