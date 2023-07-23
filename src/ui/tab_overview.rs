@@ -5,7 +5,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     symbols,
-    text::{Span, Spans, Text},
+    text::{Line, Span, Text},
     widgets::{Block, Borders, Gauge, Paragraph, Sparkline},
     Frame,
 };
@@ -437,7 +437,7 @@ where
         "Nominal" => Color::Green,
         _ => Color::Yellow,
     };
-    let text = Spans::from(vec![
+    let text = Line::from(vec![
         Span::raw("Thermal Pressure: "),
         Span::styled(&metrics.thermal_pressure, Style::default().fg(color)),
     ]);

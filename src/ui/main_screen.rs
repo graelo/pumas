@@ -4,7 +4,7 @@ use ratatui::{
     backend::Backend,
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Color, Modifier, Style},
-    text::{Span, Spans},
+    text::{Line, Span},
     widgets::{Block, Borders, Paragraph, Tabs},
     Frame,
 };
@@ -57,7 +57,7 @@ pub(crate) fn draw<B: Backend>(f: &mut Frame<B>, app: &App, area: Rect) {
         .tabs
         .titles
         .iter()
-        .map(|t| Spans::from(Span::styled(*t, Style::default().fg(Color::LightYellow))))
+        .map(|t| Line::from(Span::styled(*t, Style::default().fg(Color::LightYellow))))
         .collect();
     let tabs = Tabs::new(tab_titles)
         .block(Block::default().borders(Borders::ALL))
