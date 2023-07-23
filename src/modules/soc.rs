@@ -5,7 +5,7 @@ use std::process;
 use crate::{error::Error, Result};
 
 #[derive(Debug)]
-pub(crate) struct Soc {
+pub(crate) struct SocInfo {
     /// Brand name of the CPU, e.g. "Apple M1".
     pub(crate) cpu_brand_name: String,
 
@@ -34,8 +34,8 @@ pub(crate) struct Soc {
     pub(crate) max_package_w: f64,
 }
 
-impl Soc {
-    pub(crate) fn new() -> Result<Soc> {
+impl SocInfo {
+    pub(crate) fn new() -> Result<SocInfo> {
         let (cpu_brand_name, num_cpu_cores, num_efficiency_cores, num_performance_cores) =
             cpu_info()?;
 
@@ -43,14 +43,18 @@ impl Soc {
 
         let (max_cpu_w, max_gpu_w, max_ane_w) = match cpu_brand_name.as_str() {
             "Apple M1" => (20.0, 20.0, 8.0),
-            "Apple M1 Max" => (30.0, 60.0, 8.0),
             "Apple M1 Pro" => (30.0, 30.0, 8.0),
+            "Apple M1 Max" => (30.0, 60.0, 8.0),
             "Apple M1 Ultra" => (60.0, 120.0, 8.0),
             "Apple M2" => (25.0, 15.0, 8.0),
+            // The following are guesses based on the M1.
+            "Apple M2 Pro" => (25.0, 35.0, 8.0),
+            "Apple M2 Max" => (28.0, 65.0, 8.0),
+            "Apple M2 Ultra" => (35.0, 48.0, 8.0),
             _ => (20.0, 20.0, 8.0),
         };
 
-        Ok(Soc {
+        Ok(SocInfo {
             cpu_brand_name,
             num_cpu_cores,
             num_efficiency_cores,

@@ -4,7 +4,7 @@ use ratatui::{
     backend::Backend,
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Color, Modifier, Style},
-    text::{Span, Spans},
+    text::{Line, Span},
     widgets::{Block, Borders, Paragraph, Tabs},
     Frame,
 };
@@ -14,7 +14,7 @@ use crate::app::App;
 use super::{tab_cpu, tab_gpu, tab_overview, tab_soc};
 
 /// Draw the main UI.
-pub(crate) fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
+pub(crate) fn draw<B: Backend>(f: &mut Frame<B>, app: &App, area: Rect) {
     let chunks = Layout::default()
         .constraints(
             [
@@ -38,10 +38,10 @@ pub(crate) fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
 
     let machine_desc = format!(
         " {} (cores: {}E+{}P+{}GPU) ",
-        app.soc.cpu_brand_name,
-        app.soc.num_efficiency_cores,
-        app.soc.num_performance_cores,
-        app.soc.num_gpu_cores
+        app.soc_info.cpu_brand_name,
+        app.soc_info.num_efficiency_cores,
+        app.soc_info.num_performance_cores,
+        app.soc_info.num_gpu_cores
     );
     let machine_desc_par = Paragraph::new(Span::styled(
         machine_desc,
@@ -57,7 +57,7 @@ pub(crate) fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
         .tabs
         .titles
         .iter()
-        .map(|t| Spans::from(Span::styled(*t, Style::default().fg(Color::LightYellow))))
+        .map(|t| Line::from(Span::styled(*t, Style::default().fg(Color::LightYellow))))
         .collect();
     let tabs = Tabs::new(tab_titles)
         .block(Block::default().borders(Borders::ALL))
