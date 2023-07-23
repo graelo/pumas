@@ -5,7 +5,8 @@
 
 use std::str::FromStr;
 
-use crate::{error::Error, modules::plist_parsing};
+use super::plist_parsing;
+use crate::error::Error;
 
 /// powermetrics output.
 pub(crate) struct Metrics {
