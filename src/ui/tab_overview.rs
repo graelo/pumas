@@ -270,78 +270,8 @@ fn draw_cluster_pair_overall_metrics<B>(
     let left_area = horizontal_chunks[0];
     let right_area = horizontal_chunks[2];
 
-    let left_chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(
-            [
-                Constraint::Length(GAUGE_HEIGHT),
-                Constraint::Length(SPARKLINE_HEIGHT),
-            ]
-            .as_ref(),
-        )
-        .split(left_area);
-    let top_left_area = left_chunks[0];
-    let bottom_left_area = left_chunks[1];
-
-    let right_chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(
-            [
-                Constraint::Length(GAUGE_HEIGHT),
-                Constraint::Length(SPARKLINE_HEIGHT),
-            ]
-            .as_ref(),
-        )
-        .split(right_area);
-    let top_right_area = right_chunks[0];
-    let bottom_right_area = right_chunks[1];
-
-    // Left cluster cores Usage Gauge.
-    let title = format!(
-        "{}: {} @ {}",
-        left_cluster.name,
-        units::percent1(left_cluster.active_ratio() * 100.0),
-        units::mhz(left_cluster.freq_mhz),
-    );
-    let gauge = Gauge::default()
-        .block(Block::default().title(title))
-        .gauge_style(Style::default().fg(Color::Green).bg(Color::Gray))
-        .ratio(left_cluster.active_ratio() as f64);
-
-    f.render_widget(gauge, top_left_area);
-
-    // Left cluster cores Sparklines.
-    let sig_name = format!("{}_active_ratio", left_cluster.name);
-    let sig = history.get(&sig_name).unwrap();
-    let sparkline = Sparkline::default()
-        .style(Style::default().fg(Color::Green))
-        .bar_set(symbols::bar::NINE_LEVELS)
-        .data(sig.as_slice_last_n(bottom_left_area.width as usize))
-        .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
-    f.render_widget(sparkline, bottom_left_area);
-
-    // Right cluster cores Usage Gauge.
-    let title = format!(
-        "{}: {} @ {}",
-        right_cluster.name,
-        units::percent1(right_cluster.active_ratio() * 100.0),
-        units::mhz(right_cluster.freq_mhz),
-    );
-    let gauge = Gauge::default()
-        .block(Block::default().title(title))
-        .gauge_style(Style::default().fg(Color::Green).bg(Color::Gray))
-        .ratio(right_cluster.active_ratio() as f64);
-    f.render_widget(gauge, top_right_area);
-
-    // Right cluster cores Sparklines.
-    let sig_name = format!("{}_active_ratio", right_cluster.name);
-    let sig = history.get(&sig_name).unwrap();
-    let sparkline = Sparkline::default()
-        .style(Style::default().fg(Color::Green))
-        .bar_set(symbols::bar::NINE_LEVELS)
-        .data(sig.as_slice_last_n(bottom_right_area.width as usize))
-        .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
-    f.render_widget(sparkline, bottom_right_area);
+    draw_cluster_overall_metrics(f, left_cluster, history, left_area);
+    draw_cluster_overall_metrics(f, right_cluster, history, right_area);
 }
 
 /// Draw the GPU & ANE usage block.
