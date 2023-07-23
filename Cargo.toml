@@ -28,7 +28,6 @@ thiserror = "1"
 
 plist = { version = "1", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
-# regex = "1.7"
 si-scale = "0.2"
 
 # ui
