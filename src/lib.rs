@@ -110,8 +110,8 @@
 mod app;
 pub mod config;
 pub mod error;
+mod modules;
 pub mod monitor;
-mod parser;
 mod signal;
 mod ui;
 mod units;

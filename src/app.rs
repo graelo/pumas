@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    parser::{powermetrics::Metrics, soc::SocInfo},
+    modules::{powermetrics::Metrics, soc::SocInfo},
     signal,
 };
 

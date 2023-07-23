@@ -23,7 +23,7 @@ use termion::{
 use crate::{
     app::App,
     config::RunConfig,
-    parser::{powermetrics::Metrics, soc::SocInfo},
+    modules::{powermetrics::Metrics, soc::SocInfo},
     ui, Result,
 };
 

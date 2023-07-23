@@ -14,8 +14,8 @@ use ratatui::{
 
 use crate::{
     app::{App, History},
-    parser::powermetrics,
-    parser::soc::SocInfo,
+    modules::powermetrics,
+    modules::soc::SocInfo,
     units,
 };
 
