@@ -23,7 +23,7 @@ use termion::{
 use crate::{
     app::App,
     config::RunConfig,
-    parser::{powermetrics::PowerMetrics, soc::Soc},
+    parser::{powermetrics::Metrics, soc::Soc},
     ui, Result,
 };
 
@@ -85,7 +85,7 @@ fn run_app<B: Backend>(
 enum Event {
     Input(Key),
     // Tick,
-    Metrics(PowerMetrics),
+    Metrics(Metrics),
 }
 
 /// Run event threads.
@@ -175,7 +175,7 @@ fn stream_powermetrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
             let text = buffer.join("\n");
             buffer.clear();
 
-            let powermetrics = match PowerMetrics::from_bytes(text.as_bytes()) {
+            let powermetrics = match Metrics::from_bytes(text.as_bytes()) {
                 Ok(metrics) => metrics,
                 Err(err) => {
                     eprintln!("{err}");
@@ -237,7 +237,7 @@ fn stream_powermetrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
 //                     println!("{}", text);
 //                     println!("--");
 //                 } else {
-//                     let powermetrics = match PowerMetrics::from_bytes(text.as_bytes()) {
+//                     let powermetrics = match Metrics::from_bytes(text.as_bytes()) {
 //                         Ok(metrics) => metrics,
 //                         Err(err) => {
 //                             eprintln!("{err}");

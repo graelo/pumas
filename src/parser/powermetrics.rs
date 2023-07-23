@@ -1,11 +1,14 @@
-//! Parse powermetrics output.
+//! Power and Usage metrics coming from the macOS `powermetrics` tool.
+//!
+//! These metrics are represented a bit differently than at the parsing stage (in `plist_parsing`)
+//! in order to simplify computations and simplify access from the UI.
 
 use std::str::FromStr;
 
 use crate::{error::Error, parser::plist_parsing};
 
 /// powermetrics output.
-pub(crate) struct PowerMetrics {
+pub(crate) struct Metrics {
     /// Efficiency cluster metrics.
     pub(crate) e_clusters: Vec<ClusterMetrics>,
     /// Performance cluster metrics.
@@ -24,7 +27,7 @@ pub(crate) struct PowerMetrics {
     pub(crate) thermal_pressure: String,
 }
 
-impl FromStr for PowerMetrics {
+impl FromStr for Metrics {
     type Err = Error;
 
     fn from_str(content: &str) -> Result<Self, Self::Err> {
@@ -34,7 +37,7 @@ impl FromStr for PowerMetrics {
     }
 }
 
-impl PowerMetrics {
+impl Metrics {
     pub(crate) fn from_bytes(content: &[u8]) -> Result<Self, Error> {
         let pm: plist_parsing::Metrics =
             plist::from_bytes(content).map_err(|e| Error::PlistParsingError(e.to_string()))?;
@@ -42,7 +45,7 @@ impl PowerMetrics {
     }
 }
 
-// impl PowerMetrics {
+// impl Metrics {
 //     pub(crate) fn from_str(content: &str) -> Self {
 //         let pm: plist_parsing::Metrics =
 //             plist::from_bytes(content.as_bytes()).expect("failed to parse the plist");
@@ -78,8 +81,8 @@ impl PowerMetrics {
 //     }
 // }
 
-impl From<plist_parsing::Metrics> for PowerMetrics {
-    /// Create a new `PowerMetrics` instance from the given `plist_parsing::Metrics` instance, and
+impl From<plist_parsing::Metrics> for Metrics {
+    /// Create a new `Metrics` instance from the given `plist_parsing::Metrics` instance, and
     /// a time interval in milliseconds.
     ///
     /// Some CPUs (M1 Ultra) have multiple E clusters and multiple P clusters, so we create an
@@ -148,10 +151,14 @@ pub(crate) struct ClusterMetrics {
 
 impl From<&plist_parsing::ClusterMetrics> for ClusterMetrics {
     fn from(value: &plist_parsing::ClusterMetrics) -> Self {
+        // Average the active ratio of all CPUs in the cluster.
+        let active_ratio =
+            value.cpus.iter().map(|c| c.active_ratio()).sum::<f64>() / value.cpus.len() as f64;
+
         Self {
             name: value.name.clone(),
             freq_mhz: value.freq_mhz(),
-            active_ratio: value.active_ratio(),
+            active_ratio,
             dvfm_states: value.dvfm_states.iter().map(DvfmState::from).collect(),
             cpus: value.cpus.iter().map(CpuMetrics::from).collect(),
         }
@@ -225,12 +232,12 @@ mod tests {
     fn test_powermetrics() {
         let content = std::fs::read_to_string("./tests/data/powermetrics-output-m1.xml")
             .expect("failed to read the file");
-        let powermetrics = PowerMetrics::from_str(&content).unwrap();
+        let powermetrics = Metrics::from_str(&content).unwrap();
         // let pm: Metrics = plist::from_bytes(content.as_bytes()).expect("failed to parse the plist");
 
         // let metrics: plist_parsing::Metrics =
         //     plist::from_file("tests/data/powermetrics-output-m1.xml").unwrap();
-        // let powermetrics = PowerMetrics::from(metrics);
+        // let powermetrics = Metrics::from(metrics);
 
         // E cluster 0.
         assert_eq!(powermetrics.e_clusters[0].freq_mhz, 1022.87);

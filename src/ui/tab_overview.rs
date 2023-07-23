@@ -14,7 +14,7 @@ use ratatui::{
 
 use crate::{
     app::{App, History},
-    parser::powermetrics::{ClusterMetrics, PowerMetrics},
+    parser::powermetrics,
     parser::soc::Soc,
     units,
 };
@@ -112,7 +112,7 @@ where
 
 fn draw_cpu_clusters_usage_block<B>(
     f: &mut Frame<B>,
-    metrics: &PowerMetrics,
+    metrics: &powermetrics::Metrics,
     history: &History,
     area: Rect,
 ) where
@@ -156,8 +156,8 @@ fn draw_cpu_clusters_usage_block<B>(
 
 fn draw_cluster_pair_overall_metrics<B>(
     f: &mut Frame<B>,
-    e_cluster: &ClusterMetrics,
-    p_cluster: &ClusterMetrics,
+    e_cluster: &powermetrics::ClusterMetrics,
+    p_cluster: &powermetrics::ClusterMetrics,
     history: &History,
     area: Rect,
 ) where
@@ -264,7 +264,7 @@ fn draw_cluster_pair_overall_metrics<B>(
 
 fn draw_gpu_ane_usage_block<B>(
     f: &mut Frame<B>,
-    metrics: &PowerMetrics,
+    metrics: &powermetrics::Metrics,
     soc: &Soc,
     history: &History,
     area: Rect,
@@ -345,7 +345,7 @@ fn draw_gpu_ane_usage_block<B>(
 
     f.render_widget(gauge, top_right_area);
 
-    // ANE Usage Sparklines.
+    // Sparklines for the ANE usage.
     let sig = history.get("ane_active_ratio").unwrap();
     let sparkline = Sparkline::default()
         .style(Style::default().fg(Color::Green))
@@ -366,7 +366,7 @@ fn draw_gpu_ane_usage_block<B>(
 
 fn draw_package_power_block<B>(
     f: &mut Frame<B>,
-    metrics: &PowerMetrics,
+    metrics: &powermetrics::Metrics,
     history: &History,
     area: Rect,
 ) where
@@ -392,7 +392,7 @@ fn draw_package_power_block<B>(
     let text = Paragraph::new(Text::from(title));
     f.render_widget(text, title_area);
 
-    // Package Power Usage Sparklines.
+    // Sparklines for the Package total usage.
     let sparkline = Sparkline::default()
         .style(Style::default().fg(Color::Green))
         .bar_set(symbols::bar::NINE_LEVELS)
@@ -407,7 +407,7 @@ fn draw_package_power_block<B>(
 /// │Thermal Pressure: Nominal                                                                │
 /// └─────────────────────────────────────────────────────────────────────────────────────────┘
 
-fn draw_thermal_pressure_block<B>(f: &mut Frame<B>, metrics: &PowerMetrics, area: Rect)
+fn draw_thermal_pressure_block<B>(f: &mut Frame<B>, metrics: &powermetrics::Metrics, area: Rect)
 where
     B: Backend,
 {

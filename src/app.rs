@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    parser::{powermetrics::PowerMetrics, soc::Soc},
+    parser::{powermetrics::Metrics, soc::Soc},
     signal,
 };
 
@@ -44,8 +44,8 @@ pub(crate) struct App<'a> {
     /// Time of last update.
     pub(crate) last_update: std::time::Instant,
 
-    /// Power metrics.
-    pub(crate) metrics: Option<PowerMetrics>,
+    /// Power and usage metrics.
+    pub(crate) metrics: Option<Metrics>,
 
     /// System-on-chip information.
     pub(crate) soc: Soc,
@@ -93,7 +93,7 @@ impl<'a> App<'a> {
     //     }
 
     /// Update the app state.
-    pub fn on_metrics(&mut self, metrics: PowerMetrics) {
+    pub fn on_metrics(&mut self, metrics: Metrics) {
         self.last_update = std::time::Instant::now();
 
         self.history
