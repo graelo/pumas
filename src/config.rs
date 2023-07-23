@@ -41,12 +41,4 @@ pub struct RunConfig {
     /// Choose display color (0~8).
     #[arg(short, long, default_value = "2")]
     pub color: u8,
-
-    /// Interval for averaged values (seconds).
-    #[arg(short, long, default_value = "30")]
-    pub average: u64,
-
-    /// Max show count to restart powermetrics.
-    #[arg(short, long = "max-count")]
-    pub max_show_count: Option<u64>,
 }
