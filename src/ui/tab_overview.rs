@@ -17,8 +17,9 @@ use crate::{
     units,
 };
 
+const CLUSTER_SPACING: u16 = 1; // Space between CPU blocks.
 const SPARKLINE_HEIGHT: u16 = 3;
-const SPARKLINE_MAX_OVERSHOOT: f32 = 1.05;
+const SPARKLINE_MAX_OVERSHOOT: f32 = 1.05; // Prevent sparklines from touching gauges.
 const GAUGE_HEIGHT: u16 = 2;
 const PKG_TEXT_HEIGHT: u16 = 1;
 const THR_TEXT_HEIGHT: u16 = 1;
@@ -63,26 +64,25 @@ where
     };
 
     // Number of horizontal blocks for the CPU clusters.
-    let num_clusters_blocks =
-        num_blocks_for(metrics.e_clusters.len()) + num_blocks_for(metrics.p_clusters.len());
+    let num_clusters_blocks = (num_blocks_for(metrics.e_clusters.len())
+        + num_blocks_for(metrics.p_clusters.len())) as u16;
 
-    let cpu_block_height = GAUGE_HEIGHT + SPARKLINE_HEIGHT;
+    let cls_block_height = GAUGE_HEIGHT + SPARKLINE_HEIGHT;
+    let cpu_block_height =
+        cls_block_height * num_clusters_blocks + (num_clusters_blocks - 1) * CLUSTER_SPACING;
     let gpu_block_height = GAUGE_HEIGHT + SPARKLINE_HEIGHT;
     let pkg_block_height = PKG_TEXT_HEIGHT + SPARKLINE_HEIGHT;
     let thr_block_height = THR_TEXT_HEIGHT;
 
     let vertical_chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(
-            [
-                Constraint::Length(2 + cpu_block_height * num_clusters_blocks as u16), // Borders & CPU clusters blocks
-                Constraint::Length(2 + gpu_block_height), // Borders & GPU ANE block
-                Constraint::Length(2 + pkg_block_height), // Borders & Package block
-                Constraint::Length(2 + thr_block_height), // Borders & Thermal block
-                Constraint::Min(0),
-            ]
-            .as_ref(),
-        )
+        .constraints([
+            Constraint::Length(2 + cpu_block_height), // Borders & CPU clusters blocks
+            Constraint::Length(2 + gpu_block_height), // Borders & GPU ANE block
+            Constraint::Length(2 + pkg_block_height), // Borders & Package block
+            Constraint::Length(2 + thr_block_height), // Borders & Thermal block
+            Constraint::Min(0),
+        ])
         .split(area);
     let cpu_area = vertical_chunks[0];
     let gpu_area = vertical_chunks[1];
@@ -125,6 +125,7 @@ where
 /// │   ▄▃▅▆▂▁ ▆▇▇▃▄▅▅▅▆  ▆▃                                                                  │
 /// │▁▂▄██████▇█████████▇▃███▄▂▁█   █                                                         │
 /// │████████████████████████████▇▅▆█▆▄▅▅▆▄▆▅▅▇▇▅  ▂▄▃▂▄▃▂▂▁▃▃▁▂▁▂▂▂▃▂ ▂▁▃▂▂▂▂▁ ▂▁▁▁  ▁▁▁▁▁▁▁▁│
+/// │                                                                                         │
 /// │P0-Cluster: 25.6 % @ 1027 MHz                 P1-Cluster: 7.0 % @ 1729 MHz               │
 /// │------------------- 26% --------------------  ------------------- 7% --------------------│
 /// │   ▄▃▅▆▂▁ ▆▇▇▃▄▅▅▅▆  ▆▃                                                                  │
@@ -153,7 +154,17 @@ fn draw_cpu_clusters_usage_block<B>(
     f.render_widget(block, area);
 
     let constraints = (0..num_cluster_blocks)
-        .map(|_| Constraint::Length(GAUGE_HEIGHT + SPARKLINE_HEIGHT)) // block height
+        .map(|k| {
+            Constraint::Length(
+                GAUGE_HEIGHT
+                    + SPARKLINE_HEIGHT
+                    + if k < num_cluster_blocks - 1 {
+                        CLUSTER_SPACING
+                    } else {
+                        0
+                    },
+            )
+        }) // block height
         .collect::<Vec<_>>();
     let cpu_cluster_chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -231,13 +242,11 @@ fn draw_cluster_overall_metrics<B>(
 {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(
-            [
-                Constraint::Length(GAUGE_HEIGHT),
-                Constraint::Length(SPARKLINE_HEIGHT),
-            ]
-            .as_ref(),
-        )
+        .constraints([
+            Constraint::Length(GAUGE_HEIGHT),
+            Constraint::Length(SPARKLINE_HEIGHT),
+            Constraint::Max(CLUSTER_SPACING),
+        ])
         .split(area);
     let top_area = chunks[0];
     let bottom_area = chunks[1];
@@ -290,14 +299,11 @@ fn draw_cluster_pair_overall_metrics<B>(
 {
     let horizontal_chunks = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints(
-            [
-                Constraint::Ratio(1, 2),
-                Constraint::Length(2), // space
-                Constraint::Ratio(1, 2),
-            ]
-            .as_ref(),
-        )
+        .constraints([
+            Constraint::Ratio(1, 2),
+            Constraint::Length(2), // space
+            Constraint::Ratio(1, 2),
+        ])
         // .horizontal_margin(1)
         .split(area);
     let left_area = horizontal_chunks[0];
@@ -347,14 +353,11 @@ fn draw_gpu_ane_usage_block<B>(
 
     let horizontal_chunks = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints(
-            [
-                Constraint::Ratio(1, 2),
-                Constraint::Length(2), // space
-                Constraint::Ratio(1, 2),
-            ]
-            .as_ref(),
-        )
+        .constraints([
+            Constraint::Ratio(1, 2),
+            Constraint::Length(2), // space
+            Constraint::Ratio(1, 2),
+        ])
         .margin(1)
         .split(area);
     let left_area = horizontal_chunks[0];
@@ -362,14 +365,14 @@ fn draw_gpu_ane_usage_block<B>(
 
     let left_chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(2), Constraint::Length(9)].as_ref())
+        .constraints([Constraint::Length(2), Constraint::Length(9)])
         .split(left_area);
     let top_left_area = left_chunks[0];
     let bottom_left_area = left_chunks[1];
 
     let right_chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(2), Constraint::Length(9)].as_ref())
+        .constraints([Constraint::Length(2), Constraint::Length(9)])
         .split(right_area);
     let top_right_area = right_chunks[0];
     let bottom_right_area = right_chunks[1];
@@ -449,7 +452,7 @@ fn draw_package_power_block<B>(
 
     let vertical_chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(1), Constraint::Length(SPARKLINE_HEIGHT)].as_ref())
+        .constraints([Constraint::Length(1), Constraint::Length(SPARKLINE_HEIGHT)])
         .margin(1)
         .split(area);
     let title_area = vertical_chunks[0];
