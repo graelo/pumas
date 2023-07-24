@@ -20,24 +20,27 @@ const SPACER_HEIGHT: u16 = 2;
 
 /// Draw the startup screen.
 pub(crate) fn draw<B: Backend>(f: &mut Frame<B>) {
+    let total_size = LOGO2_HEIGHT + SPACER_HEIGHT + PUMAS_TEXT_HEIGHT + SPACER_HEIGHT + 1;
+    let centering_offset = (f.size().height - total_size) / 2;
+
     let vertical_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(LOGO2_HEIGHT + SPACER_HEIGHT + PUMAS_TEXT_HEIGHT + SPACER_HEIGHT),
+            Constraint::Length(centering_offset),
+            Constraint::Length(LOGO2_HEIGHT + SPACER_HEIGHT + PUMAS_TEXT_HEIGHT),
+            Constraint::Length(SPACER_HEIGHT),
             Constraint::Length(1),
         ])
         .split(f.size());
-    let logo_area = vertical_chunks[0];
-    let message_area = vertical_chunks[1];
+    let logo_area = vertical_chunks[1];
+    let message_area = vertical_chunks[3];
 
     draw_logo(f, logo_area);
 
     let message = text::Text::from("Starting up...".to_string());
-
     let par = Paragraph::new(message)
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true });
-
     f.render_widget(par, message_area);
 }
 
