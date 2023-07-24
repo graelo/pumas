@@ -143,6 +143,14 @@ impl<'a> App<'a> {
             .push(100.0 * metrics.gpu.active_ratio as f32);
 
         self.history
+            .entry("gpu_power".to_string())
+            .or_insert(signal::Signal::with_capacity(
+                HISTORY_CAPACITY,
+                /* max */ 100.0,
+            ))
+            .push(metrics.gpu_w);
+
+        self.history
             .entry("ane_active_ratio".to_string())
             .or_insert(signal::Signal::with_capacity(
                 HISTORY_CAPACITY,

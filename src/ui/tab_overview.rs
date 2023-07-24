@@ -379,11 +379,15 @@ fn draw_gpu_ane_usage_block<B>(
 
     // left: GPU.
     let gpu = &metrics.gpu;
+    let sig = history.get("gpu_active_ratio").unwrap();
+    let sig_gpu_power = history.get("gpu_power").unwrap();
     let title = format!(
-        "GPU Usage: {} @ {} ⚡️{}",
+        "GPU Usage: {} @ {} 󱐋 {} (peak {} 󱐋 {})",
         units::percent1(gpu.active_ratio * 100.0),
         units::mhz(gpu.freq_mhz),
-        units::watts2(metrics.gpu_w)
+        units::watts2(metrics.gpu_w),
+        units::percent1(sig.peak),
+        units::watts2(sig_gpu_power.peak)
     );
     let gauge = Gauge::default()
         .block(Block::default().title(title))
@@ -396,8 +400,6 @@ fn draw_gpu_ane_usage_block<B>(
     f.render_widget(gauge, top_left_area);
 
     // GPU Usage Sparklines.
-    // let sig_name = format!("{}_active_ratio", p_cluster.name);
-    let sig = history.get("gpu_active_ratio").unwrap();
     let sparkline = Sparkline::default()
         .style(Style::default().fg(accent_color))
         .bar_set(symbols::bar::NINE_LEVELS)
@@ -407,10 +409,13 @@ fn draw_gpu_ane_usage_block<B>(
 
     // Right: ANE.
     let ane_active_ratio = metrics.ane_w as f64 / soc_info.max_ane_w;
+    let sig = history.get("ane_active_ratio").unwrap();
     let title = format!(
-        "ANE Usage: {} ⚡️{}",
+        "ANE Usage: {} 󱐋 {} (peak {} 󱐋 {})",
         units::percent1(ane_active_ratio * 100.0),
-        units::watts2(metrics.ane_w)
+        units::watts2(metrics.ane_w),
+        units::percent1(ane_active_ratio),
+        units::watts2(sig.peak)
     );
     let gauge = Gauge::default()
         .block(Block::default().title(title))
@@ -420,7 +425,6 @@ fn draw_gpu_ane_usage_block<B>(
     f.render_widget(gauge, top_right_area);
 
     // Sparklines for the ANE usage.
-    let sig = history.get("ane_active_ratio").unwrap();
     let sparkline = Sparkline::default()
         .style(Style::default().fg(accent_color))
         .bar_set(symbols::bar::NINE_LEVELS)
@@ -460,7 +464,7 @@ fn draw_package_power_block<B>(
 
     let sig = history.get("package_w").unwrap();
     let title = format!(
-        "CPU+GPU+ANE: ⚡️{} (peak: {})",
+        "CPU+GPU+ANE: 󱐋 {} (peak: {})",
         units::watts2(metrics.package_w),
         units::watts2(sig.peak)
     );
