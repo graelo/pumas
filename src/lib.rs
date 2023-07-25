@@ -5,9 +5,9 @@
 //!
 //! | Type        | Metrics                      | Available | Comments                                                  |
 //! | ---         | ---                          | ---       | ---                                                       |
-//! | Utilization | CPU Clusters, GPU, ANE       | ✅        | History & current values. ANE util. is measured via power |
-//! | Power       | CPU, GPU, ANE, total package | ✅        | History & current values                                  |
-//! | Frequency   | CPU Clusters, GPU            | ✅        | Current avg. values                                       |
+//! | Utilization | CPU Clusters, GPU, ANE       | ✓         | History & current values. ANE util. is measured via power |
+//! | Power       | CPU, GPU, ANE, total package | ✓         | History & current values                                  |
+//! | Frequency   | CPU Clusters, GPU            | ✓         | Current avg. values                                       |
 //! | Frequency   | CPU Clusters, GPU            | planned   | Residency distrib. histograms                             |
 //! | Memory      | RAM & swap: size and usage   | planned   | Apple removed memory bandwidth from powermetrics.         |
 //!
@@ -72,17 +72,17 @@
 //!
 //! ## Details
 //!
-//! `powermetrics` is used to measure the following:
-//!
-//!  - ❌ CPU usage via `powermetrics` (removed: incorrect on M2)
-//! - GPU utilization via active residency
-//! - CPU & GPU frequency
-//! - Package/CPU/GPU/ANE energy consumption
-//!
 //! `sysinfo` crate is used to measure the following:
 //!
 //! - per-cluster CPU utilization
 //! - per-core CPU utilization (planned)
+//!
+//! `powermetrics` is used to measure the following:
+//!
+//! - ~~CPU usage via `powermetrics`~~ (removed: incorrect on M2 chips)
+//! - GPU utilization via active residency
+//! - CPU & GPU frequency
+//! - Package/CPU/GPU/ANE energy consumption
 //!
 //! `sysctl` is used to measure the following:
 //!
