@@ -42,8 +42,8 @@ pub fn run(args: RunConfig) -> Result<()> {
     let mut terminal = Terminal::new(backend)?;
 
     let soc_info = SocInfo::new()?;
-    let app = App::new(soc_info, args.accent_color, args.gauge_bg_color);
-    run_app(
+    let app = App::new(soc_info, args.colors());
+    main_loop(
         &mut terminal,
         app,
         Duration::from_millis(args.sample_rate_ms as u64),
@@ -54,7 +54,7 @@ pub fn run(args: RunConfig) -> Result<()> {
 }
 
 /// Starts the events stream source and launches the event loop.
-fn run_app<B: Backend>(
+fn main_loop<B: Backend>(
     terminal: &mut Terminal<B>,
     mut app: App,
     tick_rate: Duration,
@@ -112,24 +112,26 @@ fn start_event_threads(tick_rate: Duration) -> mpsc::Receiver<Event> {
     //     thread::sleep(tick_rate);
     // });
 
-    thread::spawn(move || stream_powermetrics(tick_rate, tx));
+    thread::spawn(move || stream_metrics(tick_rate, tx));
 
     rx
 }
 
-/// Stream metrics from the powermetrics tool and send them to the event loop.
+/// Stream metrics and send them to the event loop.
 ///
-/// This starts the powermetrics tool in streaming mode so that it outputs plists at each tick.
+/// This function starts the powermetrics tool in streaming mode so that it outputs entire plist
+/// messages at each tick.
+///
+/// When a plist message is complet, this function also gathers CPU usage from the sysinfo crate
+/// for more accurate per-core usage (powermetrics is half-broken on M2 chips).
+///
 /// This function will run in a separate thread and stream data for the entire duration of the app.
-///
-/// This function also gathers CPU usage from the sysinfo crate for more accurate per-core usage
-/// (powermetrics is half-broken on M2 chips).
 ///
 /// # Note
 ///
 /// Powermetrics outputs a plist file, but it is not valid XML, so we fix the issues before sending
 /// them to the plist parser.
-fn stream_powermetrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
+fn stream_metrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
     let sample_rate_ms = format!("{}", tick_rate.as_millis());
 
     let binary = "/usr/bin/powermetrics";
@@ -157,8 +159,16 @@ fn stream_powermetrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
     let mut buffer = powermetrics::Buffer::new();
     let mut system_state = sysinfo::SystemState::new();
 
-    // Read the lines from powermetrics, one by one, for the entire duration of the app. When the
-    // last line of a plist message is read, build and send metrics to the event loop.
+    // Main loop.
+    //
+    // Read the lines of the plist messages from powermetrics, one by one, for the entire duration
+    // of the app.
+    //
+    // When the last line of a plist message is read: build the `powermetrics::Metrics` struct and
+    // gather CPU usage from sysinfo.
+    //
+    // Finally, send metrics to the event loop.
+    //
     for line in stdout_lines.flatten() {
         if line != "</plist>" {
             buffer.append_line(line);

@@ -3,6 +3,7 @@
 use std::collections::HashMap;
 
 use crate::{
+    config::UiColors,
     modules::{powermetrics::Metrics, soc::SocInfo},
     signal,
 };
@@ -41,11 +42,11 @@ pub(crate) struct App<'a> {
     /// Tabs and currently selected tab.
     pub(crate) tabs: TabsState<'a>,
 
-    /// Accent color, default: 2 (green).
-    accent_color_: u8,
-
-    /// Gauge background color, default: 7 (white).
-    gauge_bg_color_: u8,
+    /// Color configuration.
+    ///
+    /// - Accent color, default: 2 (green).
+    /// - Gauge background color, default: 7 (white).
+    pub(crate) colors: UiColors,
 
     /// Time of last update.
     pub(crate) last_update: std::time::Instant,
@@ -62,12 +63,11 @@ pub(crate) struct App<'a> {
 
 impl<'a> App<'a> {
     /// Returns a new `App`.
-    pub fn new(soc_info: SocInfo, accent_color: u8, gauge_bg_color: u8) -> Self {
+    pub fn new(soc_info: SocInfo, colors: UiColors) -> Self {
         Self {
             should_quit: false,
             tabs: TabsState::new(vec!["Overview", "CPU", "GPU", "SoC"]),
-            accent_color_: accent_color,
-            gauge_bg_color_: gauge_bg_color,
+            colors,
             last_update: std::time::Instant::now(),
             metrics: None,
             soc_info,
@@ -182,10 +182,10 @@ impl<'a> App<'a> {
     }
 
     pub(crate) fn accent_color(&self) -> ratatui::style::Color {
-        Self::color(self.accent_color_)
+        Self::color(self.colors.accent)
     }
 
     pub fn gauge_bg_color(&self) -> ratatui::style::Color {
-        Self::color(self.gauge_bg_color_)
+        Self::color(self.colors.gauge_bg)
     }
 }

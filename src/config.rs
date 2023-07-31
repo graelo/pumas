@@ -49,3 +49,22 @@ pub struct RunConfig {
     #[arg(long, default_value = "7")]
     pub gauge_bg_color: u8,
 }
+
+impl RunConfig {
+    /// Return colors.
+    pub fn colors(&self) -> UiColors {
+        UiColors {
+            accent: self.accent_color,
+            gauge_bg: self.gauge_bg_color,
+        }
+    }
+}
+
+/// Hold color configuration.
+#[derive(Debug)]
+pub struct UiColors {
+    /// Accent color: ASCII code in 0~255.
+    pub accent: u8,
+    /// Gauge background color: ASCII code in 0~255.
+    pub gauge_bg: u8,
+}
