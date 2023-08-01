@@ -22,7 +22,6 @@ const SPARKLINE_HEIGHT: u16 = 3;
 const SPARKLINE_MAX_OVERSHOOT: f32 = 1.05; // Prevent sparklines from touching gauges.
 const GAUGE_HEIGHT: u16 = 2;
 const PKG_TEXT_HEIGHT: u16 = 1;
-const THR_TEXT_HEIGHT: u16 = 1;
 
 /// Draw the Overview tab.
 ///
@@ -78,7 +77,6 @@ where
         cls_block_height * num_clusters_blocks + (num_clusters_blocks - 1) * CLUSTER_SPACING;
     let gpu_block_height = GAUGE_HEIGHT + SPARKLINE_HEIGHT;
     let pkg_block_height = PKG_TEXT_HEIGHT + SPARKLINE_HEIGHT;
-    let thr_block_height = THR_TEXT_HEIGHT;
 
     let vertical_chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -86,14 +84,12 @@ where
             Constraint::Length(2 + cpu_block_height), // Borders & CPU clusters blocks
             Constraint::Length(2 + gpu_block_height), // Borders & GPU ANE block
             Constraint::Length(2 + pkg_block_height), // Borders & Package block
-            Constraint::Length(2 + thr_block_height), // Borders & Thermal block
             Constraint::Min(0),
         ])
         .split(area);
     let cpu_area = vertical_chunks[0];
     let gpu_area = vertical_chunks[1];
     let pkg_area = vertical_chunks[2];
-    let thr_area = vertical_chunks[3];
 
     draw_cpu_clusters_usage_block(
         f,
@@ -112,8 +108,7 @@ where
         app.gauge_bg_color(),
         gpu_area,
     );
-    draw_package_power_block(f, metrics, &app.history, app.accent_color(), pkg_area);
-    draw_thermal_pressure_block(f, metrics, app.accent_color(), thr_area);
+    draw_package_block(f, metrics, &app.history, app.accent_color(), pkg_area);
 }
 
 /// Draw the CPU clusters usage block.
@@ -446,6 +441,27 @@ fn draw_gpu_ane_usage_block<B>(
     f.render_widget(sparkline, bottom_right_area);
 }
 
+/// Draw the Package block (power and thermals).
+fn draw_package_block<B>(
+    f: &mut Frame<B>,
+    metrics: &metrics::Metrics,
+    history: &History,
+    accent_color: Color,
+    area: Rect,
+) where
+    B: Backend,
+{
+    let horizontal_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Ratio(7, 10), Constraint::Ratio(3, 10)])
+        .split(area);
+    let pkg_area = horizontal_chunks[0];
+    let thr_area = horizontal_chunks[1];
+
+    draw_package_power_block(f, metrics, history, accent_color, pkg_area);
+    draw_thermal_pressure_block(f, metrics, accent_color, thr_area);
+}
+
 /// Draw the Package power block.
 ///
 /// ┌ Package ────────────────────────────────────────────────────────────────────────────────┐
@@ -512,7 +528,7 @@ fn draw_thermal_pressure_block<B>(
         _ => Color::Yellow,
     };
     let text = Line::from(vec![
-        Span::raw("Thermal Pressure: "),
+        Span::raw("Pressure: "),
         Span::styled(&metrics.thermal_pressure, Style::default().fg(color)),
     ]);
     let paragraph =
