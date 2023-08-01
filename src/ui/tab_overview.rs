@@ -388,7 +388,7 @@ fn draw_gpu_ane_usage_block<B>(
     let sig = history.get("gpu_active_ratio").unwrap();
     let sig_gpu_power = history.get("gpu_w").unwrap();
     let title = format!(
-        "GPU Usage: {} @ {} 󱐋 {} (peak {} 󱐋 {})",
+        "GPU: {} @ {} 󱐋 {} (peak: {} 󱐋 {})",
         units::percent1(gpu.active_ratio * 100.0),
         units::mhz(gpu.freq_mhz),
         units::watts2(metrics.consumption.gpu_w),
@@ -418,7 +418,7 @@ fn draw_gpu_ane_usage_block<B>(
     let sig = history.get("ane_active_ratio").unwrap();
     let sig_ane_power = history.get("ane_w").unwrap();
     let title = format!(
-        "ANE Usage: {} 󱐋 {} (peak {} 󱐋 {})",
+        "ANE: {} 󱐋 {} (peak: {} 󱐋 {})",
         units::percent1(ane_active_ratio * 100.0),
         units::watts2(metrics.consumption.ane_w),
         units::percent1(sig.peak),
