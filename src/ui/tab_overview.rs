@@ -150,7 +150,7 @@ fn draw_cpu_clusters_usage_block<B>(
     let title = "CPU Clusters";
     let title_with_power = format!(
         " {title}: 󱐋 {} (peak: {})",
-        units::watts2(metrics.cpu_w),
+        units::watts2(metrics.consumption.cpu_w),
         units::watts2(sig.peak)
     );
     let block = Block::default()
@@ -391,7 +391,7 @@ fn draw_gpu_ane_usage_block<B>(
         "GPU Usage: {} @ {} 󱐋 {} (peak {} 󱐋 {})",
         units::percent1(gpu.active_ratio * 100.0),
         units::mhz(gpu.freq_mhz),
-        units::watts2(metrics.gpu_w),
+        units::watts2(metrics.consumption.gpu_w),
         units::percent1(sig.peak),
         units::watts2(sig_gpu_power.peak)
     );
@@ -414,13 +414,13 @@ fn draw_gpu_ane_usage_block<B>(
     f.render_widget(sparkline, bottom_left_area);
 
     // Right: ANE.
-    let ane_active_ratio = metrics.ane_w as f64 / soc_info.max_ane_w;
+    let ane_active_ratio = metrics.consumption.ane_w as f64 / soc_info.max_ane_w;
     let sig = history.get("ane_active_ratio").unwrap();
     let sig_ane_power = history.get("ane_w").unwrap();
     let title = format!(
         "ANE Usage: {} 󱐋 {} (peak {} 󱐋 {})",
         units::percent1(ane_active_ratio * 100.0),
-        units::watts2(metrics.ane_w),
+        units::watts2(metrics.consumption.ane_w),
         units::percent1(sig.peak),
         units::watts2(sig_ane_power.peak)
     );
@@ -472,7 +472,7 @@ fn draw_package_power_block<B>(
     let sig = history.get("package_w").unwrap();
     let title = format!(
         "CPU+GPU+ANE: 󱐋 {} (peak: {})",
-        units::watts2(metrics.package_w),
+        units::watts2(metrics.consumption.package_w),
         units::watts2(sig.peak)
     );
     let text = Paragraph::new(Text::from(title));

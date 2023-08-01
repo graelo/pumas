@@ -1,4 +1,4 @@
-//! Power and Usage metrics coming from the macOS `powermetrics` tool.
+//! Power and Usage metrics coming from the macOS `powermetrics` tool and the `sysinfo` crate.
 //!
 //! These metrics are represented a bit differently than at the parsing stage (in `plist_parsing`)
 //! in order to simplify computations and simplify access from the UI.
@@ -24,14 +24,8 @@ pub(crate) struct Metrics {
     pub(crate) p_clusters: Vec<ClusterMetrics>,
     /// GPU metrics.
     pub(crate) gpu: GpuMetrics,
-    /// CPU power consumption in W.
-    pub(crate) cpu_w: f32,
-    /// GPU power consumption in W.
-    pub(crate) gpu_w: f32,
-    /// Apple Neural Engine power consumption in W.
-    pub(crate) ane_w: f32,
-    /// Package power consumption in W.
-    pub(crate) package_w: f32,
+    /// Power consumption in W of the CPU, GPU, ANE, and package.
+    pub(crate) consumption: PowerConsumption,
     /// Thermal pressure.
     pub(crate) thermal_pressure: String,
 }
@@ -54,7 +48,7 @@ impl Metrics {
     }
 
     /// Total number of CPUs on the chip.
-    pub(crate) fn num_cpus(&self) -> usize {
+    fn num_cpus(&self) -> usize {
         let mut total = 0;
         self.e_clusters.iter().for_each(|c| total += c.cpus.len());
         self.p_clusters.iter().for_each(|c| total += c.cpus.len());
@@ -130,17 +124,33 @@ impl From<plist_parsing::Metrics> for Metrics {
         let ane_w = (value.processor.ane_mj as f64 / interval_sec / 1e3) as f32;
         let package_w = value.processor.package_mw / 1e3;
 
-        Self {
-            e_clusters,
-            p_clusters,
-            gpu,
+        let consumption = PowerConsumption {
             cpu_w,
             gpu_w,
             ane_w,
             package_w,
+        };
+
+        Self {
+            e_clusters,
+            p_clusters,
+            gpu,
+            consumption,
             thermal_pressure: value.thermal_pressure,
         }
     }
+}
+
+/// Power consumption in W of the CPU, GPU, ANE, and package.
+pub(crate) struct PowerConsumption {
+    /// CPU power consumption in W.
+    pub(crate) cpu_w: f32,
+    /// GPU power consumption in W.
+    pub(crate) gpu_w: f32,
+    /// Apple Neural Engine power consumption in W.
+    pub(crate) ane_w: f32,
+    /// Package power consumption in W.
+    pub(crate) package_w: f32,
 }
 
 /// Metrics for a single cluster.
@@ -228,6 +238,28 @@ impl From<&plist_parsing::DvfmState> for DvfmState {
         Self {
             freq_mhz: value.freq_mhz,
             active_ratio: value.active_ratio,
+        }
+    }
+}
+
+pub(crate) enum ThermalPressure {
+    Nominal,
+    Moderate,
+    Heavy,
+    Sleeping,
+    Trapping,
+    Undefined,
+}
+
+impl From<&str> for ThermalPressure {
+    fn from(value: &str) -> Self {
+        match value {
+            "Nominal" => Self::Nominal,
+            "Moderate" => Self::Moderate,
+            "Heavy" => Self::Heavy,
+            "Sleeping" => Self::Sleeping,
+            "Trapping" => Self::Trapping,
+            _ => Self::Undefined,
         }
     }
 }

@@ -110,7 +110,7 @@ impl<'a> App<'a> {
                 HISTORY_CAPACITY,
                 /* max */ self.soc_info.max_package_w as f32,
             ))
-            .push(metrics.package_w);
+            .push(metrics.consumption.package_w);
 
         self.history
             .entry("cpu_w".to_string())
@@ -118,7 +118,7 @@ impl<'a> App<'a> {
                 HISTORY_CAPACITY,
                 /* max */ self.soc_info.max_cpu_w as f32,
             ))
-            .push(metrics.cpu_w);
+            .push(metrics.consumption.cpu_w);
 
         for e_cluster in &metrics.e_clusters {
             let sig_name = format!("{}_active_ratio", e_cluster.name);
@@ -156,7 +156,7 @@ impl<'a> App<'a> {
                 HISTORY_CAPACITY,
                 /* max */ 100.0,
             ))
-            .push(metrics.gpu_w);
+            .push(metrics.consumption.gpu_w);
 
         self.history
             .entry("ane_active_ratio".to_string())
@@ -164,7 +164,7 @@ impl<'a> App<'a> {
                 HISTORY_CAPACITY,
                 /* max */ 100.0,
             ))
-            .push(100.0 * metrics.ane_w / self.soc_info.max_ane_w as f32);
+            .push(100.0 * metrics.consumption.ane_w / self.soc_info.max_ane_w as f32);
 
         self.history
             .entry("ane_w".to_string())
@@ -172,7 +172,7 @@ impl<'a> App<'a> {
                 HISTORY_CAPACITY,
                 /* max */ 100.0,
             ))
-            .push(metrics.ane_w);
+            .push(metrics.consumption.ane_w);
 
         self.metrics = Some(metrics);
     }
