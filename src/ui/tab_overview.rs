@@ -12,7 +12,7 @@ use ratatui::{
 
 use crate::{
     app::{App, History},
-    modules::powermetrics,
+    metrics,
     modules::soc::SocInfo,
     units,
 };
@@ -135,7 +135,7 @@ where
 ///
 fn draw_cpu_clusters_usage_block<B>(
     f: &mut Frame<B>,
-    metrics: &powermetrics::Metrics,
+    metrics: &metrics::Metrics,
     history: &History,
     accent_color: Color,
     gauge_bg_color: Color,
@@ -237,7 +237,7 @@ fn draw_cpu_clusters_usage_block<B>(
 ///
 fn draw_cluster_overall_metrics<B>(
     f: &mut Frame<B>,
-    cluster: &powermetrics::ClusterMetrics,
+    cluster: &metrics::ClusterMetrics,
     history: &History,
     accent_color: Color,
     gauge_bg_color: Color,
@@ -294,8 +294,8 @@ fn draw_cluster_overall_metrics<B>(
 ///
 fn draw_cluster_pair_overall_metrics<B>(
     f: &mut Frame<B>,
-    left_cluster: &powermetrics::ClusterMetrics,
-    right_cluster: &powermetrics::ClusterMetrics,
+    left_cluster: &metrics::ClusterMetrics,
+    right_cluster: &metrics::ClusterMetrics,
     history: &History,
     accent_color: Color,
     gauge_bg_color: Color,
@@ -345,7 +345,7 @@ fn draw_cluster_pair_overall_metrics<B>(
 ///
 fn draw_gpu_ane_usage_block<B>(
     f: &mut Frame<B>,
-    metrics: &powermetrics::Metrics,
+    metrics: &metrics::Metrics,
     soc_info: &SocInfo,
     history: &History,
     accent_color: Color,
@@ -451,7 +451,7 @@ fn draw_gpu_ane_usage_block<B>(
 ///
 fn draw_package_power_block<B>(
     f: &mut Frame<B>,
-    metrics: &powermetrics::Metrics,
+    metrics: &metrics::Metrics,
     history: &History,
     accent_color: Color,
     area: Rect,
@@ -495,7 +495,7 @@ fn draw_package_power_block<B>(
 ///
 fn draw_thermal_pressure_block<B>(
     f: &mut Frame<B>,
-    metrics: &powermetrics::Metrics,
+    metrics: &metrics::Metrics,
     accent_color: Color,
     area: Rect,
 ) where

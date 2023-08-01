@@ -5,8 +5,8 @@
 
 use std::str::FromStr;
 
-use super::plist_parsing;
 use crate::error::Error;
+use crate::modules::powermetrics::plist_parsing;
 
 /// Reformulated metrics from the output of the `powermetrics` tool.
 ///

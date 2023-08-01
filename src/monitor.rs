@@ -23,6 +23,7 @@ use termion::{
 use crate::{
     app::App,
     config::RunConfig,
+    metrics,
     modules::{powermetrics, soc::SocInfo, sysinfo},
     ui, Result,
 };
@@ -51,7 +52,7 @@ pub fn run(args: RunConfig) -> Result<()> {
 enum Event {
     Input(Key),
     // Tick,
-    Metrics(powermetrics::Metrics),
+    Metrics(metrics::Metrics),
 }
 
 /// Start the event stream sources and launch the event loop.
@@ -172,7 +173,7 @@ fn stream_metrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
             buffer.append_last_line(line);
             let text = buffer.finalize();
 
-            let power_metrics = match powermetrics::Metrics::from_bytes(text.as_bytes()) {
+            let power_metrics = match metrics::Metrics::from_bytes(text.as_bytes()) {
                 Ok(metrics) => metrics,
                 Err(err) => {
                     eprintln!("{err}");

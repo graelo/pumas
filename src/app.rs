@@ -2,11 +2,7 @@
 
 use std::collections::HashMap;
 
-use crate::{
-    config::UiColors,
-    modules::{powermetrics::Metrics, soc::SocInfo},
-    signal,
-};
+use crate::{config::UiColors, metrics::Metrics, modules::soc::SocInfo, signal};
 
 const HISTORY_CAPACITY: usize = 100;
 
