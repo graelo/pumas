@@ -97,24 +97,16 @@ impl<'a> App<'a> {
     //     }
 
     /// Update the app state.
-    pub fn on_metrics(&mut self, metrics: Metrics) {
+    pub(crate) fn on_metrics(&mut self, metrics: Metrics) {
         self.last_update = std::time::Instant::now();
+        self.update_history(&metrics);
+        self.metrics = Some(metrics);
+    }
 
-        self.history
-            .entry("package_w".to_string())
-            .or_insert(signal::Signal::with_capacity(
-                HISTORY_CAPACITY,
-                /* max */ self.soc_info.max_package_w as f32,
-            ))
-            .push(metrics.consumption.package_w);
-
-        self.history
-            .entry("cpu_w".to_string())
-            .or_insert(signal::Signal::with_capacity(
-                HISTORY_CAPACITY,
-                /* max */ self.soc_info.max_cpu_w as f32,
-            ))
-            .push(metrics.consumption.cpu_w);
+    fn update_history(&mut self, metrics: &Metrics) {
+        //
+        // Active ratios.
+        //
 
         for e_cluster in &metrics.e_clusters {
             let sig_name = format!("{}_active_ratio", e_cluster.name);
@@ -147,14 +139,6 @@ impl<'a> App<'a> {
             .push(100.0 * metrics.gpu.active_ratio as f32);
 
         self.history
-            .entry("gpu_w".to_string())
-            .or_insert(signal::Signal::with_capacity(
-                HISTORY_CAPACITY,
-                /* max */ 100.0,
-            ))
-            .push(metrics.consumption.gpu_w);
-
-        self.history
             .entry("ane_active_ratio".to_string())
             .or_insert(signal::Signal::with_capacity(
                 HISTORY_CAPACITY,
@@ -162,15 +146,41 @@ impl<'a> App<'a> {
             ))
             .push(100.0 * metrics.consumption.ane_w / self.soc_info.max_ane_w as f32);
 
+        //
+        // Power consumption.
+        //
+
+        self.history
+            .entry("cpu_w".to_string())
+            .or_insert(signal::Signal::with_capacity(
+                HISTORY_CAPACITY,
+                /* max */ self.soc_info.max_cpu_w as f32,
+            ))
+            .push(metrics.consumption.cpu_w);
+
+        self.history
+            .entry("gpu_w".to_string())
+            .or_insert(signal::Signal::with_capacity(
+                HISTORY_CAPACITY,
+                /* max */ self.soc_info.max_gpu_w as f32,
+            ))
+            .push(metrics.consumption.gpu_w);
+
         self.history
             .entry("ane_w".to_string())
             .or_insert(signal::Signal::with_capacity(
                 HISTORY_CAPACITY,
-                /* max */ 100.0,
+                /* max */ self.soc_info.max_ane_w as f32,
             ))
             .push(metrics.consumption.ane_w);
 
-        self.metrics = Some(metrics);
+        self.history
+            .entry("package_w".to_string())
+            .or_insert(signal::Signal::with_capacity(
+                HISTORY_CAPACITY,
+                /* max */ self.soc_info.max_package_w as f32,
+            ))
+            .push(metrics.consumption.package_w);
     }
 
     fn color(code: u8) -> ratatui::style::Color {
