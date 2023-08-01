@@ -12,7 +12,7 @@ use ratatui::{
 
 use crate::{
     app::{App, History},
-    modules::powermetrics,
+    metrics,
     modules::soc::SocInfo,
     units,
 };
@@ -22,37 +22,42 @@ const SPARKLINE_HEIGHT: u16 = 3;
 const SPARKLINE_MAX_OVERSHOOT: f32 = 1.05; // Prevent sparklines from touching gauges.
 const GAUGE_HEIGHT: u16 = 2;
 const PKG_TEXT_HEIGHT: u16 = 1;
-const THR_TEXT_HEIGHT: u16 = 1;
 
 /// Draw the Overview tab.
 ///
-/// Pumas v0.0.3                                                  Apple M1 (cores: 4E+4P+8GPU)
-/// ┌─────────────────────────────────────────────────────────────────────────────────────────┐
-/// │ Overview │ CPU │ GPU │ SoC                                                              │
-/// └─────────────────────────────────────────────────────────────────────────────────────────┘
-/// ┌ CPU: 160.13 mW ─────────────────────────────────────────────────────────────────────────┐
-/// │E-Cluster: 28.9 % @ 1043 MHz                  P-Cluster: 8.7 % @ 1891 MHz                │
-/// │                    29%                                           9%                     │
-/// │▆▃▅▆▆▅▂▄  ▆▂▅▂▄▄▃▄▄▅ ▄▄▄▅  ▄▄ ▅▃                                                         │
-/// │████████▆▃██████████▆████▇███▇██▂▁                                           ▆           │
-/// │██████████████████████████████████▅▅▄▄▄▆▇▆▆▆  ▃▃▂▂▃▂▂▁▂▂▅▃▃▂▃▃▂▃▃▄▃▁▂▃▁▁▁▂▃▃▁█▅▁▂▂▁▂▂▃▂▂▁│
-/// └─────────────────────────────────────────────────────────────────────────────────────────┘
-/// ┌ GPU & ANE ──────────────────────────────────────────────────────────────────────────────┐
-/// │GPU Usage: 1.6 % @ 717 MHz ⚡️16.80 mW         ANE Usage: 0.0 % ⚡️0.00 W                  │
-/// │                     2%                                           0%                     │
-/// │                                                                                         │
-/// │                                                                                         │
-/// │▂▂▃        ▂▁▁ ▃    ▄    ▁      ▁                                                        │
-/// └─────────────────────────────────────────────────────────────────────────────────────────┘
-/// ┌ Package ────────────────────────────────────────────────────────────────────────────────┐
-/// │CPU+GPU+ANE: ⚡️176.93 mW (peak: 1.58 W)                                                  │
-/// │                                                                                         │
-/// │                                                                                         │
-/// │                                                                                         │
-/// └─────────────────────────────────────────────────────────────────────────────────────────┘
-/// ┌ Thermals ───────────────────────────────────────────────────────────────────────────────┐
-/// │Thermal Pressure: Nominal                                                                │
-/// └─────────────────────────────────────────────────────────────────────────────────────────┘
+/// Pumas v0.0.8                                                                      Apple M2 Max (cores: 4E+8P+38GPU)
+/// ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+/// │ Overview │ CPU │ GPU │ SoC                                                                                       │
+/// └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+/// ┌ CPU Clusters: 󱐋 87.70 mW (peak: 570.75 mW)───────────────────────────────────────────────────────────────────────┐
+/// │E-Cluster: 5.0 % @ 1029 MHz (peak: 22.2 %)                                                                        │
+/// │------------------------------------------------------- 5% -------------------------------------------------------│
+/// │                                                                                                                  │
+/// │                                                                                                                  │
+/// │   ▁▁▂   ▂▂▁ ▁▃▁ ▁ ▁  ▁  ▁   ▁             ▂▁        ▁ ▁▁▂▂▂▂▁▁▂▁ ▁▁▂▂▂▂▂▄▂▁▁▁▁▁ ▁▁▁▂▂▂▃▃▃▁▁▅▁▁ ▁▁▁               │
+/// │                                                                                                                  │
+/// │P0-Cluster: 1.5 % @ 1634 MHz (peak: 10.4 %)                P1-Cluster: 0.0 % @ 1690 MHz (peak: 1.0 %)             │
+/// │-------------------------- 1% ---------------------------  ------------------------- 0% --------------------------│
+/// │                                                                                                                  │
+/// │                                                                                                                  │
+/// │ ▂▂▃        ▂▁▁ ▃    ▄    ▁      ▁                                                                                │
+/// └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+/// ┌ GPU & ANE ───────────────────────────────────────────────────────────────────────────────────────────────────────┐
+/// │GPU: 1.3 % @ 444 MHz 󱐋 13.80 mW (peak: 16.5 % 󱐋 422.55 mW  ANE: 0.0 % 󱐋 0.00 W (peak: 0.0 % 󱐋 0.00 W)             │
+/// │-------------------------- 1% ---------------------------  ------------------------- 0% --------------------------│
+/// │                                                                                                                  │
+/// │                                                                                                                  │
+/// │                              ▁              ▂▃ ▁▃                                                                │
+/// └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+/// ┌ Package ─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+/// │CPU+GPU+ANE: 󱐋 101.49 mW (peak: 629.25 mW)                                                                        │
+/// │                                                                                                                  │
+/// │                                                                                                                  │
+/// │▃▃▂▂▃▂▂▁▂▂▅▃▃▂▃▃▂▃▃▄▃▁▂▃▁▁▁▂▃▃▁█▅▁▂▂▁▂▂▃▂▂▁                                                                       │
+/// └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+/// ┌ Thermals ────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+/// │Thermal Pressure: Nominal                                                                                         │
+/// └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ///
 pub(crate) fn draw_overview_tab<B>(f: &mut Frame<B>, app: &App, area: Rect)
 where
@@ -72,7 +77,6 @@ where
         cls_block_height * num_clusters_blocks + (num_clusters_blocks - 1) * CLUSTER_SPACING;
     let gpu_block_height = GAUGE_HEIGHT + SPARKLINE_HEIGHT;
     let pkg_block_height = PKG_TEXT_HEIGHT + SPARKLINE_HEIGHT;
-    let thr_block_height = THR_TEXT_HEIGHT;
 
     let vertical_chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -80,14 +84,12 @@ where
             Constraint::Length(2 + cpu_block_height), // Borders & CPU clusters blocks
             Constraint::Length(2 + gpu_block_height), // Borders & GPU ANE block
             Constraint::Length(2 + pkg_block_height), // Borders & Package block
-            Constraint::Length(2 + thr_block_height), // Borders & Thermal block
             Constraint::Min(0),
         ])
         .split(area);
     let cpu_area = vertical_chunks[0];
     let gpu_area = vertical_chunks[1];
     let pkg_area = vertical_chunks[2];
-    let thr_area = vertical_chunks[3];
 
     draw_cpu_clusters_usage_block(
         f,
@@ -106,8 +108,7 @@ where
         app.gauge_bg_color(),
         gpu_area,
     );
-    draw_package_power_block(f, metrics, &app.history, app.accent_color(), pkg_area);
-    draw_thermal_pressure_block(f, metrics, app.accent_color(), thr_area);
+    draw_package_block(f, metrics, &app.history, app.accent_color(), pkg_area);
 }
 
 /// Draw the CPU clusters usage block.
@@ -135,7 +136,7 @@ where
 ///
 fn draw_cpu_clusters_usage_block<B>(
     f: &mut Frame<B>,
-    metrics: &powermetrics::Metrics,
+    metrics: &metrics::Metrics,
     history: &History,
     accent_color: Color,
     gauge_bg_color: Color,
@@ -150,7 +151,7 @@ fn draw_cpu_clusters_usage_block<B>(
     let title = "CPU Clusters";
     let title_with_power = format!(
         " {title}: 󱐋 {} (peak: {})",
-        units::watts2(metrics.cpu_w),
+        units::watts2(metrics.consumption.cpu_w),
         units::watts2(sig.peak)
     );
     let block = Block::default()
@@ -237,7 +238,7 @@ fn draw_cpu_clusters_usage_block<B>(
 ///
 fn draw_cluster_overall_metrics<B>(
     f: &mut Frame<B>,
-    cluster: &powermetrics::ClusterMetrics,
+    cluster: &metrics::ClusterMetrics,
     history: &History,
     accent_color: Color,
     gauge_bg_color: Color,
@@ -294,8 +295,8 @@ fn draw_cluster_overall_metrics<B>(
 ///
 fn draw_cluster_pair_overall_metrics<B>(
     f: &mut Frame<B>,
-    left_cluster: &powermetrics::ClusterMetrics,
-    right_cluster: &powermetrics::ClusterMetrics,
+    left_cluster: &metrics::ClusterMetrics,
+    right_cluster: &metrics::ClusterMetrics,
     history: &History,
     accent_color: Color,
     gauge_bg_color: Color,
@@ -345,7 +346,7 @@ fn draw_cluster_pair_overall_metrics<B>(
 ///
 fn draw_gpu_ane_usage_block<B>(
     f: &mut Frame<B>,
-    metrics: &powermetrics::Metrics,
+    metrics: &metrics::Metrics,
     soc_info: &SocInfo,
     history: &History,
     accent_color: Color,
@@ -388,10 +389,10 @@ fn draw_gpu_ane_usage_block<B>(
     let sig = history.get("gpu_active_ratio").unwrap();
     let sig_gpu_power = history.get("gpu_w").unwrap();
     let title = format!(
-        "GPU Usage: {} @ {} 󱐋 {} (peak {} 󱐋 {})",
+        "GPU: {} @ {} 󱐋 {} (peak: {} 󱐋 {})",
         units::percent1(gpu.active_ratio * 100.0),
         units::mhz(gpu.freq_mhz),
-        units::watts2(metrics.gpu_w),
+        units::watts2(metrics.consumption.gpu_w),
         units::percent1(sig.peak),
         units::watts2(sig_gpu_power.peak)
     );
@@ -414,13 +415,13 @@ fn draw_gpu_ane_usage_block<B>(
     f.render_widget(sparkline, bottom_left_area);
 
     // Right: ANE.
-    let ane_active_ratio = metrics.ane_w as f64 / soc_info.max_ane_w;
+    let ane_active_ratio = metrics.consumption.ane_w as f64 / soc_info.max_ane_w;
     let sig = history.get("ane_active_ratio").unwrap();
     let sig_ane_power = history.get("ane_w").unwrap();
     let title = format!(
-        "ANE Usage: {} 󱐋 {} (peak {} 󱐋 {})",
+        "ANE: {} 󱐋 {} (peak: {} 󱐋 {})",
         units::percent1(ane_active_ratio * 100.0),
-        units::watts2(metrics.ane_w),
+        units::watts2(metrics.consumption.ane_w),
         units::percent1(sig.peak),
         units::watts2(sig_ane_power.peak)
     );
@@ -440,6 +441,27 @@ fn draw_gpu_ane_usage_block<B>(
     f.render_widget(sparkline, bottom_right_area);
 }
 
+/// Draw the Package block (power and thermals).
+fn draw_package_block<B>(
+    f: &mut Frame<B>,
+    metrics: &metrics::Metrics,
+    history: &History,
+    accent_color: Color,
+    area: Rect,
+) where
+    B: Backend,
+{
+    let horizontal_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Ratio(7, 10), Constraint::Ratio(3, 10)])
+        .split(area);
+    let pkg_area = horizontal_chunks[0];
+    let thr_area = horizontal_chunks[1];
+
+    draw_package_power_block(f, metrics, history, accent_color, pkg_area);
+    draw_thermal_pressure_block(f, metrics, accent_color, thr_area);
+}
+
 /// Draw the Package power block.
 ///
 /// ┌ Package ────────────────────────────────────────────────────────────────────────────────┐
@@ -451,7 +473,7 @@ fn draw_gpu_ane_usage_block<B>(
 ///
 fn draw_package_power_block<B>(
     f: &mut Frame<B>,
-    metrics: &powermetrics::Metrics,
+    metrics: &metrics::Metrics,
     history: &History,
     accent_color: Color,
     area: Rect,
@@ -472,7 +494,7 @@ fn draw_package_power_block<B>(
     let sig = history.get("package_w").unwrap();
     let title = format!(
         "CPU+GPU+ANE: 󱐋 {} (peak: {})",
-        units::watts2(metrics.package_w),
+        units::watts2(metrics.consumption.package_w),
         units::watts2(sig.peak)
     );
     let text = Paragraph::new(Text::from(title));
@@ -495,7 +517,7 @@ fn draw_package_power_block<B>(
 ///
 fn draw_thermal_pressure_block<B>(
     f: &mut Frame<B>,
-    metrics: &powermetrics::Metrics,
+    metrics: &metrics::Metrics,
     accent_color: Color,
     area: Rect,
 ) where
@@ -506,7 +528,7 @@ fn draw_thermal_pressure_block<B>(
         _ => Color::Yellow,
     };
     let text = Line::from(vec![
-        Span::raw("Thermal Pressure: "),
+        Span::raw("Pressure: "),
         Span::styled(&metrics.thermal_pressure, Style::default().fg(color)),
     ]);
     let paragraph =

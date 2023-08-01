@@ -23,38 +23,40 @@ use termion::{
 use crate::{
     app::App,
     config::RunConfig,
+    metrics,
     modules::{powermetrics, soc::SocInfo, sysinfo},
     ui, Result,
 };
 
-/// Configures the UI, and launches powermetrics regularly to update the values.
+/// Configure the UI, and launch the main loop.
 pub fn run(args: RunConfig) -> Result<()> {
-    // println!(
-    //     "run: {}, {}",
-    //     args.sample_rate_ms, args.color
-    // );
-
     let stdout = io::stdout().into_alternate_screen()?.into_raw_mode()?;
     let stdout = MouseTerminal::from(stdout);
-    // let stdout = AlternateScreen::from(stdout);
 
     let backend = TermionBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
     let soc_info = SocInfo::new()?;
-    let app = App::new(soc_info, args.accent_color, args.gauge_bg_color);
-    run_app(
+    let app = App::new(soc_info, args.colors());
+
+    main_loop(
         &mut terminal,
         app,
         Duration::from_millis(args.sample_rate_ms as u64),
     )
-    .expect("Cannot run app");
+    .expect("Cannot continue to run the app");
 
     Ok(())
 }
 
-/// Starts the events stream source and launches the event loop.
-fn run_app<B: Backend>(
+enum Event {
+    Input(Key),
+    // Tick,
+    Metrics(metrics::Metrics),
+}
+
+/// Start the event stream sources and launch the event loop.
+fn main_loop<B: Backend>(
     terminal: &mut Terminal<B>,
     mut app: App,
     tick_rate: Duration,
@@ -65,27 +67,22 @@ fn run_app<B: Backend>(
         terminal.draw(|f| ui::draw(f, &mut app))?;
 
         match events.recv()? {
+            // Event::Tick => app.on_tick(),
             Event::Input(key) => match key {
                 Key::Char(c) => app.on_key(c),
+                Key::Esc => app.on_key('q'),
                 // Key::Up => app.on_up(),
                 // Key::Down => app.on_down(),
                 Key::Left => app.on_left(),
                 Key::Right => app.on_right(),
                 _ => {}
             },
-            // Event::Tick => app.on_tick(),
-            Event::Metrics(power_metrics) => app.on_metrics(power_metrics),
+            Event::Metrics(metrics) => app.on_metrics(metrics),
         }
         if app.should_quit {
             return Ok(());
         }
     }
-}
-
-enum Event {
-    Input(Key),
-    // Tick,
-    Metrics(powermetrics::Metrics),
 }
 
 /// Run event threads.
@@ -112,24 +109,26 @@ fn start_event_threads(tick_rate: Duration) -> mpsc::Receiver<Event> {
     //     thread::sleep(tick_rate);
     // });
 
-    thread::spawn(move || stream_powermetrics(tick_rate, tx));
+    thread::spawn(move || stream_metrics(tick_rate, tx));
 
     rx
 }
 
-/// Stream metrics from the powermetrics tool and send them to the event loop.
+/// Stream metrics and send them to the event loop.
 ///
-/// This starts the powermetrics tool in streaming mode so that it outputs plists at each tick.
+/// This function starts the powermetrics tool in streaming mode with the configured sampling
+/// period (0.5 sec by default), so that it outputs entire plist messages at each period.
+///
+/// When a plist message is complete, this function also gathers CPU usage from the sysinfo crate
+/// for more accurate per-core usage (powermetrics is half-broken on M2 chips).
+///
 /// This function will run in a separate thread and stream data for the entire duration of the app.
-///
-/// This function also gathers CPU usage from the sysinfo crate for more accurate per-core usage
-/// (powermetrics is half-broken on M2 chips).
 ///
 /// # Note
 ///
 /// Powermetrics outputs a plist file, but it is not valid XML, so we fix the issues before sending
 /// them to the plist parser.
-fn stream_powermetrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
+fn stream_metrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
     let sample_rate_ms = format!("{}", tick_rate.as_millis());
 
     let binary = "/usr/bin/powermetrics";
@@ -157,8 +156,16 @@ fn stream_powermetrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
     let mut buffer = powermetrics::Buffer::new();
     let mut system_state = sysinfo::SystemState::new();
 
-    // Read the lines from powermetrics, one by one, for the entire duration of the app. When the
-    // last line of a plist message is read, build and send metrics to the event loop.
+    // Main loop.
+    //
+    // Read the lines of the plist messages from powermetrics, one by one, for the entire duration
+    // of the app.
+    //
+    // When the last line of a plist message is read: build the `powermetrics::Metrics` struct and
+    // gather CPU usage from sysinfo.
+    //
+    // Finally, send metrics to the event loop.
+    //
     for line in stdout_lines.flatten() {
         if line != "</plist>" {
             buffer.append_line(line);
@@ -166,7 +173,7 @@ fn stream_powermetrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
             buffer.append_last_line(line);
             let text = buffer.finalize();
 
-            let mut power_metrics = match powermetrics::Metrics::from_bytes(text.as_bytes()) {
+            let power_metrics = match metrics::Metrics::from_bytes(text.as_bytes()) {
                 Ok(metrics) => metrics,
                 Err(err) => {
                     eprintln!("{err}");
@@ -177,14 +184,16 @@ fn stream_powermetrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
 
             let sysinfo_metrics = system_state.latest_metrics();
 
-            let cpu_usage: Vec<f32> = sysinfo_metrics
-                .cpu_metrics
-                .iter()
-                .map(|m| m.active_ratio)
-                .collect();
-            power_metrics.patch_all_clusters_active_ratio(&cpu_usage[..]);
+            let metrics = match power_metrics.set_cpus_active_ratio(&sysinfo_metrics.cpu_metrics) {
+                Ok(metrics) => metrics,
+                Err(err) => {
+                    eprintln!("{err}");
+                    cmd.kill().unwrap();
+                    break;
+                }
+            };
 
-            if let Err(err) = tx.send(Event::Metrics(power_metrics)) {
+            if let Err(err) = tx.send(Event::Metrics(metrics)) {
                 eprintln!("{err}");
                 cmd.kill().unwrap();
                 break;

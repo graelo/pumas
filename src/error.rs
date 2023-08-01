@@ -24,6 +24,10 @@ pub enum Error {
     #[error("plist parsing error: `{0}`")]
     PlistParsingError(String),
 
+    /// Misalignment of CPU IDs between powermetrics and the sysinfo crate.
+    #[error("cpu id misalignment: `{0}`")]
+    MisalignedCpuId(String),
+
     /// Error converting a string to utf8.
     #[error("utf8 conversion error: `{source}`")]
     Utf8ConversionError {

@@ -2,10 +2,7 @@
 
 use std::collections::HashMap;
 
-use crate::{
-    modules::{powermetrics::Metrics, soc::SocInfo},
-    signal,
-};
+use crate::{config::UiColors, metrics::Metrics, modules::soc::SocInfo, signal};
 
 const HISTORY_CAPACITY: usize = 100;
 
@@ -41,11 +38,11 @@ pub(crate) struct App<'a> {
     /// Tabs and currently selected tab.
     pub(crate) tabs: TabsState<'a>,
 
-    /// Accent color, default: 2 (green).
-    accent_color_: u8,
-
-    /// Gauge background color, default: 7 (white).
-    gauge_bg_color_: u8,
+    /// Color configuration.
+    ///
+    /// - Accent color, default: 2 (green).
+    /// - Gauge background color, default: 7 (white).
+    pub(crate) colors: UiColors,
 
     /// Time of last update.
     pub(crate) last_update: std::time::Instant,
@@ -62,12 +59,11 @@ pub(crate) struct App<'a> {
 
 impl<'a> App<'a> {
     /// Returns a new `App`.
-    pub fn new(soc_info: SocInfo, accent_color: u8, gauge_bg_color: u8) -> Self {
+    pub fn new(soc_info: SocInfo, colors: UiColors) -> Self {
         Self {
             should_quit: false,
             tabs: TabsState::new(vec!["Overview", "CPU", "GPU", "SoC"]),
-            accent_color_: accent_color,
-            gauge_bg_color_: gauge_bg_color,
+            colors,
             last_update: std::time::Instant::now(),
             metrics: None,
             soc_info,
@@ -101,24 +97,16 @@ impl<'a> App<'a> {
     //     }
 
     /// Update the app state.
-    pub fn on_metrics(&mut self, metrics: Metrics) {
+    pub(crate) fn on_metrics(&mut self, metrics: Metrics) {
         self.last_update = std::time::Instant::now();
+        self.update_history(&metrics);
+        self.metrics = Some(metrics);
+    }
 
-        self.history
-            .entry("package_w".to_string())
-            .or_insert(signal::Signal::with_capacity(
-                HISTORY_CAPACITY,
-                /* max */ self.soc_info.max_package_w as f32,
-            ))
-            .push(metrics.package_w);
-
-        self.history
-            .entry("cpu_w".to_string())
-            .or_insert(signal::Signal::with_capacity(
-                HISTORY_CAPACITY,
-                /* max */ self.soc_info.max_cpu_w as f32,
-            ))
-            .push(metrics.cpu_w);
+    fn update_history(&mut self, metrics: &Metrics) {
+        //
+        // Active ratios.
+        //
 
         for e_cluster in &metrics.e_clusters {
             let sig_name = format!("{}_active_ratio", e_cluster.name);
@@ -151,30 +139,48 @@ impl<'a> App<'a> {
             .push(100.0 * metrics.gpu.active_ratio as f32);
 
         self.history
-            .entry("gpu_w".to_string())
-            .or_insert(signal::Signal::with_capacity(
-                HISTORY_CAPACITY,
-                /* max */ 100.0,
-            ))
-            .push(metrics.gpu_w);
-
-        self.history
             .entry("ane_active_ratio".to_string())
             .or_insert(signal::Signal::with_capacity(
                 HISTORY_CAPACITY,
                 /* max */ 100.0,
             ))
-            .push(100.0 * metrics.ane_w / self.soc_info.max_ane_w as f32);
+            .push(100.0 * metrics.consumption.ane_w / self.soc_info.max_ane_w as f32);
+
+        //
+        // Power consumption.
+        //
+
+        self.history
+            .entry("cpu_w".to_string())
+            .or_insert(signal::Signal::with_capacity(
+                HISTORY_CAPACITY,
+                /* max */ self.soc_info.max_cpu_w as f32,
+            ))
+            .push(metrics.consumption.cpu_w);
+
+        self.history
+            .entry("gpu_w".to_string())
+            .or_insert(signal::Signal::with_capacity(
+                HISTORY_CAPACITY,
+                /* max */ self.soc_info.max_gpu_w as f32,
+            ))
+            .push(metrics.consumption.gpu_w);
 
         self.history
             .entry("ane_w".to_string())
             .or_insert(signal::Signal::with_capacity(
                 HISTORY_CAPACITY,
-                /* max */ 100.0,
+                /* max */ self.soc_info.max_ane_w as f32,
             ))
-            .push(metrics.ane_w);
+            .push(metrics.consumption.ane_w);
 
-        self.metrics = Some(metrics);
+        self.history
+            .entry("package_w".to_string())
+            .or_insert(signal::Signal::with_capacity(
+                HISTORY_CAPACITY,
+                /* max */ self.soc_info.max_package_w as f32,
+            ))
+            .push(metrics.consumption.package_w);
     }
 
     fn color(code: u8) -> ratatui::style::Color {
@@ -182,10 +188,10 @@ impl<'a> App<'a> {
     }
 
     pub(crate) fn accent_color(&self) -> ratatui::style::Color {
-        Self::color(self.accent_color_)
+        Self::color(self.colors.accent)
     }
 
     pub fn gauge_bg_color(&self) -> ratatui::style::Color {
-        Self::color(self.gauge_bg_color_)
+        Self::color(self.colors.gauge_bg)
     }
 }

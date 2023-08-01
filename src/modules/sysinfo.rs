@@ -6,7 +6,8 @@
 use sysinfo::{CpuExt, CpuRefreshKind, RefreshKind, System, SystemExt};
 
 pub(crate) struct CpuMetrics {
-    // pub(crate) id: u16,
+    /// CPU ID (0 - ...)
+    pub(crate) id: u16,
     /// Activity ratio (0.0 - 1.0).
     pub(crate) active_ratio: f32,
 }
@@ -36,7 +37,7 @@ impl SystemState {
             .cpus()
             .iter()
             .map(|cpu| CpuMetrics {
-                // id: cpu.name().parse::<u16>().unwrap() - 1_u16,
+                id: cpu.name().parse::<u16>().unwrap() - 1_u16,
                 active_ratio: cpu.cpu_usage() / 100.0_f32,
             })
             .collect();

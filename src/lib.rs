@@ -114,6 +114,7 @@
 mod app;
 pub mod config;
 pub mod error;
+mod metrics;
 mod modules;
 pub mod monitor;
 mod signal;

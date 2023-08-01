@@ -1,12 +1,13 @@
-//! Power and Usage metrics coming from the macOS `powermetrics` tool.
+//! Power and Usage metrics coming from the macOS `powermetrics` tool and the `sysinfo` crate.
 //!
 //! These metrics are represented a bit differently than at the parsing stage (in `plist_parsing`)
 //! in order to simplify computations and simplify access from the UI.
 
 use std::str::FromStr;
 
-use super::plist_parsing;
-use crate::error::Error;
+use crate::modules::powermetrics::plist_parsing;
+use crate::modules::sysinfo;
+use crate::{error::Error, Result};
 
 /// Reformulated metrics from the output of the `powermetrics` tool.
 ///
@@ -18,20 +19,14 @@ use crate::error::Error;
 /// - Mx Ultra chips have multiple E clusters and multiple P clusters.
 ///
 pub(crate) struct Metrics {
-    /// Efficiency cluster metrics.
+    /// Efficiency Cluster metrics.
     pub(crate) e_clusters: Vec<ClusterMetrics>,
-    /// Performance cluster metrics.
+    /// Performance Cluster metrics.
     pub(crate) p_clusters: Vec<ClusterMetrics>,
     /// GPU metrics.
     pub(crate) gpu: GpuMetrics,
-    /// CPU power consumption in W.
-    pub(crate) cpu_w: f32,
-    /// GPU power consumption in W.
-    pub(crate) gpu_w: f32,
-    /// Apple Neural Engine power consumption in W.
-    pub(crate) ane_w: f32,
-    /// Package power consumption in W.
-    pub(crate) package_w: f32,
+    /// Power consumption in W of the CPU, GPU, ANE, and package.
+    pub(crate) consumption: PowerConsumption,
     /// Thermal pressure.
     pub(crate) thermal_pressure: String,
 }
@@ -39,7 +34,7 @@ pub(crate) struct Metrics {
 impl FromStr for Metrics {
     type Err = Error;
 
-    fn from_str(content: &str) -> Result<Self, Self::Err> {
+    fn from_str(content: &str) -> std::result::Result<Self, Self::Err> {
         let pm: plist_parsing::Metrics = plist::from_bytes(content.as_bytes())
             .map_err(|e| Error::PlistParsingError(e.to_string()))?;
         Ok(Self::from(pm))
@@ -47,14 +42,14 @@ impl FromStr for Metrics {
 }
 
 impl Metrics {
-    pub(crate) fn from_bytes(content: &[u8]) -> Result<Self, Error> {
+    pub(crate) fn from_bytes(content: &[u8]) -> std::result::Result<Self, Error> {
         let pm: plist_parsing::Metrics =
             plist::from_bytes(content).map_err(|e| Error::PlistParsingError(e.to_string()))?;
         Ok(Self::from(pm))
     }
 
     /// Total number of CPUs on the chip.
-    pub(crate) fn num_cpus(&self) -> usize {
+    fn num_cpus(&self) -> usize {
         let mut total = 0;
         self.e_clusters.iter().for_each(|c| total += c.cpus.len());
         self.p_clusters.iter().for_each(|c| total += c.cpus.len());
@@ -66,67 +61,48 @@ impl Metrics {
     /// Yes this is ugly, but it's the only way to get the correct active ratio given that the
     /// powermetrics tool reports incorrect values on M2 chips.
     ///
-    /// # Note
-    ///
-    /// This can be improved by aligning the CPU ids between the two tools.
-    /// TODO: align CPU ids between powermetrics and sysinfo.
-    ///
-    pub(crate) fn patch_all_clusters_active_ratio(&mut self, active_ratios: &[f32]) {
-        assert_eq!(
-            self.num_cpus(),
-            active_ratios.len(),
-            "The number of active ratios (provided by sysinfo) must match the number of cpus."
-        );
+    pub(crate) fn set_cpus_active_ratio(
+        mut self,
+        sysinfo_metrics: &[sysinfo::CpuMetrics],
+    ) -> Result<Self> {
+        if self.num_cpus() != sysinfo_metrics.len() {
+            return Err(Error::MisalignedCpuId(format!(
+                "Number of powermetrics CPUs: {} != number of sysinfo CPUs: {}",
+                self.num_cpus(),
+                sysinfo_metrics.len()
+            )));
+        }
 
-        let mut active_ratios = active_ratios.iter();
+        let mut iterator = sysinfo_metrics.iter();
+
         for e_cluster in &mut self.e_clusters {
             for cpu in &mut e_cluster.cpus {
-                cpu.active_ratio = *active_ratios.next().unwrap() as f64;
+                let update = iterator.next().unwrap();
+                if cpu.id != update.id {
+                    return Err(Error::MisalignedCpuId(format!(
+                        "CPU id misalignment: {} != {}",
+                        cpu.id, update.id
+                    )));
+                }
+                cpu.active_ratio = update.active_ratio as f64;
             }
         }
         for p_cluster in &mut self.p_clusters {
             for cpu in &mut p_cluster.cpus {
-                cpu.active_ratio = *active_ratios.next().unwrap() as f64;
+                let update = iterator.next().unwrap();
+                if cpu.id != update.id {
+                    return Err(Error::MisalignedCpuId(format!(
+                        "CPU id misalignment: {} != {}",
+                        cpu.id, update.id
+                    )));
+                }
+                cpu.active_ratio = update.active_ratio as f64;
             }
         }
+
+        Ok(self)
     }
 }
-
-// impl Metrics {
-//     pub(crate) fn from_str(content: &str) -> Self {
-//         let pm: plist_parsing::Metrics =
-//             plist::from_bytes(content.as_bytes()).expect("failed to parse the plist");
-//         Self::from(pm)
-//     }
-// }
-
-// fn aggregate_clusters(clusters: &[&plist_parsing::Cluster]) -> ClusterMetrics {
-//     // Collect all cluster CPUs.
-//     let cpu_metrics = clusters
-//         .iter()
-//         .flat_map(|c| &c.cpus)
-//         .map(CpuMetrics::from)
-//         .collect::<Vec<_>>();
-
-//     // Compute the max frequency of all clusters.
-//     let freq_mhz = clusters
-//         .iter()
-//         .map(|c| c.freq_mhz())
-//         .max_by(|a, b| a.partial_cmp(b).unwrap())
-//         .unwrap();
-
-//     // Compute the mean active ratio of all E clusters.
-//     let active_ratio =
-//         clusters.iter().map(|c| c.active_ratio()).sum::<f64>() / clusters.len() as f64;
-
-//     // Create the aggregate cluster.
-//     ClusterMetrics {
-//         freq_mhz,
-//         active_ratio,
-//         dvfm_states: vec![],
-//         cpus: cpu_metrics,
-//     }
-// }
 
 impl From<plist_parsing::Metrics> for Metrics {
     /// Create a new `Metrics` instance from the given `plist_parsing::Metrics` instance, and
@@ -157,10 +133,6 @@ impl From<plist_parsing::Metrics> for Metrics {
             .map(ClusterMetrics::from)
             .collect::<Vec<_>>();
 
-        // // Create the aggregated E cluster.
-        // let e_cluster = aggregate_clusters(&e_clusters);
-        // let p_cluster = aggregate_clusters(&p_clusters);
-
         let gpu = GpuMetrics::from(&value.gpu);
 
         let cpu_w = (value.processor.cpu_mj as f64 / interval_sec / 1e3) as f32;
@@ -168,17 +140,33 @@ impl From<plist_parsing::Metrics> for Metrics {
         let ane_w = (value.processor.ane_mj as f64 / interval_sec / 1e3) as f32;
         let package_w = value.processor.package_mw / 1e3;
 
-        Self {
-            e_clusters,
-            p_clusters,
-            gpu,
+        let consumption = PowerConsumption {
             cpu_w,
             gpu_w,
             ane_w,
             package_w,
+        };
+
+        Self {
+            e_clusters,
+            p_clusters,
+            gpu,
+            consumption,
             thermal_pressure: value.thermal_pressure,
         }
     }
+}
+
+/// Power consumption in W of the CPU, GPU, ANE, and package.
+pub(crate) struct PowerConsumption {
+    /// CPU power consumption in W.
+    pub(crate) cpu_w: f32,
+    /// GPU power consumption in W.
+    pub(crate) gpu_w: f32,
+    /// Apple Neural Engine power consumption in W.
+    pub(crate) ane_w: f32,
+    /// Package power consumption in W.
+    pub(crate) package_w: f32,
 }
 
 /// Metrics for a single cluster.
@@ -266,6 +254,28 @@ impl From<&plist_parsing::DvfmState> for DvfmState {
         Self {
             freq_mhz: value.freq_mhz,
             active_ratio: value.active_ratio,
+        }
+    }
+}
+
+pub(crate) enum ThermalPressure {
+    Nominal,
+    Moderate,
+    Heavy,
+    Sleeping,
+    Trapping,
+    Undefined,
+}
+
+impl From<&str> for ThermalPressure {
+    fn from(value: &str) -> Self {
+        match value {
+            "Nominal" => Self::Nominal,
+            "Moderate" => Self::Moderate,
+            "Heavy" => Self::Heavy,
+            "Sleeping" => Self::Sleeping,
+            "Trapping" => Self::Trapping,
+            _ => Self::Undefined,
         }
     }
 }
