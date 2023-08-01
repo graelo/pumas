@@ -184,13 +184,14 @@ fn stream_metrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
 
             let sysinfo_metrics = system_state.latest_metrics();
 
-            let cpu_usage: Vec<f32> = sysinfo_metrics
-                .cpu_metrics
-                .iter()
-                .map(|m| m.active_ratio)
-                .collect();
-
-            let metrics = power_metrics.set_cpus_active_ratio(&cpu_usage[..]);
+            let metrics = match power_metrics.set_cpus_active_ratio(&sysinfo_metrics.cpu_metrics) {
+                Ok(metrics) => metrics,
+                Err(err) => {
+                    eprintln!("{err}");
+                    cmd.kill().unwrap();
+                    break;
+                }
+            };
 
             if let Err(err) = tx.send(Event::Metrics(metrics)) {
                 eprintln!("{err}");

@@ -5,8 +5,9 @@
 
 use std::str::FromStr;
 
-use crate::error::Error;
 use crate::modules::powermetrics::plist_parsing;
+use crate::modules::sysinfo;
+use crate::{error::Error, Result};
 
 /// Reformulated metrics from the output of the `powermetrics` tool.
 ///
@@ -33,7 +34,7 @@ pub(crate) struct Metrics {
 impl FromStr for Metrics {
     type Err = Error;
 
-    fn from_str(content: &str) -> Result<Self, Self::Err> {
+    fn from_str(content: &str) -> std::result::Result<Self, Self::Err> {
         let pm: plist_parsing::Metrics = plist::from_bytes(content.as_bytes())
             .map_err(|e| Error::PlistParsingError(e.to_string()))?;
         Ok(Self::from(pm))
@@ -41,7 +42,7 @@ impl FromStr for Metrics {
 }
 
 impl Metrics {
-    pub(crate) fn from_bytes(content: &[u8]) -> Result<Self, Error> {
+    pub(crate) fn from_bytes(content: &[u8]) -> std::result::Result<Self, Error> {
         let pm: plist_parsing::Metrics =
             plist::from_bytes(content).map_err(|e| Error::PlistParsingError(e.to_string()))?;
         Ok(Self::from(pm))
@@ -60,31 +61,46 @@ impl Metrics {
     /// Yes this is ugly, but it's the only way to get the correct active ratio given that the
     /// powermetrics tool reports incorrect values on M2 chips.
     ///
-    /// # Note
-    ///
-    /// This can be improved by aligning the CPU ids between the two tools.
-    /// TODO: align CPU ids between powermetrics and sysinfo.
-    ///
-    pub(crate) fn set_cpus_active_ratio(mut self, active_ratios: &[f32]) -> Self {
-        assert_eq!(
-            self.num_cpus(),
-            active_ratios.len(),
-            "The number of active ratios (provided by sysinfo) must match the number of cpus."
-        );
+    pub(crate) fn set_cpus_active_ratio(
+        mut self,
+        sysinfo_metrics: &[sysinfo::CpuMetrics],
+    ) -> Result<Self> {
+        if self.num_cpus() != sysinfo_metrics.len() {
+            return Err(Error::MisalignedCpuId(format!(
+                "Number of powermetrics CPUs: {} != number of sysinfo CPUs: {}",
+                self.num_cpus(),
+                sysinfo_metrics.len()
+            )));
+        }
 
-        let mut active_ratios = active_ratios.iter();
+        let mut iterator = sysinfo_metrics.iter();
+
         for e_cluster in &mut self.e_clusters {
             for cpu in &mut e_cluster.cpus {
-                cpu.active_ratio = *active_ratios.next().unwrap() as f64;
+                let update = iterator.next().unwrap();
+                if cpu.id != update.id {
+                    return Err(Error::MisalignedCpuId(format!(
+                        "CPU id misalignment: {} != {}",
+                        cpu.id, update.id
+                    )));
+                }
+                cpu.active_ratio = update.active_ratio as f64;
             }
         }
         for p_cluster in &mut self.p_clusters {
             for cpu in &mut p_cluster.cpus {
-                cpu.active_ratio = *active_ratios.next().unwrap() as f64;
+                let update = iterator.next().unwrap();
+                if cpu.id != update.id {
+                    return Err(Error::MisalignedCpuId(format!(
+                        "CPU id misalignment: {} != {}",
+                        cpu.id, update.id
+                    )));
+                }
+                cpu.active_ratio = update.active_ratio as f64;
             }
         }
 
-        self
+        Ok(self)
     }
 }
 
