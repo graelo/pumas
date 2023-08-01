@@ -23,9 +23,13 @@
 //! ## Installation
 //!
 //! ```sh
-//! cargo install pumas
-//! # or
 //! brew install graelo/tap/pumas
+//! ```
+//!
+//! or
+//!
+//! ```sh
+//! cargo install pumas
 //! ```
 //!
 //! ## Quickstart
