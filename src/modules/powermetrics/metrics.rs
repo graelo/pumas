@@ -18,9 +18,9 @@ use crate::error::Error;
 /// - Mx Ultra chips have multiple E clusters and multiple P clusters.
 ///
 pub(crate) struct Metrics {
-    /// Efficiency cluster metrics.
+    /// Efficiency Cluster metrics.
     pub(crate) e_clusters: Vec<ClusterMetrics>,
-    /// Performance cluster metrics.
+    /// Performance Cluster metrics.
     pub(crate) p_clusters: Vec<ClusterMetrics>,
     /// GPU metrics.
     pub(crate) gpu: GpuMetrics,
@@ -71,7 +71,7 @@ impl Metrics {
     /// This can be improved by aligning the CPU ids between the two tools.
     /// TODO: align CPU ids between powermetrics and sysinfo.
     ///
-    pub(crate) fn patch_all_clusters_active_ratio(&mut self, active_ratios: &[f32]) {
+    pub(crate) fn set_cpus_active_ratio(mut self, active_ratios: &[f32]) -> Self {
         assert_eq!(
             self.num_cpus(),
             active_ratios.len(),
@@ -89,44 +89,10 @@ impl Metrics {
                 cpu.active_ratio = *active_ratios.next().unwrap() as f64;
             }
         }
+
+        self
     }
 }
-
-// impl Metrics {
-//     pub(crate) fn from_str(content: &str) -> Self {
-//         let pm: plist_parsing::Metrics =
-//             plist::from_bytes(content.as_bytes()).expect("failed to parse the plist");
-//         Self::from(pm)
-//     }
-// }
-
-// fn aggregate_clusters(clusters: &[&plist_parsing::Cluster]) -> ClusterMetrics {
-//     // Collect all cluster CPUs.
-//     let cpu_metrics = clusters
-//         .iter()
-//         .flat_map(|c| &c.cpus)
-//         .map(CpuMetrics::from)
-//         .collect::<Vec<_>>();
-
-//     // Compute the max frequency of all clusters.
-//     let freq_mhz = clusters
-//         .iter()
-//         .map(|c| c.freq_mhz())
-//         .max_by(|a, b| a.partial_cmp(b).unwrap())
-//         .unwrap();
-
-//     // Compute the mean active ratio of all E clusters.
-//     let active_ratio =
-//         clusters.iter().map(|c| c.active_ratio()).sum::<f64>() / clusters.len() as f64;
-
-//     // Create the aggregate cluster.
-//     ClusterMetrics {
-//         freq_mhz,
-//         active_ratio,
-//         dvfm_states: vec![],
-//         cpus: cpu_metrics,
-//     }
-// }
 
 impl From<plist_parsing::Metrics> for Metrics {
     /// Create a new `Metrics` instance from the given `plist_parsing::Metrics` instance, and
@@ -156,10 +122,6 @@ impl From<plist_parsing::Metrics> for Metrics {
             .filter(|c| c.name.starts_with('P'))
             .map(ClusterMetrics::from)
             .collect::<Vec<_>>();
-
-        // // Create the aggregated E cluster.
-        // let e_cluster = aggregate_clusters(&e_clusters);
-        // let p_cluster = aggregate_clusters(&p_clusters);
 
         let gpu = GpuMetrics::from(&value.gpu);
 

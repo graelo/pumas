@@ -27,33 +27,34 @@ use crate::{
     ui, Result,
 };
 
-/// Configures the UI, and launches powermetrics regularly to update the values.
+/// Configure the UI, and launch the main loop.
 pub fn run(args: RunConfig) -> Result<()> {
-    // println!(
-    //     "run: {}, {}",
-    //     args.sample_rate_ms, args.color
-    // );
-
     let stdout = io::stdout().into_alternate_screen()?.into_raw_mode()?;
     let stdout = MouseTerminal::from(stdout);
-    // let stdout = AlternateScreen::from(stdout);
 
     let backend = TermionBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
     let soc_info = SocInfo::new()?;
     let app = App::new(soc_info, args.colors());
+
     main_loop(
         &mut terminal,
         app,
         Duration::from_millis(args.sample_rate_ms as u64),
     )
-    .expect("Cannot run app");
+    .expect("Cannot continue to run the app");
 
     Ok(())
 }
 
-/// Starts the events stream source and launches the event loop.
+enum Event {
+    Input(Key),
+    // Tick,
+    Metrics(powermetrics::Metrics),
+}
+
+/// Start the event stream sources and launch the event loop.
 fn main_loop<B: Backend>(
     terminal: &mut Terminal<B>,
     mut app: App,
@@ -65,27 +66,22 @@ fn main_loop<B: Backend>(
         terminal.draw(|f| ui::draw(f, &mut app))?;
 
         match events.recv()? {
+            // Event::Tick => app.on_tick(),
             Event::Input(key) => match key {
                 Key::Char(c) => app.on_key(c),
+                Key::Esc => app.on_key('q'),
                 // Key::Up => app.on_up(),
                 // Key::Down => app.on_down(),
                 Key::Left => app.on_left(),
                 Key::Right => app.on_right(),
                 _ => {}
             },
-            // Event::Tick => app.on_tick(),
-            Event::Metrics(power_metrics) => app.on_metrics(power_metrics),
+            Event::Metrics(metrics) => app.on_metrics(metrics),
         }
         if app.should_quit {
             return Ok(());
         }
     }
-}
-
-enum Event {
-    Input(Key),
-    // Tick,
-    Metrics(powermetrics::Metrics),
 }
 
 /// Run event threads.
@@ -119,10 +115,10 @@ fn start_event_threads(tick_rate: Duration) -> mpsc::Receiver<Event> {
 
 /// Stream metrics and send them to the event loop.
 ///
-/// This function starts the powermetrics tool in streaming mode so that it outputs entire plist
-/// messages at each tick.
+/// This function starts the powermetrics tool in streaming mode with the configured sampling
+/// period (0.5 sec by default), so that it outputs entire plist messages at each period.
 ///
-/// When a plist message is complet, this function also gathers CPU usage from the sysinfo crate
+/// When a plist message is complete, this function also gathers CPU usage from the sysinfo crate
 /// for more accurate per-core usage (powermetrics is half-broken on M2 chips).
 ///
 /// This function will run in a separate thread and stream data for the entire duration of the app.
@@ -176,7 +172,7 @@ fn stream_metrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
             buffer.append_last_line(line);
             let text = buffer.finalize();
 
-            let mut power_metrics = match powermetrics::Metrics::from_bytes(text.as_bytes()) {
+            let power_metrics = match powermetrics::Metrics::from_bytes(text.as_bytes()) {
                 Ok(metrics) => metrics,
                 Err(err) => {
                     eprintln!("{err}");
@@ -192,9 +188,10 @@ fn stream_metrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
                 .iter()
                 .map(|m| m.active_ratio)
                 .collect();
-            power_metrics.patch_all_clusters_active_ratio(&cpu_usage[..]);
 
-            if let Err(err) = tx.send(Event::Metrics(power_metrics)) {
+            let metrics = power_metrics.set_cpus_active_ratio(&cpu_usage[..]);
+
+            if let Err(err) = tx.send(Event::Metrics(metrics)) {
                 eprintln!("{err}");
                 cmd.kill().unwrap();
                 break;
