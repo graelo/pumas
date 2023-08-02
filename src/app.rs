@@ -110,7 +110,7 @@ impl<'a> App<'a> {
 
         for e_cluster in &metrics.e_clusters {
             // Cluster activity ratio.
-            let sig_name = format!("{}_active_ratio", e_cluster.name);
+            let sig_name = format!("{}_active_percent", e_cluster.name);
             self.history
                 .entry(sig_name)
                 .or_insert(signal::Signal::with_capacity(
@@ -121,7 +121,7 @@ impl<'a> App<'a> {
 
             for cpu in &e_cluster.cpus {
                 // Per-core activity ratio.
-                let sig_name = format!("{}_active_ratio", cpu.id);
+                let sig_name = format!("{}_active_percent", cpu.id);
                 self.history
                     .entry(sig_name)
                     .or_insert(signal::Signal::with_capacity(
@@ -144,7 +144,7 @@ impl<'a> App<'a> {
 
         for p_cluster in &metrics.p_clusters {
             // Cluster activity ratio.
-            let sig_name = format!("{}_active_ratio", p_cluster.name);
+            let sig_name = format!("{}_active_percent", p_cluster.name);
             self.history
                 .entry(sig_name)
                 .or_insert(signal::Signal::with_capacity(
@@ -155,7 +155,7 @@ impl<'a> App<'a> {
 
             for cpu in &p_cluster.cpus {
                 // Per-core activity ratio.
-                let sig_name = format!("{}_active_ratio", cpu.id);
+                let sig_name = format!("{}_active_percent", cpu.id);
                 self.history
                     .entry(sig_name)
                     .or_insert(signal::Signal::with_capacity(
@@ -177,7 +177,7 @@ impl<'a> App<'a> {
         }
 
         self.history
-            .entry("gpu_active_ratio".to_string())
+            .entry("gpu_active_percent".to_string())
             .or_insert(signal::Signal::with_capacity(
                 HISTORY_CAPACITY,
                 /* max */ 100.0,
@@ -185,7 +185,7 @@ impl<'a> App<'a> {
             .push(100.0 * metrics.gpu.active_ratio as f32);
 
         self.history
-            .entry("ane_active_ratio".to_string())
+            .entry("ane_active_percent".to_string())
             .or_insert(signal::Signal::with_capacity(
                 HISTORY_CAPACITY,
                 /* max */ 100.0,

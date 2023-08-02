@@ -258,7 +258,7 @@ fn draw_cluster_overall_metrics<B>(
     let bottom_area = chunks[1];
 
     // Cluster cores Usage Gauge.
-    let sig_name = format!("{}_active_ratio", cluster.name);
+    let sig_name = format!("{}_active_percent", cluster.name);
     let sig = history.get(&sig_name).unwrap();
     let title = format!(
         "{}: {} @ {} (peak: {})",
@@ -386,7 +386,7 @@ fn draw_gpu_ane_usage_block<B>(
 
     // left: GPU.
     let gpu = &metrics.gpu;
-    let sig = history.get("gpu_active_ratio").unwrap();
+    let sig = history.get("gpu_active_percent").unwrap();
     let sig_gpu_power = history.get("gpu_w").unwrap();
     let title = format!(
         "GPU: {} @ {} 󱐋 {} (peak: {} 󱐋 {})",
@@ -416,7 +416,7 @@ fn draw_gpu_ane_usage_block<B>(
 
     // Right: ANE.
     let ane_active_ratio = metrics.consumption.ane_w as f64 / soc_info.max_ane_w;
-    let sig = history.get("ane_active_ratio").unwrap();
+    let sig = history.get("ane_active_percent").unwrap();
     let sig_ane_power = history.get("ane_w").unwrap();
     let title = format!(
         "ANE: {} 󱐋 {} (peak: {} 󱐋 {})",

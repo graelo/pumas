@@ -207,7 +207,7 @@ fn draw_cpu<B>(
     let acti_histo_area = activity_chunks[0];
     let acti_gauge_area = activity_chunks[1];
 
-    let sig_name = format!("{}_active_ratio", cpu.id);
+    let sig_name = format!("{}_active_percent", cpu.id);
     let sig = history.get(&sig_name).unwrap();
     let activity_history_sparkline = Sparkline::default()
         .style(Style::default().fg(accent_color))
