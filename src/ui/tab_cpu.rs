@@ -28,10 +28,6 @@ pub(crate) fn draw_cpu_tab<B>(f: &mut Frame<B>, app: &App, area: Rect)
 where
     B: Backend,
 {
-    // let text = Text::from("Coming soon: CPU Power and frequency distribution.");
-    // let par = Paragraph::new(text).block(Block::default().title("Paragraph").borders(Borders::ALL));
-    // f.render_widget(par, area);
-
     let metrics = match &app.metrics {
         Some(metrics) => metrics,
         None => return,
@@ -39,53 +35,6 @@ where
 
     let accent_color = app.accent_color();
     let gauge_bg_color = app.gauge_bg_color();
-
-    // let chunks = Layout::default()
-    //     .direction(Direction::Vertical)
-    //     .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)].as_ref())
-    //     // .margin(1)
-    //     .split(area);
-    // let top_area = chunks[0];
-    // let bot_area = chunks[1];
-
-    // let bar_chart = BarChart::default()
-    //     .block(Block::default().title("BarChart").borders(Borders::ALL))
-    //     .bar_width(3)
-    //     .bar_gap(1)
-    //     .group_gap(3)
-    //     .bar_style(Style::new().fg(accent_color).bg(gauge_bg_color))
-    //     .value_style(Style::new().fg(gauge_bg_color).bg(accent_color))
-    //     // .label_style(Style::new().black())
-    //     // .data(&[("B0", 0), ("B1", 2), ("B2", 4), ("B3", 3)])
-    //     .data(BarGroup::default().label("E-Cluster".into()).bars(&[
-    //         Bar::default().label("8".into()).value(7),
-    //         Bar::default().label("9".into()).value(8),
-    //         Bar::default().label("10".into()).value(9),
-    //         Bar::default().label("11".into()).value(10),
-    //     ]))
-    //     .data(BarGroup::default().label("P0-Cluster".into()).bars(&[
-    //         Bar::default().label("8".into()).value(7),
-    //         Bar::default().label("9".into()).value(8),
-    //         Bar::default().label("10".into()).value(9),
-    //         Bar::default().label("11".into()).value(10),
-    //     ]))
-    //     .data(BarGroup::default().label("P1-Cluster".into()).bars(&[
-    //         Bar::default().label("8".into()).value(7),
-    //         Bar::default().label("9".into()).value(8),
-    //         Bar::default().label("10".into()).value(9),
-    //         Bar::default().label("11".into()).value(10),
-    //     ]))
-    //     // .data(BarGroup::default().bars(&[Bar::default().value(6), Bar::default().value(8)]))
-    //     .max(14);
-    // f.render_widget(bar_chart, top_area);
-
-    //
-    //
-
-    // let num_cluster_blocks = metrics.e_clusters.len() + metrics.p_clusters.len();
-    // let constraints = (0..num_cluster_blocks)
-    //     .map(|_| Constraint::Max(8)) // block height
-    //     .collect::<Vec<_>>();
 
     let constraints = metrics
         .e_clusters
