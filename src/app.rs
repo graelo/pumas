@@ -109,6 +109,7 @@ impl<'a> App<'a> {
         //
 
         for e_cluster in &metrics.e_clusters {
+            // Cluster activity ratio.
             let sig_name = format!("{}_active_ratio", e_cluster.name);
             self.history
                 .entry(sig_name)
@@ -117,9 +118,32 @@ impl<'a> App<'a> {
                     /* max */ 100.0,
                 ))
                 .push(100.0 * e_cluster.active_ratio());
+
+            for cpu in &e_cluster.cpus {
+                // Per-core activity ratio.
+                let sig_name = format!("{}_active_ratio", cpu.id);
+                self.history
+                    .entry(sig_name)
+                    .or_insert(signal::Signal::with_capacity(
+                        HISTORY_CAPACITY,
+                        /* max */ 100.0,
+                    ))
+                    .push(100.0 * cpu.active_ratio as f32);
+
+                // Per-core frequency.
+                let sig_name = format!("{}_freq_mhz", cpu.id);
+                self.history
+                    .entry(sig_name)
+                    .or_insert(signal::Signal::with_capacity(
+                        HISTORY_CAPACITY,
+                        /* max */ 4000.0, // TODO
+                    ))
+                    .push(cpu.freq_mhz as f32);
+            }
         }
 
         for p_cluster in &metrics.p_clusters {
+            // Cluster activity ratio.
             let sig_name = format!("{}_active_ratio", p_cluster.name);
             self.history
                 .entry(sig_name)
@@ -128,6 +152,28 @@ impl<'a> App<'a> {
                     /* max */ 100.0,
                 ))
                 .push(100.0 * p_cluster.active_ratio());
+
+            for cpu in &p_cluster.cpus {
+                // Per-core activity ratio.
+                let sig_name = format!("{}_active_ratio", cpu.id);
+                self.history
+                    .entry(sig_name)
+                    .or_insert(signal::Signal::with_capacity(
+                        HISTORY_CAPACITY,
+                        /* max */ 100.0,
+                    ))
+                    .push(100.0 * cpu.active_ratio as f32);
+
+                // Per-core frequency.
+                let sig_name = format!("{}_freq_mhz", cpu.id);
+                self.history
+                    .entry(sig_name)
+                    .or_insert(signal::Signal::with_capacity(
+                        HISTORY_CAPACITY,
+                        /* max */ 4000.0, // TODO
+                    ))
+                    .push(cpu.freq_mhz as f32);
+            }
         }
 
         self.history
