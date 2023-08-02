@@ -222,6 +222,36 @@ impl From<&plist_parsing::Cpu> for CpuMetrics {
     }
 }
 
+impl CpuMetrics {
+    // /// Return the frequencies of all DVFM states.
+    // pub(crate) fn frequencies_mhz(&self) -> Vec<u16> {
+    //     self.dvfm_states
+    //         .iter()
+    //         .map(|state| state.freq_mhz)
+    //         .collect::<Vec<_>>()
+    // }
+
+    pub(crate) fn max_frequency(&self) -> u16 {
+        self.dvfm_states
+            .iter()
+            .map(|state| state.freq_mhz)
+            .max()
+            .unwrap()
+    }
+
+    pub(crate) fn min_frequency(&self) -> u16 {
+        self.dvfm_states
+            .iter()
+            .map(|state| state.freq_mhz)
+            .min()
+            .unwrap()
+    }
+
+    pub(crate) fn freq_ratio(&self) -> f64 {
+        (self.freq_mhz - self.min_frequency() as f64).max(0.0) / self.max_frequency() as f64
+    }
+}
+
 /// Metrics for the GPU.
 pub(crate) struct GpuMetrics {
     /// GPU frequency in MHz.

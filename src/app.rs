@@ -131,14 +131,14 @@ impl<'a> App<'a> {
                     .push(100.0 * cpu.active_ratio as f32);
 
                 // Per-core frequency.
-                let sig_name = format!("{}_freq_mhz", cpu.id);
+                let sig_name = format!("{}_freq_percent", cpu.id);
                 self.history
                     .entry(sig_name)
                     .or_insert(signal::Signal::with_capacity(
                         HISTORY_CAPACITY,
-                        /* max */ 4000.0, // TODO
+                        /* max */ 100.0,
                     ))
-                    .push(cpu.freq_mhz as f32);
+                    .push(100.0 * cpu.freq_ratio() as f32);
             }
         }
 
@@ -165,14 +165,14 @@ impl<'a> App<'a> {
                     .push(100.0 * cpu.active_ratio as f32);
 
                 // Per-core frequency.
-                let sig_name = format!("{}_freq_mhz", cpu.id);
+                let sig_name = format!("{}_freq_percent", cpu.id);
                 self.history
                     .entry(sig_name)
                     .or_insert(signal::Signal::with_capacity(
                         HISTORY_CAPACITY,
-                        /* max */ 4000.0, // TODO
+                        /* max */ 100.0,
                     ))
-                    .push(cpu.freq_mhz as f32);
+                    .push(100.0 * cpu.freq_ratio() as f32);
             }
         }
 

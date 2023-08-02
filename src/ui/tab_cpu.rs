@@ -241,12 +241,13 @@ fn draw_cpu<B>(
     let freq_label_area = frequency_chunks[0];
     let freq_hist_area = frequency_chunks[1];
     let freq_value_area = frequency_chunks[2];
+    let freq_gauge_area = frequency_chunks[3];
 
     let freq_label_text = "freq:";
     let par = Paragraph::new(Span::from(freq_label_text));
     f.render_widget(par, freq_label_area);
 
-    let sig_name = format!("{}_freq_mhz", cpu.id);
+    let sig_name = format!("{}_freq_percent", cpu.id);
     let sig = history.get(&sig_name).unwrap();
     let freq_history_sparkline = Sparkline::default()
         .style(Style::default().fg(accent_color))
@@ -260,4 +261,11 @@ fn draw_cpu<B>(
     let freq_value_text = units::mhz(cpu.freq_mhz);
     let par = Paragraph::new(Span::from(freq_value_text));
     f.render_widget(par, freq_value_area);
+
+    let gauge = LineGauge::default()
+        .gauge_style(Style::default().fg(accent_color).bg(gauge_bg_color))
+        .line_set(symbols::line::THICK)
+        // .label(label)
+        .ratio(cpu.freq_ratio());
+    f.render_widget(gauge, freq_gauge_area);
 }
