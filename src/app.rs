@@ -184,6 +184,15 @@ impl<'a> App<'a> {
             ))
             .push(100.0 * metrics.gpu.active_ratio as f32);
 
+        // GPU frequency.
+        self.history
+            .entry("gpu_freq_percent".to_string())
+            .or_insert(signal::Signal::with_capacity(
+                HISTORY_CAPACITY,
+                /* max */ 100.0,
+            ))
+            .push(100.0 * metrics.gpu.freq_ratio() as f32);
+
         self.history
             .entry("ane_active_percent".to_string())
             .or_insert(signal::Signal::with_capacity(

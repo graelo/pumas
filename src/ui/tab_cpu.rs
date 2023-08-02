@@ -68,18 +68,22 @@ where
     let gauge_bg_color = app.gauge_bg_color();
 
     let constraints = metrics
+        // E-Clusters
         .e_clusters
         .iter()
         .map(|cl| Constraint::Length(2 + CPU_BLOCK_HEIGHT * cl.cpus.len() as u16))
+        // P-Clusters
         .chain(
             metrics
                 .p_clusters
                 .iter()
                 .map(|cl| Constraint::Length(2 + CPU_BLOCK_HEIGHT * cl.cpus.len() as u16)),
         )
+        // Frequency table
         .chain(std::iter::once(Constraint::Length(
             2 + FREQUENCY_TABLE_HEIGHT,
         )))
+        // Spacer
         .chain(std::iter::once(Constraint::Min(0)))
         .collect::<Vec<_>>();
 

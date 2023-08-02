@@ -276,6 +276,40 @@ impl From<&plist_parsing::GpuMetrics> for GpuMetrics {
     }
 }
 
+impl GpuMetrics {
+    /// Return the frequencies of all DVFM states.
+    pub(crate) fn frequencies_mhz(&self) -> Vec<u16> {
+        self.dvfm_states
+            .iter()
+            .map(|state| state.freq_mhz)
+            .collect::<Vec<_>>()
+    }
+
+    pub(crate) fn max_frequency(&self) -> u16 {
+        self.dvfm_states
+            .iter()
+            .map(|state| state.freq_mhz)
+            .max()
+            .unwrap()
+    }
+
+    pub(crate) fn min_frequency(&self) -> u16 {
+        self.dvfm_states
+            .iter()
+            .map(|state| state.freq_mhz)
+            .min()
+            .unwrap()
+    }
+
+    pub(crate) fn freq_ratio(&self) -> f64 {
+        let min = self.min_frequency() as f64;
+        let max = self.max_frequency() as f64;
+        ((self.freq_mhz - min).max(0.0) / (max - min).max(1.0))
+            .max(0.0)
+            .min(1.0)
+    }
+}
+
 /// Frequency ratios (from dynamic voltage and frequency management).
 #[derive(Debug, PartialEq)]
 pub(crate) struct DvfmState {
