@@ -48,7 +48,31 @@ cargo install pumas
 sudo pumas run
 ```
 
-![Screenshot](./images/screenshot.png)
+Use the arrow keys to switch between tabs. Press `q` or `x` to quit.
+
+### Screenshots
+
+Overview Tab: global metrics for utilization and power consumption.
+
+![Overview](./images/screenshot-overview.png)
+
+CPU Tab: per-cluster CPU utilization (with short history) and frequency
+(with short history)
+
+![CPU](./images/screenshot-cpu.png)
+
+GPU Tab: GPU utilization (with short history) and frequency
+(with short history)
+
+![GPU](./images/screenshot-gpu.png)
+
+SoC Tab: misc info about the SoC
+
+![SoC](./images/screenshot-soc.png)
+
+Startup:
+
+![Startup](./images/screenshot-startup.png)
 
 ## Usage
 
