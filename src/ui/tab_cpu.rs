@@ -3,16 +3,16 @@
 use ratatui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Style},
+    style::{Color, Modifier, Style},
     symbols,
     text::Span,
-    widgets::{Block, Borders, LineGauge, Paragraph, Sparkline},
+    widgets::{Block, Borders, Cell, LineGauge, Paragraph, Row, Sparkline, Table},
     Frame,
 };
 
 use crate::{
     app::{App, History},
-    metrics::{ClusterMetrics, CpuMetrics},
+    metrics::{ClusterMetrics, CpuMetrics, Metrics},
     units,
 };
 
@@ -22,8 +22,39 @@ const ACTIVITY_HISTORY_LENGTH: u16 = 8;
 const FREQUENCY_LABEL_WIDTH: u16 = 6; // "freq: "
 const FREQUENCY_VALUE_WIDTH: u16 = 10; // "1070 MHz "
 const FREQUENCY_HISTORY_LENGTH: u16 = 8;
+const FREQUENCY_TABLE_HEIGHT: u16 = 4;
 
 /// Draw the per-core usage, and per-core frequency distribution.
+///
+/// Pumas v0.0.10                                                             Apple M2 Max (cores: 4E+8P+38GPU)
+/// ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+/// │ Overview │ CPU │ GPU │ SoC                                                                               │
+/// └──────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+/// ┌ E-Cluster: ──────────────────────────────────────────────────────────────────────────────────────────────┐
+/// │ 0 -          6.9% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━freq:   ▁ ▁    1085 MHz  11% ━━━━━━━━━━━━━━━━━━━━━━│
+/// │ 1 -          6.9% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━freq:     ▁    1009 MHz  6% ━━━━━━━━━━━━━━━━━━━━━━━│
+/// │ 2 -          6.9% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━freq:   ▁ ▁▁   1047 MHz  9% ━━━━━━━━━━━━━━━━━━━━━━━│
+/// │ 3 -          3.0% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━freq: ▁ ▁▁▁    1011 MHz  7% ━━━━━━━━━━━━━━━━━━━━━━━│
+/// └──────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+/// ┌ P0-Cluster: ─────────────────────────────────────────────────────────────────────────────────────────────┐
+/// │ 4 - ▇▇▇      2.0% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━freq: ▇▇▇▇▁    734 MHz   1% ━━━━━━━━━━━━━━━━━━━━━━━│
+/// │ 5 -          2.0% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━freq: ▇▇▇▇     724 MHz   1% ━━━━━━━━━━━━━━━━━━━━━━━│
+/// │ 6 -          0.0% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━freq: ▇▇▇▇     711 MHz   0% ━━━━━━━━━━━━━━━━━━━━━━━│
+/// │ 7 -          0.0% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━freq: ▇▇▇▇     706 MHz   0% ━━━━━━━━━━━━━━━━━━━━━━━│
+/// └──────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+/// ┌ P1-Cluster: ─────────────────────────────────────────────────────────────────────────────────────────────┐
+/// │ 8 -          0.0% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━freq:  ▇       708 MHz   0% ━━━━━━━━━━━━━━━━━━━━━━━│
+/// │ 9 -          0.0% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━freq:          703 MHz   0% ━━━━━━━━━━━━━━━━━━━━━━━│
+/// │10 -          1.0% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━freq:          702 MHz   0% ━━━━━━━━━━━━━━━━━━━━━━━│
+/// │11 -          0.0% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━freq:          702 MHz   0% ━━━━━━━━━━━━━━━━━━━━━━━│
+/// └──────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+/// ┌Frequencies───────────────────────────────────────────────────────────────────────────────────────────────┐
+/// │E-Cluster:  912 1284 1752 2004 2256 2424                                                                  │
+/// │P-Cluster:  702  948 1188 1452 1704 1968 2208 2400 2568 2724 2868 3000 3132 3264 3360 3408 3504 3528 3696 │
+/// │                                                                                                          │
+/// │Note:      Hardware-wise, CPUs quickly shift between the above frequencies.                               │
+/// └──────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+///
 pub(crate) fn draw_cpu_tab<B>(f: &mut Frame<B>, app: &App, area: Rect)
 where
     B: Backend,
@@ -46,6 +77,9 @@ where
                 .iter()
                 .map(|cl| Constraint::Length(2 + CPU_BLOCK_HEIGHT * cl.cpus.len() as u16)),
         )
+        .chain(std::iter::once(Constraint::Length(
+            2 + FREQUENCY_TABLE_HEIGHT,
+        )))
         .chain(std::iter::once(Constraint::Min(0)))
         .collect::<Vec<_>>();
 
@@ -77,6 +111,9 @@ where
             *cluster_area,
         );
     }
+
+    let freq_table_area = clu_area_iter.next().unwrap();
+    draw_freq_table(f, metrics, *freq_table_area);
 }
 
 fn draw_cpu_cluster<B>(
@@ -217,4 +254,54 @@ fn draw_cpu<B>(
         // .label(label)
         .ratio(cpu.freq_ratio());
     f.render_widget(gauge, freq_gauge_area);
+}
+
+fn draw_freq_table<B>(f: &mut Frame<B>, metrics: &Metrics, area: Rect)
+where
+    B: Backend,
+{
+    let e_cluster_frequencies = metrics.e_clusters[0].cpus[0].frequencies_mhz();
+    let p_cluster_frequencies = metrics.p_clusters[0].cpus[0].frequencies_mhz();
+
+    let e_clus = e_cluster_frequencies
+        .iter()
+        .map(|f| format!("{:4}", *f))
+        .collect::<Vec<_>>()
+        .join(" ");
+    let p_clus = p_cluster_frequencies
+        .iter()
+        .map(|f| format!("{:4}", *f))
+        .collect::<Vec<_>>()
+        .join(" ");
+    let row_content = vec![
+        ("E-Cluster:", e_clus),
+        ("P-Cluster:", p_clus),
+        ("", "".into()),
+        (
+            "Note:",
+            "Hardware-wise, CPUs quickly shift between the above frequencies.".into(),
+        ),
+    ];
+
+    let rows = row_content.iter().map(|(left, ref right)| {
+        Row::new(vec![
+            Cell::from(Span::from(*left)),
+            Cell::from(Span::styled(
+                right.as_str(),
+                Style::default().add_modifier(Modifier::BOLD),
+            )),
+        ])
+    });
+
+    let label_width = 10;
+    let array_width = area.width - label_width - 2;
+    let constraints = [
+        Constraint::Length(label_width),
+        Constraint::Length(array_width),
+    ];
+    let table = Table::new(rows)
+        .widths(&constraints)
+        .block(Block::default().borders(Borders::ALL).title("Frequencies"));
+
+    f.render_widget(table, area);
 }
