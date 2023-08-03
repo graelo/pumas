@@ -48,7 +48,7 @@ cargo install pumas
 sudo pumas run
 ```
 
-Use the arrow keys to switch between tabs. Press `q` or `x` to quit.
+Use the arrow keys to switch between tabs. Press `Esc`, `q` or `x` to quit.
 
 ### Screenshots
 
@@ -92,7 +92,7 @@ Options:
   -V, --version  Print version
 ```
 
-and
+Pumas can run in two modes: UI mode (the default) and JSON mode.
 
 ```sh
 $ pumas run --help
@@ -104,16 +104,34 @@ Options:
   -i, --sample-rate <SAMPLE_RATE_MS>     Update rate (milliseconds): min: 100 [default: 1000]
       --accent-color <ACCENT_COLOR>      Accent color: ASCII code in 0~255 [default: 2]
       --gauge-bg-color <GAUGE_BG_COLOR>  Gauge background color: ASCII code in 0~255 [default: 7]
+      --json                             Print metrics to stdout as JSON instead of running the UI
   -h, --help                             Print help (see more with '--help')
   -V, --version                          Print version
 ```
 
-## Details
+### JSON Mode
+
+In JSON mode, Pumas will stream metrics to stdout as JSON instead of running the UI. You can
+then pipe the metrics to `jq`, or create a node-exporter for Prometheus, etc.
+
+For instance, the following command will stream the active ratio of the third CPU core of the
+first CPU cluster at each sample interval:
+
+```sh
+$ sudo pumas run --json | jq '.metrics.e_clusters[0].cpus[2].active_ratio'
+0.04624276980757713
+0.11764705926179886
+^C
+```
+
+The JSON schema and an example are available in the [schema](./schema) directory.
+
+## Source of metrics
 
 `sysinfo` crate is used to measure the following:
 
 - per-cluster CPU utilization
-- per-core CPU utilization (planned)
+- per-core CPU utilization
 
 `powermetrics` is used to measure the following:
 

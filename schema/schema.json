@@ -1,0 +1,203 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/Welcome9",
+    "definitions": {
+        "Welcome9": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "metrics": {
+                    "$ref": "#/definitions/Metrics"
+                },
+                "soc": {
+                    "$ref": "#/definitions/Soc"
+                }
+            },
+            "required": [
+                "metrics",
+                "soc"
+            ],
+            "title": "Welcome9"
+        },
+        "Metrics": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "consumption": {
+                    "$ref": "#/definitions/Consumption"
+                },
+                "e_clusters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Cluster"
+                    }
+                },
+                "gpu": {
+                    "$ref": "#/definitions/GPU"
+                },
+                "p_clusters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Cluster"
+                    }
+                },
+                "thermal_pressure": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "consumption",
+                "e_clusters",
+                "gpu",
+                "p_clusters",
+                "thermal_pressure"
+            ],
+            "title": "Metrics"
+        },
+        "Consumption": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "ane_w": {
+                    "type": "number"
+                },
+                "cpu_w": {
+                    "type": "number"
+                },
+                "gpu_w": {
+                    "type": "number"
+                },
+                "package_w": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "ane_w",
+                "cpu_w",
+                "gpu_w",
+                "package_w"
+            ],
+            "title": "Consumption"
+        },
+        "Cluster": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "cpus": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/GPU"
+                    }
+                },
+                "dvfm_states": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/DvfmState"
+                    }
+                },
+                "freq_mhz": {
+                    "type": "number"
+                },
+                "name": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "cpus",
+                "dvfm_states",
+                "freq_mhz",
+                "name"
+            ],
+            "title": "Cluster"
+        },
+        "GPU": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "active_ratio": {
+                    "type": "number"
+                },
+                "dvfm_states": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/DvfmState"
+                    }
+                },
+                "freq_mhz": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "active_ratio",
+                "dvfm_states",
+                "freq_mhz"
+            ],
+            "title": "GPU"
+        },
+        "DvfmState": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "active_ratio": {
+                    "type": "number"
+                },
+                "freq_mhz": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "active_ratio",
+                "freq_mhz"
+            ],
+            "title": "DvfmState"
+        },
+        "Soc": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "cpu_brand_name": {
+                    "type": "string"
+                },
+                "max_ane_w": {
+                    "type": "number"
+                },
+                "max_cpu_w": {
+                    "type": "number"
+                },
+                "max_gpu_w": {
+                    "type": "number"
+                },
+                "max_package_w": {
+                    "type": "number"
+                },
+                "num_cpu_cores": {
+                    "type": "integer"
+                },
+                "num_efficiency_cores": {
+                    "type": "integer"
+                },
+                "num_gpu_cores": {
+                    "type": "integer"
+                },
+                "num_performance_cores": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "cpu_brand_name",
+                "max_ane_w",
+                "max_cpu_w",
+                "max_gpu_w",
+                "max_package_w",
+                "num_cpu_cores",
+                "num_efficiency_cores",
+                "num_gpu_cores",
+                "num_performance_cores"
+            ],
+            "title": "Soc"
+        }
+    }
+}

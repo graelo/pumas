@@ -28,23 +28,36 @@ use crate::{
     ui, Result,
 };
 
-/// Configure the UI, and launch the main loop.
+/// Launch the main loop.
+///
+/// If `json` is false (default), configure the App struct and run the main loop which updates
+/// the UI, otherwise run the main loop and export metrics as JSON.
+///
 pub fn run(args: RunConfig) -> Result<()> {
-    let stdout = io::stdout().into_alternate_screen()?.into_raw_mode()?;
-    let stdout = MouseTerminal::from(stdout);
-
-    let backend = TermionBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
-
     let soc_info = SocInfo::new()?;
-    let app = App::new(soc_info, args.colors());
 
-    main_loop(
-        &mut terminal,
-        app,
-        Duration::from_millis(args.sample_rate_ms as u64),
-    )
-    .expect("Cannot continue to run the app");
+    match args.json {
+        true => {
+            main_exporter_loop(soc_info, Duration::from_millis(args.sample_rate_ms as u64))
+                .expect("Cannot continue exporting metrics");
+        }
+        false => {
+            let stdout = io::stdout().into_alternate_screen()?.into_raw_mode()?;
+            let stdout = MouseTerminal::from(stdout);
+
+            let backend = TermionBackend::new(stdout);
+            let mut terminal = Terminal::new(backend)?;
+
+            let app = App::new(soc_info, args.colors());
+
+            main_ui_loop(
+                &mut terminal,
+                app,
+                Duration::from_millis(args.sample_rate_ms as u64),
+            )
+            .expect("Cannot continue to run the app");
+        }
+    }
 
     Ok(())
 }
@@ -55,8 +68,8 @@ enum Event {
     Metrics(metrics::Metrics),
 }
 
-/// Start the event stream sources and launch the event loop.
-fn main_loop<B: Backend>(
+/// Start the event stream sources and launch the UI event loop.
+fn main_ui_loop<B: Backend>(
     terminal: &mut Terminal<B>,
     mut app: App,
     tick_rate: Duration,
@@ -83,6 +96,29 @@ fn main_loop<B: Backend>(
             return Ok(());
         }
     }
+}
+
+/// Start the event stream sources and export metrics as JSON.
+fn main_exporter_loop(
+    soc_info: SocInfo,
+    tick_rate: Duration,
+) -> std::result::Result<(), Box<dyn Error>> {
+    let events = start_event_threads(tick_rate);
+
+    loop {
+        if let Event::Metrics(metrics) = events.recv()? {
+            export(&soc_info, metrics)
+        }
+    }
+}
+
+fn export(soc_info: &SocInfo, metrics: metrics::Metrics) {
+    // let json = serde_json::to_string(&metrics).unwrap();
+    let json = serde_json::json!({
+        "soc": soc_info,
+        "metrics": metrics,
+    });
+    println!("{}", json);
 }
 
 /// Run event threads.
