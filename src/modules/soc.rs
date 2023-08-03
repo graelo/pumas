@@ -3,8 +3,9 @@
 use std::process;
 
 use crate::{error::Error, Result};
+use serde::Serialize;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub(crate) struct SocInfo {
     /// Brand name of the CPU, e.g. "Apple M1".
     pub(crate) cpu_brand_name: String,

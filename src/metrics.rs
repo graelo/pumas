@@ -5,9 +5,13 @@
 
 use std::str::FromStr;
 
-use crate::modules::powermetrics::plist_parsing;
-use crate::modules::sysinfo;
-use crate::{error::Error, Result};
+use serde::Serialize;
+
+use crate::{
+    error::Error,
+    modules::{powermetrics::plist_parsing, sysinfo},
+    Result,
+};
 
 /// Reformulated metrics from the output of the `powermetrics` tool.
 ///
@@ -18,6 +22,7 @@ use crate::{error::Error, Result};
 /// - Mx Max chips have one E cluster and two P clusters.
 /// - Mx Ultra chips have multiple E clusters and multiple P clusters.
 ///
+#[derive(Debug, Serialize)]
 pub(crate) struct Metrics {
     /// Efficiency Cluster metrics.
     pub(crate) e_clusters: Vec<ClusterMetrics>,
@@ -158,6 +163,7 @@ impl From<plist_parsing::Metrics> for Metrics {
 }
 
 /// Power consumption in W of the CPU, GPU, ANE, and package.
+#[derive(Debug, Serialize)]
 pub(crate) struct PowerConsumption {
     /// CPU power consumption in W.
     pub(crate) cpu_w: f32,
@@ -170,6 +176,7 @@ pub(crate) struct PowerConsumption {
 }
 
 /// Metrics for a single cluster.
+#[derive(Debug, Serialize)]
 pub(crate) struct ClusterMetrics {
     /// Cluster name: e.g. "E-Cluster" or "P-Cluster", or "P0-Cluster", "P1-Cluster", etc.
     pub(crate) name: String,
@@ -200,6 +207,7 @@ impl From<&plist_parsing::ClusterMetrics> for ClusterMetrics {
 }
 
 /// Metrics for a single CPU.
+#[derive(Debug, Serialize)]
 pub(crate) struct CpuMetrics {
     /// CPU ID.
     pub(crate) id: u16,
@@ -257,6 +265,7 @@ impl CpuMetrics {
 }
 
 /// Metrics for the GPU.
+#[derive(Debug, Serialize)]
 pub(crate) struct GpuMetrics {
     /// GPU frequency in MHz.
     pub(crate) freq_mhz: f64,
@@ -311,7 +320,7 @@ impl GpuMetrics {
 }
 
 /// Frequency ratios (from dynamic voltage and frequency management).
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub(crate) struct DvfmState {
     pub(crate) freq_mhz: u16,
     pub(crate) active_ratio: f64,

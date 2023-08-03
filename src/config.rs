@@ -48,6 +48,10 @@ pub struct RunConfig {
     /// Gauge background color: ASCII code in 0~255.
     #[arg(long, default_value = "7")]
     pub gauge_bg_color: u8,
+
+    /// Print metrics to stdout as JSON instead of running the UI.
+    #[arg(long, default_value = "false")]
+    pub json: bool,
 }
 
 impl RunConfig {
