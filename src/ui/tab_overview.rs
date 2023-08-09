@@ -180,51 +180,70 @@ fn draw_cpu_clusters_usage_block<B>(
 
     let mut clu_area_iter = cpu_cluster_chunks.iter();
 
-    // TODO: refactor this.
     // Draw the metrics for the Efficiency cluster (or clusters).
-    let area = clu_area_iter.next().unwrap();
-    if metrics.e_clusters.len() == 1 {
-        draw_cluster_overall_metrics(
-            f,
-            &metrics.e_clusters[0],
-            history,
-            accent_color,
-            gauge_bg_color,
-            *area,
-        );
-    } else {
-        draw_cluster_pair_overall_metrics(
-            f,
-            &metrics.e_clusters[0],
-            &metrics.e_clusters[1],
-            history,
-            accent_color,
-            gauge_bg_color,
-            *area,
-        );
+    for clu_slice in metrics.e_clusters.chunks(2) {
+        let area = clu_area_iter.next().unwrap();
+
+        match clu_slice.len() {
+            1 => {
+                let cluster = &clu_slice[0];
+                draw_cluster_overall_metrics(
+                    f,
+                    cluster,
+                    history,
+                    accent_color,
+                    gauge_bg_color,
+                    *area,
+                );
+            }
+            2 => {
+                let (left_cluster, right_cluster) = (&clu_slice[0], &clu_slice[1]);
+                draw_cluster_pair_overall_metrics(
+                    f,
+                    left_cluster,
+                    right_cluster,
+                    history,
+                    accent_color,
+                    gauge_bg_color,
+                    *area,
+                );
+            }
+            _ => unreachable!(),
+        }
     }
 
     // Draw the metrics for the Performance cluster (or clusters).
-    let area = clu_area_iter.next().unwrap();
-    if metrics.p_clusters.len() == 1 {
-        draw_cluster_overall_metrics(
-            f,
-            &metrics.p_clusters[0],
-            history,
-            accent_color,
-            gauge_bg_color,
-            *area,
-        );
-    } else {
-        draw_cluster_pair_overall_metrics(
-            f,
-            &metrics.p_clusters[0],
-            &metrics.p_clusters[1],
-            history,
-            accent_color,
-            gauge_bg_color,
-            *area,
-        );
+    // Yes this is duplicate code, but the alternative is to have a function with many arguments
+    // which is just used here.
+    for clu_slice in metrics.p_clusters.chunks(2) {
+        let area = clu_area_iter.next().unwrap();
+
+        match clu_slice.len() {
+            1 => {
+                let cluster = &clu_slice[0];
+                draw_cluster_overall_metrics(
+                    f,
+                    cluster,
+                    history,
+                    accent_color,
+                    gauge_bg_color,
+                    *area,
+                );
+            }
+            2 => {
+                let (left_cluster, right_cluster) = (&clu_slice[0], &clu_slice[1]);
+                draw_cluster_pair_overall_metrics(
+                    f,
+                    left_cluster,
+                    right_cluster,
+                    history,
+                    accent_color,
+                    gauge_bg_color,
+                    *area,
+                );
+            }
+            _ => unreachable!(),
+        }
     }
 }
 
@@ -536,7 +555,7 @@ fn draw_thermal_pressure_block<B>(
     f.render_widget(paragraph, area);
 }
 
-/// Compute the number of blocks for a given cluster.
+/// Compute the number of blocks for a given set of clusters.
 fn num_blocks_for(count: usize) -> usize {
     (count as f32 / 2.0).ceil() as usize
 }
