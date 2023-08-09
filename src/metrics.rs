@@ -78,30 +78,30 @@ impl Metrics {
             )));
         }
 
-        let mut iterator = sysinfo_metrics.iter();
+        // For sysinfo cpu metrics, create a hashmap of cpu ID -> active ratio. This is necessary
+        // because the order of the CPUs is not guaranteed to be the same as ours, especially on
+        // Ultra chips.
+        let sysinfo_metrics = sysinfo_metrics
+            .iter()
+            .map(|m| (m.id, m.active_ratio))
+            .collect::<std::collections::HashMap<_, _>>();
+
+        // let mut iterator = sysinfo_metrics.iter();
 
         for e_cluster in &mut self.e_clusters {
             for cpu in &mut e_cluster.cpus {
-                let update = iterator.next().unwrap();
-                if cpu.id != update.id {
-                    return Err(Error::MisalignedCpuId(format!(
-                        "CPU id misalignment: {} != {}",
-                        cpu.id, update.id
-                    )));
-                }
-                cpu.active_ratio = update.active_ratio as f64;
+                let sysinfo_active_ratio = sysinfo_metrics.get(&cpu.id).ok_or_else(|| {
+                    Error::MisalignedCpuId(format!("CPU id not found: {}", cpu.id))
+                })?;
+                cpu.active_ratio = *sysinfo_active_ratio as f64;
             }
         }
         for p_cluster in &mut self.p_clusters {
             for cpu in &mut p_cluster.cpus {
-                let update = iterator.next().unwrap();
-                if cpu.id != update.id {
-                    return Err(Error::MisalignedCpuId(format!(
-                        "CPU id misalignment: {} != {}",
-                        cpu.id, update.id
-                    )));
-                }
-                cpu.active_ratio = update.active_ratio as f64;
+                let update_active_ratio = sysinfo_metrics.get(&cpu.id).ok_or_else(|| {
+                    Error::MisalignedCpuId(format!("CPU id not found: {}", cpu.id))
+                })?;
+                cpu.active_ratio = *update_active_ratio as f64;
             }
         }
 
