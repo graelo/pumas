@@ -89,9 +89,9 @@ checksum = "df8670b8c7b9dae1793364eafadf7239c40d669904660c5960d74cfd80b46a53"
 
 [[package]]
 name = "cc"
-version = "1.0.81"
+version = "1.0.82"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c6b2562119bf28c3439f7f02db99faf0aa1a8cdfe5772a2ee155d32227239f0"
+checksum = "305fe645edc1442a0fa8b6726ba61d422798d37a52e12eaecf4b022ebbb88f01"
 dependencies = [
  "libc",
 ]
@@ -104,9 +104,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "clap"
-version = "4.3.19"
+version = "4.3.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5fd304a20bff958a57f04c4e96a2e7594cc4490a0e809cbd48bb6437edaa452d"
+checksum = "c27cdf28c0f604ba3f512b0c9a409f8de8513e4816705deb0498b627e7c3a3fd"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -115,9 +115,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.3.19"
+version = "4.3.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01c6a3f08f1fe5662a35cfe393aec09c4df95f60ee93b7556505260f75eee9e1"
+checksum = "08a9f1ab5e9f01a9b81f202e8562eb9a10de70abf9eaeac1be465c28b75aa4aa"
 dependencies = [
  "anstream",
  "anstyle",
@@ -489,9 +489,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "0.38.6"
+version = "0.38.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1ee020b1716f0a80e2ace9b03441a749e402e86712f15f16fe8a8f75afac732f"
+checksum = "172891ebdceb05aa0005f533a6cbfca599ddd7d966f6f5d4d9b2e70478e70399"
 dependencies = [
  "bitflags 2.3.3",
  "errno",
@@ -520,18 +520,18 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
 name = "serde"
-version = "1.0.180"
+version = "1.0.183"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ea67f183f058fe88a4e3ec6e2788e003840893b91bac4559cabedd00863b3ed"
+checksum = "32ac8da02677876d532745a130fc9d8e6edfa81a269b107c5b00829b91d8eb3c"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.180"
+version = "1.0.183"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24e744d7782b686ab3b73267ef05697159cc0e5abbed3f47f9933165e5219036"
+checksum = "aafe972d60b0b9bee71a91b92fee2d4fb3c9d7e8f6b179aa99f27203d99a4816"
 dependencies = [
  "proc-macro2",
  "quote",
