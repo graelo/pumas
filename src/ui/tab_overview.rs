@@ -29,7 +29,7 @@ const PKG_TEXT_HEIGHT: u16 = 1;
 /// ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 /// │ Overview │ CPU │ GPU │ SoC                                                                                       │
 /// └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-/// ┌ CPU Clusters: 󱐋 87.70 mW (peak: 570.75 mW)───────────────────────────────────────────────────────────────────────┐
+/// ┌ CPU Clusters: 87.70 mW (peak: 570.75 mW) ─-──────────────────────────────────────────────────────────────────────┐
 /// │E-Cluster: 5.0 % @ 1029 MHz (peak: 22.2 %)                                                                        │
 /// │------------------------------------------------------- 5% -------------------------------------------------------│
 /// │                                                                                                                  │
@@ -43,14 +43,14 @@ const PKG_TEXT_HEIGHT: u16 = 1;
 /// │ ▂▂▃        ▂▁▁ ▃    ▄    ▁      ▁                                                                                │
 /// └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 /// ┌ GPU & ANE ───────────────────────────────────────────────────────────────────────────────────────────────────────┐
-/// │GPU: 1.3 % @ 444 MHz 󱐋 13.80 mW (peak: 16.5 % 󱐋 422.55 mW  ANE: 0.0 % 󱐋 0.00 W (peak: 0.0 % 󱐋 0.00 W)             │
+/// │GPU: 1.3 % @ 444 MHz / 13.80 mW (peak: 16.5 % / 422.55 mW  ANE: 0.0 % / 0.00 W (peak: 0.0 % / 0.00 W)             │
 /// │-------------------------- 1% ---------------------------  ------------------------- 0% --------------------------│
 /// │                                                                                                                  │
 /// │                                                                                                                  │
 /// │                              ▁              ▂▃ ▁▃                                                                │
 /// └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 /// ┌ Package ─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-/// │CPU+GPU+ANE: 󱐋 101.49 mW (peak: 629.25 mW)                                                                        │
+/// │CPU+GPU+ANE: 101.49 mW (peak: 629.25 mW)                                                                        │
 /// │                                                                                                                  │
 /// │                                                                                                                  │
 /// │▃▃▂▂▃▂▂▁▂▂▅▃▃▂▃▃▂▃▃▄▃▁▂▃▁▁▁▂▃▃▁█▅▁▂▂▁▂▂▃▂▂▁                                                                       │
@@ -150,7 +150,7 @@ fn draw_cpu_clusters_usage_block<B>(
     let sig = history.get("cpu_w").unwrap();
     let title = "CPU Clusters";
     let title_with_power = format!(
-        " {title}: 󱐋 {} (peak: {})",
+        " {title}: {} (peak: {}) ",
         units::watts2(metrics.consumption.cpu_w),
         units::watts2(sig.peak)
     );
@@ -408,7 +408,7 @@ fn draw_gpu_ane_usage_block<B>(
     let sig = history.get("gpu_active_percent").unwrap();
     let sig_gpu_power = history.get("gpu_w").unwrap();
     let title = format!(
-        "GPU: {} @ {} 󱐋 {} (peak: {} 󱐋 {})",
+        "GPU: {} @ {} / {} (peak: {} / {})",
         units::percent1(gpu.active_ratio * 100.0),
         units::mhz(gpu.freq_mhz),
         units::watts2(metrics.consumption.gpu_w),
@@ -438,7 +438,7 @@ fn draw_gpu_ane_usage_block<B>(
     let sig = history.get("ane_active_percent").unwrap();
     let sig_ane_power = history.get("ane_w").unwrap();
     let title = format!(
-        "ANE: {} 󱐋 {} (peak: {} 󱐋 {})",
+        "ANE: {} / {} (peak: {} / {})",
         units::percent1(ane_active_ratio * 100.0),
         units::watts2(metrics.consumption.ane_w),
         units::percent1(sig.peak),
@@ -512,7 +512,7 @@ fn draw_package_power_block<B>(
 
     let sig = history.get("package_w").unwrap();
     let title = format!(
-        "CPU+GPU+ANE: 󱐋 {} (peak: {})",
+        "CPU+GPU+ANE: {} (peak: {})",
         units::watts2(metrics.consumption.package_w),
         units::watts2(sig.peak)
     );

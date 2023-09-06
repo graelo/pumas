@@ -49,7 +49,7 @@ jobs:
       - name: Quality - convco check
         run: |
           git show-ref
-          curl -sSfLO https://github.com/convco/convco/releases/latest/download/convco-macos.zip
+          curl -sSfLO https://github.com/convco/convco/releases/download/v0.4.1/convco-macos.zip
           unzip convco-macos.zip
           chmod +x convco
           ./convco check
@@ -57,7 +57,7 @@ jobs:
 
       - name: Quality - cargo deny check
         run: |
-          curl -sSfL https://github.com/EmbarkStudios/cargo-deny/releases/download/0.13.8/cargo-deny-0.13.8-aarch64-apple-darwin.tar.gz | gtar zx --no-anchored cargo-deny --strip-components=1
+          curl -sSfL https://github.com/EmbarkStudios/cargo-deny/releases/download/0.14.2/cargo-deny-0.14.2-aarch64-apple-darwin.tar.gz | gtar zx --no-anchored cargo-deny --strip-components=1
           chmod +x cargo-deny
           mv cargo-deny ~/.cargo/bin/
           cargo deny check
