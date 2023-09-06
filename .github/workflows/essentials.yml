@@ -49,7 +49,7 @@ jobs:
       - name: Quality - convco check
         run: |
           git show-ref
-          curl -sSfLO https://github.com/convco/convco/releases/latest/download/convco-macos.zip
+          curl -sSfLO https://github.com/convco/convco/releases/download/v0.4.1/convco-macos.zip
           unzip convco-macos.zip
           chmod +x convco
           ./convco check
