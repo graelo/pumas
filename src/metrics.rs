@@ -13,7 +13,7 @@ use crate::{
     Result,
 };
 
-/// Reformulated metrics from the output of the `powermetrics` tool.
+/// Reformulated metrics from the output of the `powermetrics` tool and `sysinfo`.
 ///
 /// # Note
 ///
@@ -34,6 +34,8 @@ pub(crate) struct Metrics {
     pub(crate) consumption: PowerConsumption,
     /// Thermal pressure.
     pub(crate) thermal_pressure: String,
+    /// Memory metrics.
+    pub(crate) memory: MemoryMetrics,
 }
 
 impl FromStr for Metrics {
@@ -61,12 +63,21 @@ impl Metrics {
         total
     }
 
+    /// Merge the Sysinfo CPU metrics with the powermetrics CPU metrics.
+    pub(crate) fn merge_sysinfo_metrics(
+        mut self,
+        sysinfo_metrics: sysinfo::Metrics,
+    ) -> Result<Self> {
+        self.memory = MemoryMetrics::from(sysinfo_metrics.memory_metrics);
+        self.set_cpus_active_ratio(&sysinfo_metrics.cpu_metrics)
+    }
+
     /// Override the CPU active ratio with the values provided by sysinfo.
     ///
     /// Yes this is ugly, but it's the only way to get the correct active ratio given that the
     /// powermetrics tool reports incorrect values on M2 chips.
     ///
-    pub(crate) fn set_cpus_active_ratio(
+    pub fn set_cpus_active_ratio(
         mut self,
         sysinfo_metrics: &[sysinfo::CpuMetrics],
     ) -> Result<Self> {
@@ -152,12 +163,15 @@ impl From<plist_parsing::Metrics> for Metrics {
             package_w,
         };
 
+        let memory_metrics = MemoryMetrics::default();
+
         Self {
             e_clusters,
             p_clusters,
             gpu,
             consumption,
             thermal_pressure: value.thermal_pressure,
+            memory: memory_metrics,
         }
     }
 }
@@ -353,6 +367,38 @@ impl From<&str> for ThermalPressure {
             "Sleeping" => Self::Sleeping,
             "Trapping" => Self::Trapping,
             _ => Self::Undefined,
+        }
+    }
+}
+
+/// Memory metrics: RAM and Swap.
+#[derive(Debug, Default, Serialize)]
+pub(crate) struct MemoryMetrics {
+    pub(crate) ram_total: u64,
+    pub(crate) ram_used: u64,
+    pub(crate) swap_total: u64,
+    pub(crate) swap_used: u64,
+}
+
+impl MemoryMetrics {
+    pub(crate) fn ram_usage_ratio(&self) -> f64 {
+        self.ram_used as f64 / self.ram_total as f64
+    }
+    pub(crate) fn swap_usage_ratio(&self) -> f64 {
+        if self.swap_total == 0 {
+            return 0.0;
+        }
+        self.swap_used as f64 / self.swap_total as f64
+    }
+}
+
+impl From<sysinfo::MemoryMetrics> for MemoryMetrics {
+    fn from(value: sysinfo::MemoryMetrics) -> Self {
+        Self {
+            ram_total: value.ram_total,
+            ram_used: value.ram_used,
+            swap_total: value.swap_total,
+            swap_used: value.swap_used,
         }
     }
 }

@@ -1,9 +1,11 @@
 //! Metrics obtained via the sysinfo crate.
 //!
-//! Currently, this provides CPU usage per core. This is more accurate than the CPU usage obtained
+//! Currently, this provides:
+//! - Memory usage
+//! - CPU usage per core, which is more accurate than the CPU usage obtained
 //! via powermetrics on M2 chips.
 
-use sysinfo::{CpuExt, CpuRefreshKind, RefreshKind, System, SystemExt};
+use sysinfo::{CpuRefreshKind, MemoryRefreshKind, System};
 
 pub(crate) struct CpuMetrics {
     /// CPU ID (0 - ...)
@@ -12,8 +14,16 @@ pub(crate) struct CpuMetrics {
     pub(crate) active_ratio: f32,
 }
 
+pub(crate) struct MemoryMetrics {
+    pub(crate) ram_total: u64,
+    pub(crate) ram_used: u64,
+    pub(crate) swap_total: u64,
+    pub(crate) swap_used: u64,
+}
+
 pub(crate) struct Metrics {
     pub(crate) cpu_metrics: Vec<CpuMetrics>,
+    pub(crate) memory_metrics: MemoryMetrics,
 }
 
 pub(crate) struct SystemState {
@@ -22,15 +32,19 @@ pub(crate) struct SystemState {
 
 impl SystemState {
     pub(crate) fn new() -> Self {
-        let mut system =
-            System::new_with_specifics(RefreshKind::new().with_cpu(CpuRefreshKind::everything()));
+        let mut system = System::new();
         system.refresh_cpu_specifics(CpuRefreshKind::new().with_cpu_usage());
+        system.refresh_memory_specifics(MemoryRefreshKind::everything());
         Self { system }
     }
 
     pub(crate) fn latest_metrics(&mut self) -> Metrics {
         self.system
             .refresh_cpu_specifics(CpuRefreshKind::new().with_cpu_usage());
+        self.system
+            .refresh_memory_specifics(MemoryRefreshKind::new().with_ram());
+        self.system
+            .refresh_memory_specifics(MemoryRefreshKind::new().with_swap());
 
         let cpu_metrics = self
             .system
@@ -42,6 +56,16 @@ impl SystemState {
             })
             .collect();
 
-        Metrics { cpu_metrics }
+        let memory_metrics = MemoryMetrics {
+            ram_total: self.system.total_memory(), // Note: this never changes.
+            ram_used: self.system.used_memory(),
+            swap_total: self.system.total_swap(),
+            swap_used: self.system.used_swap(),
+        };
+
+        Metrics {
+            cpu_metrics,
+            memory_metrics,
+        }
     }
 }
