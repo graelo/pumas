@@ -82,12 +82,12 @@ fn main_ui_loop<B: Backend>(
         match events.recv()? {
             // Event::Tick => app.on_tick(),
             Event::Input(key) => match key {
-                Key::Char(c) => app.on_key(c),
                 Key::Esc => app.on_key('q'),
                 // Key::Up => app.on_up(),
                 // Key::Down => app.on_down(),
-                Key::Left => app.on_left(),
-                Key::Right => app.on_right(),
+                Key::Left | Key::BackTab => app.on_left(),
+                Key::Right | Key::Char('\t') => app.on_right(),
+                Key::Char(c) => app.on_key(c),
                 _ => {}
             },
             Event::Metrics(metrics) => app.on_metrics(metrics),
