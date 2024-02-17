@@ -2,7 +2,7 @@
 
 [![crate](https://img.shields.io/crates/v/pumas.svg)](https://crates.io/crates/pumas)
 [![documentation](https://docs.rs/pumas/badge.svg)](https://docs.rs/pumas)
-[![minimum rustc 1.64](https://img.shields.io/badge/rustc-1.64+-red.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
+[![minimum rustc 1.69](https://img.shields.io/badge/rustc-1.69+-red.svg)](https://rust-lang.github.io/rfcs/2495-min-rust-version.html)
 [![rust 2021 edition](https://img.shields.io/badge/edition-2021-blue.svg)](https://doc.rust-lang.org/edition-guide/rust-2021/index.html)
 <!-- [![build status](https://github.com/graelo/pumas/actions/workflows/essentials.yml/badge.svg)](https://github.com/graelo/pumas/actions/workflows/essentials.yml) -->
 
