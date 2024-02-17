@@ -9,16 +9,15 @@
 //! | Power       | CPU, GPU, ANE, total package | ✓         | History & current values                                  |
 //! | Frequency   | CPU Clusters, GPU            | ✓         | Current avg. values                                       |
 //! | Frequency   | CPU Clusters, GPU            | planned   | Residency distrib. histograms                             |
-//! | Memory      | RAM & swap: size and usage   | planned   | Apple removed memory bandwidth from powermetrics.         |
+//! | Memory      | RAM & Swap: size and usage   | ✓         | Apple removed memory bandwidth from powermetrics.         |
 //!
-//! Pumas uses the built-in `powermetrics` utility on macOS, which allows access to a
-//! variety of hardware performance counters. Note that it requires `sudo` to run due
-//! to `powermetrics` needing root access to run. Pumas is lightweight and has
-//! minimal performance impact.
+//! To gather data, Pumas uses both the macOS built-in `powermetrics` utility, and the `sysinfo`
+//! crate (same data as `htop`).
 //!
-//! Pumas only works on Apple Silicon Macs on macOS Monterey and later.
+//! The built-in `powermetrics` allows access to a variety of hardware performance counters. Note
+//! that Pumas requires `sudo` to run only due to `powermetrics` needing root access to run.
 //!
-//! This is a work in progress.
+//! Pumas is lightweight and has minimal performance impact.
 //!
 //! ## Installation
 //!
@@ -122,6 +121,7 @@
 //!
 //! - per-cluster CPU utilization
 //! - per-core CPU utilization
+//! - RAM & Swap usage & size
 //!
 //! `powermetrics` is used to measure the following:
 //!
