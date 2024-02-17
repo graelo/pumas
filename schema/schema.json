@@ -1,8 +1,8 @@
 {
     "$schema": "http://json-schema.org/draft-06/schema#",
-    "$ref": "#/definitions/Welcome9",
+    "$ref": "#/definitions/Welcome1",
     "definitions": {
-        "Welcome9": {
+        "Welcome1": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
@@ -17,7 +17,7 @@
                 "metrics",
                 "soc"
             ],
-            "title": "Welcome9"
+            "title": "Welcome1"
         },
         "Metrics": {
             "type": "object",
@@ -35,6 +35,9 @@
                 "gpu": {
                     "$ref": "#/definitions/GPU"
                 },
+                "memory": {
+                    "$ref": "#/definitions/Memory"
+                },
                 "p_clusters": {
                     "type": "array",
                     "items": {
@@ -49,6 +52,7 @@
                 "consumption",
                 "e_clusters",
                 "gpu",
+                "memory",
                 "p_clusters",
                 "thermal_pressure"
             ],
@@ -153,6 +157,31 @@
                 "freq_mhz"
             ],
             "title": "DvfmState"
+        },
+        "Memory": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "ram_total": {
+                    "type": "integer"
+                },
+                "ram_used": {
+                    "type": "integer"
+                },
+                "swap_total": {
+                    "type": "integer"
+                },
+                "swap_used": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "ram_total",
+                "ram_used",
+                "swap_total",
+                "swap_used"
+            ],
+            "title": "Memory"
         },
         "Soc": {
             "type": "object",

@@ -33,3 +33,11 @@ scale_fn!(mhz,
     mantissa_fmt: "{:.0}",
     unit: "MHz",
     doc: "Return a string with the value and its si-scaled unit of MHz.");
+
+// defines the `bibytes1()` function: 9.56 GB
+scale_fn!(bibytes1,
+    base: B1024,
+    constraint: UnitAndAbove,
+    mantissa_fmt: "{:.1}",
+    unit: "B",
+    doc: "Return a string with the value and its si-scaled unit of bibytes.");

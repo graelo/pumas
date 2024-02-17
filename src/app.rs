@@ -236,6 +236,27 @@ impl<'a> App<'a> {
                 /* max */ self.soc_info.max_package_w as f32,
             ))
             .push(metrics.consumption.package_w);
+
+        //
+        // Memory usage.
+        //
+
+        self.history
+            .entry("ram_usage_bytes".to_string())
+            .or_insert(signal::Signal::with_capacity(
+                HISTORY_CAPACITY,
+                /* max */ metrics.memory.ram_total as f32,
+            ))
+            .push(metrics.memory.ram_used as f32);
+
+        // In practice, the max value isn't used as it changes over time.
+        self.history
+            .entry("swap_usage_bytes".to_string())
+            .or_insert(signal::Signal::with_capacity(
+                HISTORY_CAPACITY,
+                /* max */ metrics.memory.swap_total as f32,
+            ))
+            .push(metrics.memory.swap_used as f32);
     }
 
     fn color(code: u8) -> ratatui::style::Color {

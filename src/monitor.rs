@@ -82,12 +82,12 @@ fn main_ui_loop<B: Backend>(
         match events.recv()? {
             // Event::Tick => app.on_tick(),
             Event::Input(key) => match key {
-                Key::Char(c) => app.on_key(c),
                 Key::Esc => app.on_key('q'),
                 // Key::Up => app.on_up(),
                 // Key::Down => app.on_down(),
-                Key::Left => app.on_left(),
-                Key::Right => app.on_right(),
+                Key::Left | Key::BackTab => app.on_left(),
+                Key::Right | Key::Char('\t') => app.on_right(),
+                Key::Char(c) => app.on_key(c),
                 _ => {}
             },
             Event::Metrics(metrics) => app.on_metrics(metrics),
@@ -198,11 +198,11 @@ fn stream_metrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
     // of the app.
     //
     // When the last line of a plist message is read: build the `powermetrics::Metrics` struct and
-    // gather CPU usage from sysinfo.
+    // gather CPU usage and Memory from sysinfo.
     //
     // Finally, send metrics to the event loop.
     //
-    for line in stdout_lines.flatten() {
+    for line in stdout_lines.map_while(std::result::Result::<String, std::io::Error>::ok) {
         if line != "</plist>" {
             buffer.append_line(line);
         } else {
@@ -220,7 +220,7 @@ fn stream_metrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
 
             let sysinfo_metrics = system_state.latest_metrics();
 
-            let metrics = match power_metrics.set_cpus_active_ratio(&sysinfo_metrics.cpu_metrics) {
+            let metrics = match power_metrics.merge_sysinfo_metrics(sysinfo_metrics) {
                 Ok(metrics) => metrics,
                 Err(err) => {
                     eprintln!("{err}");
