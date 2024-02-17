@@ -25,39 +25,43 @@ const PKG_TEXT_HEIGHT: u16 = 1;
 
 /// Draw the Overview tab.
 ///
-/// Pumas v0.0.8                                                                      Apple M2 Max (cores: 4E+8P+38GPU)
-/// ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-/// │ Overview │ CPU │ GPU │ SoC                                                                                       │
-/// └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-/// ┌ CPU Clusters: 87.70 mW (peak: 570.75 mW) ─-──────────────────────────────────────────────────────────────────────┐
-/// │E-Cluster: 5.0 % @ 1029 MHz (peak: 22.2 %)                                                                        │
-/// │------------------------------------------------------- 5% -------------------------------------------------------│
-/// │                                                                                                                  │
-/// │                                                                                                                  │
-/// │   ▁▁▂   ▂▂▁ ▁▃▁ ▁ ▁  ▁  ▁   ▁             ▂▁        ▁ ▁▁▂▂▂▂▁▁▂▁ ▁▁▂▂▂▂▂▄▂▁▁▁▁▁ ▁▁▁▂▂▂▃▃▃▁▁▅▁▁ ▁▁▁               │
-/// │                                                                                                                  │
-/// │P0-Cluster: 1.5 % @ 1634 MHz (peak: 10.4 %)                P1-Cluster: 0.0 % @ 1690 MHz (peak: 1.0 %)             │
-/// │-------------------------- 1% ---------------------------  ------------------------- 0% --------------------------│
-/// │                                                                                                                  │
-/// │                                                                                                                  │
-/// │ ▂▂▃        ▂▁▁ ▃    ▄    ▁      ▁                                                                                │
-/// └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-/// ┌ GPU & ANE ───────────────────────────────────────────────────────────────────────────────────────────────────────┐
-/// │GPU: 1.3 % @ 444 MHz / 13.80 mW (peak: 16.5 % / 422.55 mW  ANE: 0.0 % / 0.00 W (peak: 0.0 % / 0.00 W)             │
-/// │-------------------------- 1% ---------------------------  ------------------------- 0% --------------------------│
-/// │                                                                                                                  │
-/// │                                                                                                                  │
-/// │                              ▁              ▂▃ ▁▃                                                                │
-/// └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-/// ┌ Package ─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-/// │CPU+GPU+ANE: 101.49 mW (peak: 629.25 mW)                                                                        │
-/// │                                                                                                                  │
-/// │                                                                                                                  │
-/// │▃▃▂▂▃▂▂▁▂▂▅▃▃▂▃▃▂▃▃▄▃▁▂▃▁▁▁▂▃▃▁█▅▁▂▂▁▂▂▃▂▂▁                                                                       │
-/// └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-/// ┌ Thermals ────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-/// │Thermal Pressure: Nominal                                                                                         │
-/// └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+/// Pumas v0.1.2                                                                                Apple M2 Max (cores: 4E+8P+38GPU)
+/// ┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+/// │ Overview │ CPU │ GPU │ SoC                                                                                                 │
+/// └────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+/// ┌ CPU Clusters: 119.67 mW (peak: 6.42 W) ────────────────────────────────────────────────────────────────────────────────────┐
+/// │E-Cluster: 21.8 % @ 973 MHz (peak: 22.1 %)                                                                                  │
+/// │                                                            22%                                                             │
+/// │                                                                                                                            │
+/// │                                                                                                                            │
+/// │▂▂▃▂▂▃▃▃▅▄▃▃▂▂▂▂▃▄▃▃▂▃▂▂▂▃▂▄▃▃▃▃▂▂▂▂▃▂▂▃▅▃▃▃▃▃▂▃▃▃▂▃▂▂▂▂▂▂▃▃▂▃▃▃▂▂▂▂▃▂▂▃▃▂▂▃▃▃▂▂▂▂▂▂▃▂▂▂▃▂▂▂▂▂▂▂▂▄▃▄                        │
+/// │                                                                                                                            │
+/// │P0-Cluster: 0.7 % @ 2020 MHz (peak: 33.3 %)                     P1-Cluster: 0.0 % @ 0 MHz (peak: 20.0 %)                    │
+/// │                              1%                                                             0%                             │
+/// │                                                                                                                            │
+/// │                                                                                                                            │
+/// │        ▁▅   ▁           ▇▂      ▁ ▁  ▁                ▃▁                                                                   │
+/// └────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+/// ┌ GPU & ANE ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+/// │GPU: 0.4 % @ 444 MHz / 10.88 mW (peak: 12.3 % / 301.91 mW)      ANE: 0.0 % / 0.00 W (peak: 0.0 % / 0.00 W)                  │
+/// │                              0%                                                             0%                             │
+/// │                                                                                                                            │
+/// │                                                                                                                            │
+/// │      ▁      ▁                                           ▁                                                                  │
+/// └────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+/// ┌ Package ─────────────────────────────────────────────────────────────────────────────┐┌ Thermals ──────────────────────────┐
+/// │CPU+GPU+ANE: 130.55 mW (peak: 6.48 W)                                                 ││Pressure: Nominal                   │
+/// │                                                                                      ││                                    │
+/// │                                                                                      ││                                    │
+/// │                                                 ▁                                    ││                                    │
+/// └──────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────┘
+/// ┌ RAM & SWAP ────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+/// │RAM: 21.2 % = 20.4 GiB / 96.0 GiB (peak: 21.3 % = 20.5 GiB)     SWAP: 40.6 % = 416.1 MiB / 1.0 GiB (peak: 416.1 MiB)        │
+/// │                             21%                                                            41%                             │
+/// │                                                                                                                            │
+/// │                                                                ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁│
+/// │▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄  ████████████████████████████████████████████████████████████│
+/// └────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ///
 pub(crate) fn draw_overview_tab<B>(f: &mut Frame<B>, app: &App, area: Rect)
 where
@@ -77,19 +81,22 @@ where
         cls_block_height * num_clusters_blocks + (num_clusters_blocks - 1) * CLUSTER_SPACING;
     let gpu_block_height = GAUGE_HEIGHT + SPARKLINE_HEIGHT;
     let pkg_block_height = PKG_TEXT_HEIGHT + SPARKLINE_HEIGHT;
+    let mem_block_height = GAUGE_HEIGHT + SPARKLINE_HEIGHT;
 
     let vertical_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(2 + cpu_block_height), // Borders & CPU clusters blocks
             Constraint::Length(2 + gpu_block_height), // Borders & GPU ANE block
-            Constraint::Length(2 + pkg_block_height), // Borders & Package block
+            Constraint::Length(2 + pkg_block_height), // Borders & Package+Thermals block
+            Constraint::Length(2 + mem_block_height), // Borders & Memory block
             Constraint::Min(0),
         ])
         .split(area);
     let cpu_area = vertical_chunks[0];
     let gpu_area = vertical_chunks[1];
     let pkg_area = vertical_chunks[2];
+    let mem_area = vertical_chunks[3];
 
     draw_cpu_clusters_usage_block(
         f,
@@ -108,7 +115,15 @@ where
         app.gauge_bg_color(),
         gpu_area,
     );
-    draw_package_block(f, metrics, &app.history, app.accent_color(), pkg_area);
+    draw_pkg_thm_usage_block(f, metrics, &app.history, app.accent_color(), pkg_area);
+    draw_mem_usage_block(
+        f,
+        metrics,
+        &app.history,
+        app.accent_color(),
+        app.gauge_bg_color(),
+        mem_area,
+    );
 }
 
 /// Draw the CPU clusters usage block.
@@ -461,7 +476,7 @@ fn draw_gpu_ane_usage_block<B>(
 }
 
 /// Draw the Package block (power and thermals).
-fn draw_package_block<B>(
+fn draw_pkg_thm_usage_block<B>(
     f: &mut Frame<B>,
     metrics: &metrics::Metrics,
     history: &History,
@@ -479,6 +494,119 @@ fn draw_package_block<B>(
 
     draw_package_power_block(f, metrics, history, accent_color, pkg_area);
     draw_thermal_pressure_block(f, metrics, accent_color, thr_area);
+}
+
+/// Draw the Memory usage block.
+///
+/// ┌ RAM & SWAP ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+/// │RAM: 21.2 % = 20.4 GiB / 96.0 GiB (peak: 21.2 % = 20.4 GiB)          SWAP: 40.6 % = 416.1 MiB / 1.0 GiB (peak: 416.1 MiB)             │
+/// │                                21%                                                                 41%                               │
+/// │                                                                                                                                      │
+/// │                                                                     ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁                     │
+/// │▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄                         ████████████████████████████████████████████                     │
+/// └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+///
+fn draw_mem_usage_block<B>(
+    f: &mut Frame<B>,
+    metrics: &metrics::Metrics,
+    history: &History,
+    accent_color: Color,
+    gauge_bg_color: Color,
+    area: Rect,
+) where
+    B: Backend,
+{
+    let block = Block::default().title(" RAM & SWAP ").borders(Borders::ALL);
+    f.render_widget(block, area);
+
+    let horizontal_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Ratio(1, 2),
+            Constraint::Length(2), // space
+            Constraint::Ratio(1, 2),
+        ])
+        .margin(1)
+        .split(area);
+    let left_area = horizontal_chunks[0];
+    let right_area = horizontal_chunks[2];
+
+    let left_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(2), Constraint::Length(9)])
+        .split(left_area);
+    let top_left_area = left_chunks[0];
+    let bottom_left_area = left_chunks[1];
+
+    let right_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(2), Constraint::Length(9)])
+        .split(right_area);
+    let top_right_area = right_chunks[0];
+    let bottom_right_area = right_chunks[1];
+
+    let mem = &metrics.memory;
+
+    // left: RAM.
+    {
+        let sig = history.get("ram_usage_bytes").unwrap();
+        let ram_usage_ratio = mem.ram_usage_ratio();
+        let title = format!(
+            "RAM: {} = {} / {} (peak: {} = {})",
+            units::percent1(ram_usage_ratio * 100.0),
+            units::bibytes1(mem.ram_used as f64),
+            units::bibytes1(mem.ram_total as f64),
+            units::percent1(sig.peak / mem.ram_total as f32 * 100.0),
+            units::bibytes1(sig.peak),
+        );
+        let gauge = Gauge::default()
+            .block(Block::default().title(title))
+            .gauge_style(
+                Style::default().fg(accent_color).bg(gauge_bg_color),
+                // .add_modifier(Modifier::ITALIC | Modifier::BOLD),
+            )
+            .ratio(ram_usage_ratio);
+
+        f.render_widget(gauge, top_left_area);
+
+        // RAM Usage Sparklines.
+        let sparkline = Sparkline::default()
+            .style(Style::default().fg(accent_color))
+            .bar_set(symbols::bar::NINE_LEVELS)
+            .data(sig.as_slice_last_n(bottom_left_area.width as usize))
+            .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
+        f.render_widget(sparkline, bottom_left_area);
+    }
+
+    // right: Swap.
+    {
+        let sig = history.get("swap_usage_bytes").unwrap();
+        let swap_usage_ratio = mem.swap_usage_ratio();
+        let title = format!(
+            "SWAP: {} = {} / {} (peak: {})",
+            units::percent1(swap_usage_ratio * 100.0),
+            units::bibytes1(mem.swap_used as f64),
+            units::bibytes1(mem.swap_total as f64),
+            units::bibytes1(sig.peak),
+        );
+        let gauge = Gauge::default()
+            .block(Block::default().title(title))
+            .gauge_style(
+                Style::default().fg(accent_color).bg(gauge_bg_color),
+                // .add_modifier(Modifier::ITALIC | Modifier::BOLD),
+            )
+            .ratio(swap_usage_ratio);
+
+        f.render_widget(gauge, top_right_area);
+
+        // Swap Usage Sparklines.
+        let sparkline = Sparkline::default()
+            .style(Style::default().fg(accent_color))
+            .bar_set(symbols::bar::NINE_LEVELS)
+            .data(sig.as_slice_last_n(bottom_right_area.width as usize))
+            .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
+        f.render_widget(sparkline, bottom_right_area);
+    }
 }
 
 /// Draw the Package power block.
