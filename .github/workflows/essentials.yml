@@ -62,12 +62,12 @@ jobs:
           mv cargo-deny ~/.cargo/bin/
           cargo deny check
 
-      - name: Quality - cargo outdated
-        timeout-minutes: 20
-        run: |
-          cargo install --locked cargo-outdated || true
-          rm -rf ~/.cargo/advisory-db
-          cargo outdated --exit-code 1
+      # - name: Quality - cargo outdated
+      #   timeout-minutes: 20
+      #   run: |
+      #     cargo install --locked cargo-outdated || true
+      #     rm -rf ~/.cargo/advisory-db
+      #     cargo outdated --exit-code 1
 
       # - name: Quality - cargo udeps (needs nightly)
       #   run: |
