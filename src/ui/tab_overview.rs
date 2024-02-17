@@ -1,7 +1,6 @@
 //! Overview tab.
 
 use ratatui::{
-    backend::Backend,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     symbols,
@@ -63,10 +62,7 @@ const PKG_TEXT_HEIGHT: u16 = 1;
 /// │▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄  ████████████████████████████████████████████████████████████│
 /// └────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ///
-pub(crate) fn draw_overview_tab<B>(f: &mut Frame<B>, app: &App, area: Rect)
-where
-    B: Backend,
-{
+pub(crate) fn draw_overview_tab(f: &mut Frame, app: &App, area: Rect) {
     let metrics = match &app.metrics {
         Some(metrics) => metrics,
         None => return,
@@ -149,16 +145,14 @@ where
 /// │████████████████████████████▇▅▆█▆▄▅▅▆▄▆▅▅▇▇▅  ▂▄▃▂▄▃▂▂▁▃▃▁▂▁▂▂▂▃▂ ▂▁▃▂▂▂▂▁ ▂▁▁▁  ▁▁▁▁▁▁▁▁│
 /// └─────────────────────────────────────────────────────────────────────────────────────────┘
 ///
-fn draw_cpu_clusters_usage_block<B>(
-    f: &mut Frame<B>,
+fn draw_cpu_clusters_usage_block(
+    f: &mut Frame,
     metrics: &metrics::Metrics,
     history: &History,
     accent_color: Color,
     gauge_bg_color: Color,
     area: Rect,
-) where
-    B: Backend,
-{
+) {
     let num_cluster_blocks =
         num_blocks_for(metrics.e_clusters.len()) + num_blocks_for(metrics.p_clusters.len());
 
@@ -270,16 +264,14 @@ fn draw_cpu_clusters_usage_block<B>(
 ///  ▁ ▄▅▄ ▁    ▂   ▃▃                                          ▃   ▅
 /// ██▅█████▄▆▄▅█▄▆███▆▇▅▇▅▅▅█▆█▃▅▃▅▄▅▅▅▅█▄▅▃▅▅▆█▅▃▄▁▂▁▄▃▁▇▃▂▃▁▆█▂▃▆█▂▂▂▂▂▃▁▂▁▁ ▂▂▂▂▂▃▂▁▁▂▂▃▂
 ///
-fn draw_cluster_overall_metrics<B>(
-    f: &mut Frame<B>,
+fn draw_cluster_overall_metrics(
+    f: &mut Frame,
     cluster: &metrics::ClusterMetrics,
     history: &History,
     accent_color: Color,
     gauge_bg_color: Color,
     area: Rect,
-) where
-    B: Backend,
-{
+) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -327,17 +319,15 @@ fn draw_cluster_overall_metrics<B>(
 ///  ▁ ▄▅▄ ▁    ▂   ▃▃                                          ▃   ▅
 /// ██▅█████▄▆▄▅█▄▆███▆▇▅▇▅▅▅█▆█▃▅▃▅▄▅▅▅▅█▄▅▃▅▅▆  ▃▄▁▂▁▄▃▁▇▃▂▃▁▆█▂▃▆█▂▂▂▂▂▃▁▂▁▁ ▂▂▂▂▂▃▂▁▁▂▂▃▂
 ///
-fn draw_cluster_pair_overall_metrics<B>(
-    f: &mut Frame<B>,
+fn draw_cluster_pair_overall_metrics(
+    f: &mut Frame,
     left_cluster: &metrics::ClusterMetrics,
     right_cluster: &metrics::ClusterMetrics,
     history: &History,
     accent_color: Color,
     gauge_bg_color: Color,
     area: Rect,
-) where
-    B: Backend,
-{
+) {
     let horizontal_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
@@ -378,17 +368,15 @@ fn draw_cluster_pair_overall_metrics<B>(
 /// │                  ▁          ▄▅▄▅▄▅▂ ▁                                         │
 /// └───────────────────────────────────────────────────────────────────────────────┘
 ///
-fn draw_gpu_ane_usage_block<B>(
-    f: &mut Frame<B>,
+fn draw_gpu_ane_usage_block(
+    f: &mut Frame,
     metrics: &metrics::Metrics,
     soc_info: &SocInfo,
     history: &History,
     accent_color: Color,
     gauge_bg_color: Color,
     area: Rect,
-) where
-    B: Backend,
-{
+) {
     let block = Block::default().title(" GPU & ANE ").borders(Borders::ALL);
     f.render_widget(block, area);
 
@@ -476,15 +464,13 @@ fn draw_gpu_ane_usage_block<B>(
 }
 
 /// Draw the Package block (power and thermals).
-fn draw_pkg_thm_usage_block<B>(
-    f: &mut Frame<B>,
+fn draw_pkg_thm_usage_block(
+    f: &mut Frame,
     metrics: &metrics::Metrics,
     history: &History,
     accent_color: Color,
     area: Rect,
-) where
-    B: Backend,
-{
+) {
     let horizontal_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Ratio(7, 10), Constraint::Ratio(3, 10)])
@@ -506,16 +492,14 @@ fn draw_pkg_thm_usage_block<B>(
 /// │▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄                         ████████████████████████████████████████████                     │
 /// └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ///
-fn draw_mem_usage_block<B>(
-    f: &mut Frame<B>,
+fn draw_mem_usage_block(
+    f: &mut Frame,
     metrics: &metrics::Metrics,
     history: &History,
     accent_color: Color,
     gauge_bg_color: Color,
     area: Rect,
-) where
-    B: Backend,
-{
+) {
     let block = Block::default().title(" RAM & SWAP ").borders(Borders::ALL);
     f.render_widget(block, area);
 
@@ -618,15 +602,13 @@ fn draw_mem_usage_block<B>(
 /// │                                    ▁                                           ▁▁▁▁▁▁▁  │
 /// └─────────────────────────────────────────────────────────────────────────────────────────┘
 ///
-fn draw_package_power_block<B>(
-    f: &mut Frame<B>,
+fn draw_package_power_block(
+    f: &mut Frame,
     metrics: &metrics::Metrics,
     history: &History,
     accent_color: Color,
     area: Rect,
-) where
-    B: Backend,
-{
+) {
     let block = Block::default().title(" Package ").borders(Borders::ALL);
     f.render_widget(block, area);
 
@@ -662,14 +644,12 @@ fn draw_package_power_block<B>(
 /// │Thermal Pressure: Nominal                                                                │
 /// └─────────────────────────────────────────────────────────────────────────────────────────┘
 ///
-fn draw_thermal_pressure_block<B>(
-    f: &mut Frame<B>,
+fn draw_thermal_pressure_block(
+    f: &mut Frame,
     metrics: &metrics::Metrics,
     accent_color: Color,
     area: Rect,
-) where
-    B: Backend,
-{
+) {
     let color = match metrics.thermal_pressure.as_str() {
         "Nominal" => accent_color,
         _ => Color::Yellow,

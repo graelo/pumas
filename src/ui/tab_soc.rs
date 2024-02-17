@@ -1,7 +1,6 @@
 //! SoC tab.
 
 use ratatui::{
-    backend::Backend,
     layout::{Constraint, Rect},
     style::{Modifier, Style},
     text::Span,
@@ -14,10 +13,7 @@ use crate::{app::App, units};
 /// Draw the SoC tab.
 ///
 /// A simple table with the SoC's name, number of cores, etc.
-pub(crate) fn draw_soc_tab<B>(f: &mut Frame<B>, app: &App, area: Rect)
-where
-    B: Backend,
-{
+pub(crate) fn draw_soc_tab(f: &mut Frame, app: &App, area: Rect) {
     let row_content = vec![
         ("SoC brand name:", app.soc_info.cpu_brand_name.clone()),
         ("CPU cores:", format!("{}", app.soc_info.num_cpu_cores)),
@@ -44,8 +40,9 @@ where
             )),
         ])
     });
+    let widths = [Constraint::Length(20), Constraint::Length(16)];
 
-    let table = Table::new(rows).widths(&[Constraint::Length(20), Constraint::Length(16)]);
+    let table = Table::new(rows, widths);
 
     f.render_widget(table, area);
 }
