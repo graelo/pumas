@@ -1,7 +1,6 @@
 //! CPU cores tab.
 
 use ratatui::{
-    backend::Backend,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     symbols,
@@ -55,10 +54,7 @@ const FREQUENCY_TABLE_HEIGHT: u16 = 4;
 /// │Note:      Hardware-wise, CPUs quickly shift between the above frequencies.                               │
 /// └──────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ///
-pub(crate) fn draw_cpu_tab<B>(f: &mut Frame<B>, app: &App, area: Rect)
-where
-    B: Backend,
-{
+pub(crate) fn draw_cpu_tab(f: &mut Frame, app: &App, area: Rect) {
     let metrics = match &app.metrics {
         Some(metrics) => metrics,
         None => return,
@@ -120,16 +116,14 @@ where
     draw_freq_table(f, metrics, *freq_table_area);
 }
 
-fn draw_cpu_cluster<B>(
-    f: &mut Frame<B>,
+fn draw_cpu_cluster(
+    f: &mut Frame,
     cluster: &ClusterMetrics,
     history: &History,
     accent_color: Color,
     gauge_bg_color: Color,
     area: Rect,
-) where
-    B: Backend,
-{
+) {
     let cluster_name = format!(" {}: ", cluster.name);
     let block = Block::default().title(cluster_name).borders(Borders::ALL);
     f.render_widget(block, area);
@@ -150,16 +144,14 @@ fn draw_cpu_cluster<B>(
     }
 }
 
-fn draw_cpu<B>(
-    f: &mut Frame<B>,
+fn draw_cpu(
+    f: &mut Frame,
     cpu: &CpuMetrics,
     history: &History,
     accent_color: Color,
     gauge_bg_color: Color,
     area: Rect,
-) where
-    B: Backend,
-{
+) {
     let horiz_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Length(5), Constraint::Min(0)])
@@ -260,10 +252,7 @@ fn draw_cpu<B>(
     f.render_widget(gauge, freq_gauge_area);
 }
 
-fn draw_freq_table<B>(f: &mut Frame<B>, metrics: &Metrics, area: Rect)
-where
-    B: Backend,
-{
+fn draw_freq_table(f: &mut Frame, metrics: &Metrics, area: Rect) {
     let e_cluster_frequencies = metrics.e_clusters[0].cpus[0].frequencies_mhz();
     let p_cluster_frequencies = metrics.p_clusters[0].cpus[0].frequencies_mhz();
 
@@ -303,8 +292,7 @@ where
         Constraint::Length(label_width),
         Constraint::Length(array_width),
     ];
-    let table = Table::new(rows)
-        .widths(&constraints)
+    let table = Table::new(rows, constraints)
         .block(Block::default().borders(Borders::ALL).title("Frequencies"));
 
     f.render_widget(table, area);

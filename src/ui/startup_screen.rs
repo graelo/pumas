@@ -1,7 +1,6 @@
 //! Startup screen.
 
 use ratatui::{
-    backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     text,
@@ -19,7 +18,7 @@ const PUMAS_TEXT_HEIGHT: u16 = 6;
 const SPACER_HEIGHT: u16 = 2;
 
 /// Draw the startup screen.
-pub(crate) fn draw<B: Backend>(f: &mut Frame<B>) {
+pub(crate) fn draw(f: &mut Frame) {
     let total_size = LOGO2_HEIGHT + SPACER_HEIGHT + PUMAS_TEXT_HEIGHT + SPACER_HEIGHT + 1;
     let centering_offset = (f.size().height - total_size) / 2;
 
@@ -45,7 +44,7 @@ pub(crate) fn draw<B: Backend>(f: &mut Frame<B>) {
 }
 
 /// Draw the logo.
-fn draw_logo<B: Backend>(f: &mut Frame<B>, area: Rect) {
+fn draw_logo(f: &mut Frame, area: Rect) {
     let horizontal_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([

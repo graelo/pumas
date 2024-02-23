@@ -1,7 +1,6 @@
 //! GPU tab.
 
 use ratatui::{
-    backend::Backend,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     symbols,
@@ -24,10 +23,7 @@ const FREQUENCY_HISTORY_LENGTH: u16 = 8;
 // const FREQUENCY_TABLE_HEIGHT: u16 = 4;
 
 /// Draw the GPU tab.
-pub(crate) fn draw_gpu_tab<B>(f: &mut Frame<B>, app: &App, area: Rect)
-where
-    B: Backend,
-{
+pub(crate) fn draw_gpu_tab(f: &mut Frame, app: &App, area: Rect) {
     // let text = Text::from("Coming soon: GPU Power and frequency distribution.");
     // let par = Paragraph::new(text).block(Block::default().title("Paragraph").borders(Borders::ALL));
     // f.render_widget(par, area);
@@ -62,16 +58,14 @@ where
     draw_freq_table(f, &metrics.gpu, freq_table_area);
 }
 
-fn draw_gpu<B>(
-    f: &mut Frame<B>,
+fn draw_gpu(
+    f: &mut Frame,
     gpu: &GpuMetrics,
     history: &History,
     accent_color: Color,
     gauge_bg_color: Color,
     area: Rect,
-) where
-    B: Backend,
-{
+) {
     let block = Block::default().title("GPU: ").borders(Borders::ALL);
     f.render_widget(block, area);
 
@@ -159,10 +153,7 @@ fn draw_gpu<B>(
     f.render_widget(gauge, freq_gauge_area);
 }
 
-fn draw_freq_table<B>(f: &mut Frame<B>, gpu_metrics: &GpuMetrics, area: Rect)
-where
-    B: Backend,
-{
+fn draw_freq_table(f: &mut Frame, gpu_metrics: &GpuMetrics, area: Rect) {
     let gpu_freq_values = gpu_metrics
         .frequencies_mhz()
         .iter()
@@ -194,8 +185,7 @@ where
         Constraint::Length(label_width),
         Constraint::Length(array_width),
     ];
-    let table = Table::new(rows)
-        .widths(&constraints)
+    let table = Table::new(rows, constraints)
         .block(Block::default().borders(Borders::ALL).title("Frequencies"));
 
     f.render_widget(table, area);

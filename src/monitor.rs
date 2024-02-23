@@ -42,7 +42,7 @@ pub fn run(args: RunConfig) -> Result<()> {
                 .expect("Cannot continue exporting metrics");
         }
         false => {
-            let stdout = io::stdout().into_alternate_screen()?.into_raw_mode()?;
+            let stdout = io::stdout().into_raw_mode()?.into_alternate_screen()?;
             let stdout = MouseTerminal::from(stdout);
 
             let backend = TermionBackend::new(stdout);

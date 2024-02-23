@@ -1,7 +1,6 @@
 //! Definition of the UI.
 
 use ratatui::{
-    backend::Backend,
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Modifier, Style},
     text::{Line, Span},
@@ -14,7 +13,7 @@ use crate::app::App;
 use super::{tab_cpu, tab_gpu, tab_overview, tab_soc};
 
 /// Draw the main UI.
-pub(crate) fn draw<B: Backend>(f: &mut Frame<B>, app: &App, area: Rect) {
+pub(crate) fn draw(f: &mut Frame, app: &App, area: Rect) {
     let chunks = Layout::default()
         .constraints(
             [
@@ -53,7 +52,7 @@ pub(crate) fn draw<B: Backend>(f: &mut Frame<B>, app: &App, area: Rect) {
     //
     // Tab bar.
     //
-    let tab_titles = app
+    let tab_titles: Vec<_> = app
         .tabs
         .titles
         .iter()
