@@ -10,7 +10,7 @@ use ratatui::{
 };
 
 use crate::{
-    app::{App, History},
+    app::{App, AppColors, History},
     metrics,
     modules::soc::SocInfo,
     units,
@@ -94,32 +94,17 @@ pub(crate) fn draw_overview_tab(f: &mut Frame, app: &App, area: Rect) {
     let pkg_area = vertical_chunks[2];
     let mem_area = vertical_chunks[3];
 
-    draw_cpu_clusters_usage_block(
-        f,
-        metrics,
-        &app.history,
-        app.accent_color(),
-        app.gauge_bg_color(),
-        cpu_area,
-    );
+    draw_cpu_clusters_usage_block(f, metrics, &app.history, &app.colors, cpu_area);
     draw_gpu_ane_usage_block(
         f,
         metrics,
         &app.soc_info,
         &app.history,
-        app.accent_color(),
-        app.gauge_bg_color(),
+        &app.colors,
         gpu_area,
     );
-    draw_pkg_thm_usage_block(f, metrics, &app.history, app.accent_color(), pkg_area);
-    draw_mem_usage_block(
-        f,
-        metrics,
-        &app.history,
-        app.accent_color(),
-        app.gauge_bg_color(),
-        mem_area,
-    );
+    draw_pkg_thm_usage_block(f, metrics, &app.history, &app.colors, pkg_area);
+    draw_mem_usage_block(f, metrics, &app.history, &app.colors, mem_area);
 }
 
 /// Draw the CPU clusters usage block.
@@ -149,8 +134,7 @@ fn draw_cpu_clusters_usage_block(
     f: &mut Frame,
     metrics: &metrics::Metrics,
     history: &History,
-    accent_color: Color,
-    gauge_bg_color: Color,
+    colors: &AppColors,
     area: Rect,
 ) {
     let num_cluster_blocks =
@@ -196,14 +180,7 @@ fn draw_cpu_clusters_usage_block(
         match clu_slice.len() {
             1 => {
                 let cluster = &clu_slice[0];
-                draw_cluster_overall_metrics(
-                    f,
-                    cluster,
-                    history,
-                    accent_color,
-                    gauge_bg_color,
-                    *area,
-                );
+                draw_cluster_overall_metrics(f, cluster, history, colors, *area);
             }
             2 => {
                 let (left_cluster, right_cluster) = (&clu_slice[0], &clu_slice[1]);
@@ -212,8 +189,7 @@ fn draw_cpu_clusters_usage_block(
                     left_cluster,
                     right_cluster,
                     history,
-                    accent_color,
-                    gauge_bg_color,
+                    colors,
                     *area,
                 );
             }
@@ -230,14 +206,7 @@ fn draw_cpu_clusters_usage_block(
         match clu_slice.len() {
             1 => {
                 let cluster = &clu_slice[0];
-                draw_cluster_overall_metrics(
-                    f,
-                    cluster,
-                    history,
-                    accent_color,
-                    gauge_bg_color,
-                    *area,
-                );
+                draw_cluster_overall_metrics(f, cluster, history, colors, *area);
             }
             2 => {
                 let (left_cluster, right_cluster) = (&clu_slice[0], &clu_slice[1]);
@@ -246,8 +215,7 @@ fn draw_cpu_clusters_usage_block(
                     left_cluster,
                     right_cluster,
                     history,
-                    accent_color,
-                    gauge_bg_color,
+                    colors,
                     *area,
                 );
             }
@@ -268,8 +236,7 @@ fn draw_cluster_overall_metrics(
     f: &mut Frame,
     cluster: &metrics::ClusterMetrics,
     history: &History,
-    accent_color: Color,
-    gauge_bg_color: Color,
+    colors: &AppColors,
     area: Rect,
 ) {
     let chunks = Layout::default()
@@ -295,14 +262,18 @@ fn draw_cluster_overall_metrics(
     );
     let gauge = Gauge::default()
         .block(Block::default().title(title))
-        .gauge_style(Style::default().fg(accent_color).bg(gauge_bg_color))
+        .gauge_style(Style::default().fg(colors.gauge_fg()).bg(colors.gauge_bg()))
         .ratio(cluster.active_ratio() as f64);
 
     f.render_widget(gauge, top_area);
 
     // Cluster cores Sparklines.
     let sparkline = Sparkline::default()
-        .style(Style::default().fg(accent_color))
+        .style(
+            Style::default()
+                .fg(colors.history_fg())
+                .bg(colors.history_bg()),
+        )
         .bar_set(symbols::bar::NINE_LEVELS)
         .data(sig.as_slice_last_n(bottom_area.width as usize))
         .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
@@ -324,8 +295,7 @@ fn draw_cluster_pair_overall_metrics(
     left_cluster: &metrics::ClusterMetrics,
     right_cluster: &metrics::ClusterMetrics,
     history: &History,
-    accent_color: Color,
-    gauge_bg_color: Color,
+    colors: &AppColors,
     area: Rect,
 ) {
     let horizontal_chunks = Layout::default()
@@ -340,22 +310,8 @@ fn draw_cluster_pair_overall_metrics(
     let left_area = horizontal_chunks[0];
     let right_area = horizontal_chunks[2];
 
-    draw_cluster_overall_metrics(
-        f,
-        left_cluster,
-        history,
-        accent_color,
-        gauge_bg_color,
-        left_area,
-    );
-    draw_cluster_overall_metrics(
-        f,
-        right_cluster,
-        history,
-        accent_color,
-        gauge_bg_color,
-        right_area,
-    );
+    draw_cluster_overall_metrics(f, left_cluster, history, colors, left_area);
+    draw_cluster_overall_metrics(f, right_cluster, history, colors, right_area);
 }
 
 /// Draw the GPU & ANE usage block.
@@ -373,8 +329,7 @@ fn draw_gpu_ane_usage_block(
     metrics: &metrics::Metrics,
     soc_info: &SocInfo,
     history: &History,
-    accent_color: Color,
-    gauge_bg_color: Color,
+    colors: &AppColors,
     area: Rect,
 ) {
     let block = Block::default().title(" GPU & ANE ").borders(Borders::ALL);
@@ -421,7 +376,7 @@ fn draw_gpu_ane_usage_block(
     let gauge = Gauge::default()
         .block(Block::default().title(title))
         .gauge_style(
-            Style::default().fg(accent_color).bg(gauge_bg_color),
+            Style::default().fg(colors.gauge_fg()).bg(colors.gauge_bg()),
             // .add_modifier(Modifier::ITALIC | Modifier::BOLD),
         )
         .ratio(gpu.active_ratio);
@@ -430,7 +385,11 @@ fn draw_gpu_ane_usage_block(
 
     // GPU Usage Sparklines.
     let sparkline = Sparkline::default()
-        .style(Style::default().fg(accent_color))
+        .style(
+            Style::default()
+                .fg(colors.history_fg())
+                .bg(colors.history_bg()),
+        )
         .bar_set(symbols::bar::NINE_LEVELS)
         .data(sig.as_slice_last_n(bottom_left_area.width as usize))
         .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
@@ -449,14 +408,18 @@ fn draw_gpu_ane_usage_block(
     );
     let gauge = Gauge::default()
         .block(Block::default().title(title))
-        .gauge_style(Style::default().fg(accent_color).bg(gauge_bg_color))
+        .gauge_style(Style::default().fg(colors.gauge_fg()).bg(colors.gauge_bg()))
         .ratio(ane_active_ratio);
 
     f.render_widget(gauge, top_right_area);
 
     // Sparklines for the ANE usage.
     let sparkline = Sparkline::default()
-        .style(Style::default().fg(accent_color))
+        .style(
+            Style::default()
+                .fg(colors.history_fg())
+                .bg(colors.history_bg()),
+        )
         .bar_set(symbols::bar::NINE_LEVELS)
         .data(sig.as_slice_last_n(bottom_right_area.width as usize))
         .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
@@ -468,7 +431,7 @@ fn draw_pkg_thm_usage_block(
     f: &mut Frame,
     metrics: &metrics::Metrics,
     history: &History,
-    accent_color: Color,
+    colors: &AppColors,
     area: Rect,
 ) {
     let horizontal_chunks = Layout::default()
@@ -478,8 +441,8 @@ fn draw_pkg_thm_usage_block(
     let pkg_area = horizontal_chunks[0];
     let thr_area = horizontal_chunks[1];
 
-    draw_package_power_block(f, metrics, history, accent_color, pkg_area);
-    draw_thermal_pressure_block(f, metrics, accent_color, thr_area);
+    draw_package_power_block(f, metrics, history, colors, pkg_area);
+    draw_thermal_pressure_block(f, metrics, colors, thr_area);
 }
 
 /// Draw the Memory usage block.
@@ -496,8 +459,7 @@ fn draw_mem_usage_block(
     f: &mut Frame,
     metrics: &metrics::Metrics,
     history: &History,
-    accent_color: Color,
-    gauge_bg_color: Color,
+    colors: &AppColors,
     area: Rect,
 ) {
     let block = Block::default().title(" RAM & SWAP ").borders(Borders::ALL);
@@ -546,7 +508,7 @@ fn draw_mem_usage_block(
         let gauge = Gauge::default()
             .block(Block::default().title(title))
             .gauge_style(
-                Style::default().fg(accent_color).bg(gauge_bg_color),
+                Style::default().fg(colors.gauge_fg()).bg(colors.gauge_bg()),
                 // .add_modifier(Modifier::ITALIC | Modifier::BOLD),
             )
             .ratio(ram_usage_ratio);
@@ -555,7 +517,11 @@ fn draw_mem_usage_block(
 
         // RAM Usage Sparklines.
         let sparkline = Sparkline::default()
-            .style(Style::default().fg(accent_color))
+            .style(
+                Style::default()
+                    .fg(colors.history_fg())
+                    .bg(colors.history_bg()),
+            )
             .bar_set(symbols::bar::NINE_LEVELS)
             .data(sig.as_slice_last_n(bottom_left_area.width as usize))
             .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
@@ -576,7 +542,7 @@ fn draw_mem_usage_block(
         let gauge = Gauge::default()
             .block(Block::default().title(title))
             .gauge_style(
-                Style::default().fg(accent_color).bg(gauge_bg_color),
+                Style::default().fg(colors.gauge_fg()).bg(colors.gauge_bg()),
                 // .add_modifier(Modifier::ITALIC | Modifier::BOLD),
             )
             .ratio(swap_usage_ratio);
@@ -585,7 +551,11 @@ fn draw_mem_usage_block(
 
         // Swap Usage Sparklines.
         let sparkline = Sparkline::default()
-            .style(Style::default().fg(accent_color))
+            .style(
+                Style::default()
+                    .fg(colors.history_fg())
+                    .bg(colors.history_bg()),
+            )
             .bar_set(symbols::bar::NINE_LEVELS)
             .data(sig.as_slice_last_n(bottom_right_area.width as usize))
             .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
@@ -606,7 +576,7 @@ fn draw_package_power_block(
     f: &mut Frame,
     metrics: &metrics::Metrics,
     history: &History,
-    accent_color: Color,
+    colors: &AppColors,
     area: Rect,
 ) {
     let block = Block::default().title(" Package ").borders(Borders::ALL);
@@ -631,7 +601,11 @@ fn draw_package_power_block(
 
     // Sparklines for the Package total usage.
     let sparkline = Sparkline::default()
-        .style(Style::default().fg(accent_color))
+        .style(
+            Style::default()
+                .fg(colors.history_fg())
+                .bg(colors.history_bg()),
+        )
         .bar_set(symbols::bar::NINE_LEVELS)
         .data(sig.as_slice_last_n(sparkline_area.width as usize))
         .max(sig.max as u64);
@@ -647,11 +621,11 @@ fn draw_package_power_block(
 fn draw_thermal_pressure_block(
     f: &mut Frame,
     metrics: &metrics::Metrics,
-    accent_color: Color,
+    colors: &AppColors,
     area: Rect,
 ) {
     let color = match metrics.thermal_pressure.as_str() {
-        "Nominal" => accent_color,
+        "Nominal" => colors.accent(),
         _ => Color::Yellow,
     };
     let text = Line::from(vec![

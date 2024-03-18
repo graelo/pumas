@@ -4,8 +4,6 @@ use std::collections::HashMap;
 
 use crate::{config::UiColors, metrics::Metrics, modules::soc::SocInfo, signal};
 
-const HISTORY_CAPACITY: usize = 100;
-
 pub(crate) type History = HashMap<String, signal::Signal<f32>>;
 
 pub(crate) struct TabsState<'a> {
@@ -30,6 +28,36 @@ impl<'a> TabsState<'a> {
     }
 }
 
+pub(crate) struct AppColors {
+    raw_colors: UiColors,
+}
+
+impl AppColors {
+    fn color(code: u8) -> ratatui::style::Color {
+        ratatui::style::Color::Indexed(code)
+    }
+
+    pub(crate) fn accent(&self) -> ratatui::style::Color {
+        Self::color(self.raw_colors.accent)
+    }
+
+    pub(crate) fn gauge_fg(&self) -> ratatui::style::Color {
+        Self::color(self.raw_colors.gauge_fg)
+    }
+
+    pub(crate) fn gauge_bg(&self) -> ratatui::style::Color {
+        Self::color(self.raw_colors.gauge_bg)
+    }
+
+    pub(crate) fn history_fg(&self) -> ratatui::style::Color {
+        Self::color(self.raw_colors.history_fg)
+    }
+
+    pub(crate) fn history_bg(&self) -> ratatui::style::Color {
+        Self::color(self.raw_colors.history_bg)
+    }
+}
+
 /// The App structure.
 pub(crate) struct App<'a> {
     /// Indicates the app should quit.
@@ -41,8 +69,11 @@ pub(crate) struct App<'a> {
     /// Color configuration.
     ///
     /// - Accent color, default: 2 (green).
+    /// - Gauge foreground color, default: 2 (green).
     /// - Gauge background color, default: 7 (white).
-    pub(crate) colors: UiColors,
+    /// - History foreground color, default: 4 (blue).
+    /// - History background color, default: 7 (white).
+    pub(crate) colors: AppColors,
 
     /// Time of last update.
     pub(crate) last_update: std::time::Instant,
@@ -55,19 +86,23 @@ pub(crate) struct App<'a> {
 
     /// Store the history of all signals (u64 needed for `Sparkline`).
     pub(crate) history: History,
+
+    /// Size of the history buffer.
+    pub(crate) history_size: usize,
 }
 
 impl<'a> App<'a> {
     /// Returns a new `App`.
-    pub fn new(soc_info: SocInfo, colors: UiColors) -> Self {
+    pub fn new(soc_info: SocInfo, colors: UiColors, history_size: usize) -> Self {
         Self {
             should_quit: false,
             tabs: TabsState::new(vec!["Overview", "CPU", "GPU", "SoC"]),
-            colors,
+            colors: AppColors { raw_colors: colors },
             last_update: std::time::Instant::now(),
             metrics: None,
             soc_info,
             history: HashMap::new(),
+            history_size,
         }
     }
 
@@ -114,7 +149,7 @@ impl<'a> App<'a> {
             self.history
                 .entry(sig_name)
                 .or_insert(signal::Signal::with_capacity(
-                    HISTORY_CAPACITY,
+                    self.history_size,
                     /* max */ 100.0,
                 ))
                 .push(100.0 * e_cluster.active_ratio());
@@ -125,7 +160,7 @@ impl<'a> App<'a> {
                 self.history
                     .entry(sig_name)
                     .or_insert(signal::Signal::with_capacity(
-                        HISTORY_CAPACITY,
+                        self.history_size,
                         /* max */ 100.0,
                     ))
                     .push(100.0 * cpu.active_ratio as f32);
@@ -135,7 +170,7 @@ impl<'a> App<'a> {
                 self.history
                     .entry(sig_name)
                     .or_insert(signal::Signal::with_capacity(
-                        HISTORY_CAPACITY,
+                        self.history_size,
                         /* max */ 100.0,
                     ))
                     .push(100.0 * cpu.freq_ratio() as f32);
@@ -148,7 +183,7 @@ impl<'a> App<'a> {
             self.history
                 .entry(sig_name)
                 .or_insert(signal::Signal::with_capacity(
-                    HISTORY_CAPACITY,
+                    self.history_size,
                     /* max */ 100.0,
                 ))
                 .push(100.0 * p_cluster.active_ratio());
@@ -159,7 +194,7 @@ impl<'a> App<'a> {
                 self.history
                     .entry(sig_name)
                     .or_insert(signal::Signal::with_capacity(
-                        HISTORY_CAPACITY,
+                        self.history_size,
                         /* max */ 100.0,
                     ))
                     .push(100.0 * cpu.active_ratio as f32);
@@ -169,7 +204,7 @@ impl<'a> App<'a> {
                 self.history
                     .entry(sig_name)
                     .or_insert(signal::Signal::with_capacity(
-                        HISTORY_CAPACITY,
+                        self.history_size,
                         /* max */ 100.0,
                     ))
                     .push(100.0 * cpu.freq_ratio() as f32);
@@ -179,7 +214,7 @@ impl<'a> App<'a> {
         self.history
             .entry("gpu_active_percent".to_string())
             .or_insert(signal::Signal::with_capacity(
-                HISTORY_CAPACITY,
+                self.history_size,
                 /* max */ 100.0,
             ))
             .push(100.0 * metrics.gpu.active_ratio as f32);
@@ -188,7 +223,7 @@ impl<'a> App<'a> {
         self.history
             .entry("gpu_freq_percent".to_string())
             .or_insert(signal::Signal::with_capacity(
-                HISTORY_CAPACITY,
+                self.history_size,
                 /* max */ 100.0,
             ))
             .push(100.0 * metrics.gpu.freq_ratio() as f32);
@@ -196,7 +231,7 @@ impl<'a> App<'a> {
         self.history
             .entry("ane_active_percent".to_string())
             .or_insert(signal::Signal::with_capacity(
-                HISTORY_CAPACITY,
+                self.history_size,
                 /* max */ 100.0,
             ))
             .push(100.0 * metrics.consumption.ane_w / self.soc_info.max_ane_w as f32);
@@ -208,7 +243,7 @@ impl<'a> App<'a> {
         self.history
             .entry("cpu_w".to_string())
             .or_insert(signal::Signal::with_capacity(
-                HISTORY_CAPACITY,
+                self.history_size,
                 /* max */ self.soc_info.max_cpu_w as f32,
             ))
             .push(metrics.consumption.cpu_w);
@@ -216,7 +251,7 @@ impl<'a> App<'a> {
         self.history
             .entry("gpu_w".to_string())
             .or_insert(signal::Signal::with_capacity(
-                HISTORY_CAPACITY,
+                self.history_size,
                 /* max */ self.soc_info.max_gpu_w as f32,
             ))
             .push(metrics.consumption.gpu_w);
@@ -224,7 +259,7 @@ impl<'a> App<'a> {
         self.history
             .entry("ane_w".to_string())
             .or_insert(signal::Signal::with_capacity(
-                HISTORY_CAPACITY,
+                self.history_size,
                 /* max */ self.soc_info.max_ane_w as f32,
             ))
             .push(metrics.consumption.ane_w);
@@ -232,7 +267,7 @@ impl<'a> App<'a> {
         self.history
             .entry("package_w".to_string())
             .or_insert(signal::Signal::with_capacity(
-                HISTORY_CAPACITY,
+                self.history_size,
                 /* max */ self.soc_info.max_package_w as f32,
             ))
             .push(metrics.consumption.package_w);
@@ -244,7 +279,7 @@ impl<'a> App<'a> {
         self.history
             .entry("ram_usage_bytes".to_string())
             .or_insert(signal::Signal::with_capacity(
-                HISTORY_CAPACITY,
+                self.history_size,
                 /* max */ metrics.memory.ram_total as f32,
             ))
             .push(metrics.memory.ram_used as f32);
@@ -253,21 +288,9 @@ impl<'a> App<'a> {
         self.history
             .entry("swap_usage_bytes".to_string())
             .or_insert(signal::Signal::with_capacity(
-                HISTORY_CAPACITY,
+                self.history_size,
                 /* max */ metrics.memory.swap_total as f32,
             ))
             .push(metrics.memory.swap_used as f32);
-    }
-
-    fn color(code: u8) -> ratatui::style::Color {
-        ratatui::style::Color::Indexed(code)
-    }
-
-    pub(crate) fn accent_color(&self) -> ratatui::style::Color {
-        Self::color(self.colors.accent)
-    }
-
-    pub fn gauge_bg_color(&self) -> ratatui::style::Color {
-        Self::color(self.colors.gauge_bg)
     }
 }

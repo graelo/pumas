@@ -44,7 +44,7 @@ pub(crate) fn draw(f: &mut Frame, app: &App, area: Rect) {
     );
     let machine_desc_par = Paragraph::new(Span::styled(
         machine_desc,
-        Style::default().fg(app.accent_color()),
+        Style::default().fg(app.colors.accent()),
     ))
     .alignment(Alignment::Right);
     f.render_widget(machine_desc_par, title_area);
@@ -63,7 +63,7 @@ pub(crate) fn draw(f: &mut Frame, app: &App, area: Rect) {
         // .title(title))
         .highlight_style(
             Style::default()
-                .fg(app.accent_color())
+                .fg(app.colors.accent())
                 .add_modifier(Modifier::BOLD),
         )
         .select(app.tabs.index);

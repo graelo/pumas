@@ -2,7 +2,7 @@
 
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     symbols,
     text::Span,
     widgets::{Block, Borders, Cell, LineGauge, Paragraph, Row, Sparkline, Table},
@@ -10,7 +10,7 @@ use ratatui::{
 };
 
 use crate::{
-    app::{App, History},
+    app::{App, AppColors, History},
     metrics::{ClusterMetrics, CpuMetrics, Metrics},
     units,
 };
@@ -60,9 +60,6 @@ pub(crate) fn draw_cpu_tab(f: &mut Frame, app: &App, area: Rect) {
         None => return,
     };
 
-    let accent_color = app.accent_color();
-    let gauge_bg_color = app.gauge_bg_color();
-
     let constraints = metrics
         // E-Clusters
         .e_clusters
@@ -91,25 +88,11 @@ pub(crate) fn draw_cpu_tab(f: &mut Frame, app: &App, area: Rect) {
 
     for cluster in metrics.e_clusters.iter() {
         let cluster_area = clu_area_iter.next().unwrap();
-        draw_cpu_cluster(
-            f,
-            cluster,
-            &app.history,
-            accent_color,
-            gauge_bg_color,
-            *cluster_area,
-        );
+        draw_cpu_cluster(f, cluster, &app.history, &app.colors, *cluster_area);
     }
     for cluster in metrics.p_clusters.iter() {
         let cluster_area = clu_area_iter.next().unwrap();
-        draw_cpu_cluster(
-            f,
-            cluster,
-            &app.history,
-            accent_color,
-            gauge_bg_color,
-            *cluster_area,
-        );
+        draw_cpu_cluster(f, cluster, &app.history, &app.colors, *cluster_area);
     }
 
     let freq_table_area = clu_area_iter.next().unwrap();
@@ -120,8 +103,7 @@ fn draw_cpu_cluster(
     f: &mut Frame,
     cluster: &ClusterMetrics,
     history: &History,
-    accent_color: Color,
-    gauge_bg_color: Color,
+    colors: &AppColors,
     area: Rect,
 ) {
     let cluster_name = format!(" {}: ", cluster.name);
@@ -140,18 +122,11 @@ fn draw_cpu_cluster(
 
     for cpu in cluster.cpus.iter() {
         let cpu_area = cpu_area_iter.next().unwrap();
-        draw_cpu(f, cpu, history, accent_color, gauge_bg_color, *cpu_area);
+        draw_cpu(f, cpu, history, colors, *cpu_area);
     }
 }
 
-fn draw_cpu(
-    f: &mut Frame,
-    cpu: &CpuMetrics,
-    history: &History,
-    accent_color: Color,
-    gauge_bg_color: Color,
-    area: Rect,
-) {
+fn draw_cpu(f: &mut Frame, cpu: &CpuMetrics, history: &History, colors: &AppColors, area: Rect) {
     let horiz_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Length(5), Constraint::Min(0)])
@@ -164,7 +139,10 @@ fn draw_cpu(
     //
 
     let cpu_id_text = format!("{:2} -", cpu.id);
-    let par = Paragraph::new(Span::styled(cpu_id_text, Style::default().fg(accent_color)));
+    let par = Paragraph::new(Span::styled(
+        cpu_id_text,
+        Style::default().fg(colors.accent()),
+    ));
     f.render_widget(par, cpu_id_area);
 
     //
@@ -192,7 +170,11 @@ fn draw_cpu(
     let sig_name = format!("{}_active_percent", cpu.id);
     let sig = history.get(&sig_name).unwrap();
     let activity_history_sparkline = Sparkline::default()
-        .style(Style::default().fg(accent_color))
+        .style(
+            Style::default()
+                .fg(colors.history_fg())
+                .bg(colors.history_bg()),
+        )
         .bar_set(symbols::bar::NINE_LEVELS)
         .data(sig.as_slice_last_n(ACTIVITY_HISTORY_LENGTH as usize))
         .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
@@ -201,7 +183,7 @@ fn draw_cpu(
     let active_ratio = cpu.active_ratio;
     let label = format!("{:.1}%", active_ratio * 100.0);
     let gauge = LineGauge::default()
-        .gauge_style(Style::default().fg(accent_color).bg(gauge_bg_color))
+        .gauge_style(Style::default().fg(colors.gauge_fg()).bg(colors.gauge_bg()))
         .line_set(symbols::line::THICK)
         .label(label)
         .ratio(active_ratio);
@@ -232,7 +214,11 @@ fn draw_cpu(
     let sig_name = format!("{}_freq_percent", cpu.id);
     let sig = history.get(&sig_name).unwrap();
     let freq_history_sparkline = Sparkline::default()
-        .style(Style::default().fg(accent_color))
+        .style(
+            Style::default()
+                .fg(colors.history_fg())
+                .bg(colors.history_bg()),
+        )
         .bar_set(symbols::bar::NINE_LEVELS)
         .data(sig.as_slice_last_n(FREQUENCY_HISTORY_LENGTH as usize))
         // .data(&[1, 4, 3, 4, 2, 3, 8, 4])
@@ -245,7 +231,7 @@ fn draw_cpu(
     f.render_widget(par, freq_value_area);
 
     let gauge = LineGauge::default()
-        .gauge_style(Style::default().fg(accent_color).bg(gauge_bg_color))
+        .gauge_style(Style::default().fg(colors.gauge_fg()).bg(colors.gauge_bg()))
         .line_set(symbols::line::THICK)
         // .label(label)
         .ratio(cpu.freq_ratio());

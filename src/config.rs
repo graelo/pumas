@@ -41,13 +41,31 @@ pub struct RunConfig {
         value_parser = clap::value_parser!(u16).range(100..))]
     pub sample_rate_ms: u16,
 
-    /// Accent color: ASCII code in 0~255.
+    /// History buffer size: default: 128.
+    ///
+    /// Number of recent samples to keep in history for each metric.
+    #[arg(long, default_value = "128")]
+    pub history_size: usize,
+
+    /// Accent color for labels: ASCII code in 0~255, default: green.
     #[arg(long, default_value = "2")]
     pub accent_color: u8,
 
-    /// Gauge background color: ASCII code in 0~255.
+    /// Gauge foreground color: ASCII code in 0~255, default: green.
+    #[arg(long, default_value = "2")]
+    pub gauge_fg_color: u8,
+
+    /// Gauge background color: ASCII code in 0~255, default: white.
     #[arg(long, default_value = "7")]
     pub gauge_bg_color: u8,
+
+    /// History foreground color: ASCII code in 0~255, default: blue.
+    #[arg(long, default_value = "4")]
+    pub history_fg_color: u8,
+
+    /// History background color: ASCII code in 0~255, default: white.
+    #[arg(long, default_value = "7")]
+    pub history_bg_color: u8,
 
     /// Print metrics to stdout as JSON instead of running the UI.
     #[arg(long, default_value = "false")]
@@ -59,7 +77,10 @@ impl RunConfig {
     pub fn colors(&self) -> UiColors {
         UiColors {
             accent: self.accent_color,
+            gauge_fg: self.gauge_fg_color,
             gauge_bg: self.gauge_bg_color,
+            history_fg: self.history_fg_color,
+            history_bg: self.history_bg_color,
         }
     }
 }
@@ -69,6 +90,12 @@ impl RunConfig {
 pub struct UiColors {
     /// Accent color: ASCII code in 0~255.
     pub accent: u8,
+    /// Gauge foreground color: ASCII code in 0~255.
+    pub gauge_fg: u8,
     /// Gauge background color: ASCII code in 0~255.
     pub gauge_bg: u8,
+    /// History foreground color: ASCII code in 0~255.
+    pub history_fg: u8,
+    /// History background color: ASCII code in 0~255.
+    pub history_bg: u8,
 }

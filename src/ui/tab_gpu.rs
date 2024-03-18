@@ -2,7 +2,7 @@
 
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     symbols,
     text::Span,
     widgets::{Block, Borders, Cell, LineGauge, Paragraph, Row, Sparkline, Table},
@@ -10,7 +10,7 @@ use ratatui::{
 };
 
 use crate::{
-    app::{App, History},
+    app::{App, AppColors, History},
     metrics::GpuMetrics,
     units,
 };
@@ -33,9 +33,6 @@ pub(crate) fn draw_gpu_tab(f: &mut Frame, app: &App, area: Rect) {
         None => return,
     };
 
-    let accent_color = app.accent_color();
-    let gauge_bg_color = app.gauge_bg_color();
-
     let gpu_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -47,25 +44,11 @@ pub(crate) fn draw_gpu_tab(f: &mut Frame, app: &App, area: Rect) {
     let gpu_freq_area = gpu_chunks[0];
     let freq_table_area = gpu_chunks[1];
 
-    draw_gpu(
-        f,
-        &metrics.gpu,
-        &app.history,
-        accent_color,
-        gauge_bg_color,
-        gpu_freq_area,
-    );
+    draw_gpu(f, &metrics.gpu, &app.history, &app.colors, gpu_freq_area);
     draw_freq_table(f, &metrics.gpu, freq_table_area);
 }
 
-fn draw_gpu(
-    f: &mut Frame,
-    gpu: &GpuMetrics,
-    history: &History,
-    accent_color: Color,
-    gauge_bg_color: Color,
-    area: Rect,
-) {
+fn draw_gpu(f: &mut Frame, gpu: &GpuMetrics, history: &History, colors: &AppColors, area: Rect) {
     let block = Block::default().title("GPU: ").borders(Borders::ALL);
     f.render_widget(block, area);
 
@@ -94,7 +77,11 @@ fn draw_gpu(
 
     let sig = history.get("gpu_active_percent").unwrap();
     let activity_history_sparkline = Sparkline::default()
-        .style(Style::default().fg(accent_color))
+        .style(
+            Style::default()
+                .fg(colors.history_fg())
+                .bg(colors.history_bg()),
+        )
         .bar_set(symbols::bar::NINE_LEVELS)
         .data(sig.as_slice_last_n(ACTIVITY_HISTORY_LENGTH as usize))
         .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
@@ -103,7 +90,7 @@ fn draw_gpu(
     let active_ratio = gpu.active_ratio;
     let label = format!("{:.1}%", active_ratio * 100.0);
     let gauge = LineGauge::default()
-        .gauge_style(Style::default().fg(accent_color).bg(gauge_bg_color))
+        .gauge_style(Style::default().fg(colors.gauge_fg()).bg(colors.gauge_bg()))
         .line_set(symbols::line::THICK)
         .label(label)
         .ratio(active_ratio);
@@ -133,7 +120,11 @@ fn draw_gpu(
 
     let sig = history.get("gpu_freq_percent").unwrap();
     let freq_history_sparkline = Sparkline::default()
-        .style(Style::default().fg(accent_color))
+        .style(
+            Style::default()
+                .fg(colors.history_fg())
+                .bg(colors.history_bg()),
+        )
         .bar_set(symbols::bar::NINE_LEVELS)
         .data(sig.as_slice_last_n(FREQUENCY_HISTORY_LENGTH as usize))
         // .data(&[1, 4, 3, 4, 2, 3, 8, 4])
@@ -146,7 +137,7 @@ fn draw_gpu(
     f.render_widget(par, freq_value_area);
 
     let gauge = LineGauge::default()
-        .gauge_style(Style::default().fg(accent_color).bg(gauge_bg_color))
+        .gauge_style(Style::default().fg(colors.gauge_fg()).bg(colors.gauge_bg()))
         .line_set(symbols::line::THICK)
         // .label(label)
         .ratio(gpu.freq_ratio());

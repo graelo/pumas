@@ -43,17 +43,23 @@
 //!
 //! Overview Tab: global metrics for utilization and power consumption.
 //!
-//! ![Overview](./images/screenshot-overview.png)
+//! ![Overview dark](./images/screenshot-overview-dark.png)
+//!
+//! ![Overview light](./images/screenshot-overview-light.png)
 //!
 //! CPU Tab: per-cluster CPU utilization (with short history) and frequency
 //! (with short history)
 //!
-//! ![CPU](./images/screenshot-cpu.png)
+//! ![CPU-dark](./images/screenshot-cpu-dark.png)
+//!
+//! ![CPU-light](./images/screenshot-cpu-light.png)
 //!
 //! GPU Tab: GPU utilization (with short history) and frequency
 //! (with short history)
 //!
-//! ![GPU](./images/screenshot-gpu.png)
+//! ![GPU-dark](./images/screenshot-gpu-dark.png)
+//!
+//! ![GPU-light](./images/screenshot-gpu-light.png)
 //!
 //! SoC Tab: misc info about the SoC
 //!
@@ -90,12 +96,26 @@
 //! Usage: pumas run [OPTIONS]
 //!
 //! Options:
-//!   -i, --sample-rate <SAMPLE_RATE_MS>     Update rate (milliseconds): min: 100 [default: 1000]
-//!       --accent-color <ACCENT_COLOR>      Accent color: ASCII code in 0~255 [default: 2]
-//!       --gauge-bg-color <GAUGE_BG_COLOR>  Gauge background color: ASCII code in 0~255 [default: 7]
-//!       --json                             Print metrics to stdout as JSON instead of running the UI
-//!   -h, --help                             Print help (see more with '--help')
-//!   -V, --version                          Print version
+//!   -i, --sample-rate <SAMPLE_RATE_MS>
+//!           Update rate (milliseconds): min: 100 [default: 1000]
+//!       --history-size <HISTORY_SIZE>
+//!           History buffer size: default: 128 [default: 128]
+//!       --accent-color <ACCENT_COLOR>
+//!           Accent color for labels: ASCII code in 0~255, default: green [default: 2]
+//!       --gauge-fg-color <GAUGE_FG_COLOR>
+//!           Gauge foreground color: ASCII code in 0~255, default: green [default: 2]
+//!       --gauge-bg-color <GAUGE_BG_COLOR>
+//!           Gauge background color: ASCII code in 0~255, default: white [default: 7]
+//!       --history-fg-color <HISTORY_FG_COLOR>
+//!           History foreground color: ASCII code in 0~255, default: blue [default: 4]
+//!       --history-bg-color <HISTORY_BG_COLOR>
+//!           History background color: ASCII code in 0~255, default: white [default: 7]
+//!       --json
+//!           Print metrics to stdout as JSON instead of running the UI
+//!   -h, --help
+//!           Print help (see more with '--help')
+//!   -V, --version
+//!           Print version
 //! ```
 //!
 //! ### JSON Mode
