@@ -30,6 +30,36 @@ impl<'a> TabsState<'a> {
     }
 }
 
+pub(crate) struct AppColors {
+    raw_colors: UiColors,
+}
+
+impl AppColors {
+    fn color(code: u8) -> ratatui::style::Color {
+        ratatui::style::Color::Indexed(code)
+    }
+
+    pub(crate) fn accent(&self) -> ratatui::style::Color {
+        Self::color(self.raw_colors.accent)
+    }
+
+    pub(crate) fn gauge_fg(&self) -> ratatui::style::Color {
+        Self::color(self.raw_colors.gauge_fg)
+    }
+
+    pub(crate) fn gauge_bg(&self) -> ratatui::style::Color {
+        Self::color(self.raw_colors.gauge_bg)
+    }
+
+    pub(crate) fn history_fg(&self) -> ratatui::style::Color {
+        Self::color(self.raw_colors.history_fg)
+    }
+
+    pub(crate) fn history_bg(&self) -> ratatui::style::Color {
+        Self::color(self.raw_colors.history_bg)
+    }
+}
+
 /// The App structure.
 pub(crate) struct App<'a> {
     /// Indicates the app should quit.
@@ -41,8 +71,11 @@ pub(crate) struct App<'a> {
     /// Color configuration.
     ///
     /// - Accent color, default: 2 (green).
+    /// - Gauge foreground color, default: 2 (green).
     /// - Gauge background color, default: 7 (white).
-    pub(crate) colors: UiColors,
+    /// - History foreground color, default: 4 (blue).
+    /// - History background color, default: 7 (white).
+    pub(crate) colors: AppColors,
 
     /// Time of last update.
     pub(crate) last_update: std::time::Instant,
@@ -59,11 +92,11 @@ pub(crate) struct App<'a> {
 
 impl<'a> App<'a> {
     /// Returns a new `App`.
-    pub fn new(soc_info: SocInfo, colors: UiColors) -> Self {
+    pub fn new(soc_info: SocInfo, colors: UiColors, history_size: usize) -> Self {
         Self {
             should_quit: false,
             tabs: TabsState::new(vec!["Overview", "CPU", "GPU", "SoC"]),
-            colors,
+            colors: AppColors { raw_colors: colors },
             last_update: std::time::Instant::now(),
             metrics: None,
             soc_info,
@@ -257,17 +290,5 @@ impl<'a> App<'a> {
                 /* max */ metrics.memory.swap_total as f32,
             ))
             .push(metrics.memory.swap_used as f32);
-    }
-
-    fn color(code: u8) -> ratatui::style::Color {
-        ratatui::style::Color::Indexed(code)
-    }
-
-    pub(crate) fn accent_color(&self) -> ratatui::style::Color {
-        Self::color(self.colors.accent)
-    }
-
-    pub fn gauge_bg_color(&self) -> ratatui::style::Color {
-        Self::color(self.colors.gauge_bg)
     }
 }
