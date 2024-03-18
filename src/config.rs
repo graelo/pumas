@@ -41,7 +41,13 @@ pub struct RunConfig {
         value_parser = clap::value_parser!(u16).range(100..))]
     pub sample_rate_ms: u16,
 
-    /// Accent color: ASCII code in 0~255.
+    /// History buffer size: default: 128.
+    ///
+    /// Number of recent samples to keep in history for each metric.
+    #[arg(long, default_value = "128")]
+    pub history_size: usize,
+
+    /// Accent color for labels: ASCII code in 0~255, default: green.
     #[arg(long, default_value = "2")]
     pub accent_color: u8,
 
@@ -89,7 +95,6 @@ pub struct UiColors {
     /// Gauge background color: ASCII code in 0~255.
     pub gauge_bg: u8,
     /// History foreground color: ASCII code in 0~255.
-
     pub history_fg: u8,
     /// History background color: ASCII code in 0~255.
     pub history_bg: u8,
