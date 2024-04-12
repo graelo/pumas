@@ -34,10 +34,10 @@ pub(crate) struct ProcessorMetrics {
     pub(crate) ane_mj: u16,
     /// Energy consumed by the CPU in mJ over the sampling period.
     #[serde(rename = "cpu_energy")]
-    pub(crate) cpu_mj: u16,
+    pub(crate) cpu_mj: u32,
     /// Energy consumed by the GPU in mJ over the sampling period.
     #[serde(rename = "gpu_energy")]
-    pub(crate) gpu_mj: u16,
+    pub(crate) gpu_mj: u32,
     /// Average power consumed by the package in mW over the sampling period.
     #[serde(rename = "combined_power")]
     pub(crate) package_mw: f32,
@@ -133,7 +133,7 @@ mod tests {
     use assert_approx_eq::assert_approx_eq;
 
     #[test]
-    fn read_file() {
+    fn read_file_m1() {
         // Read the file.
         let content = std::fs::read_to_string("./tests/data/powermetrics-output-m1.xml")
             .expect("failed to read the file");
@@ -215,5 +215,89 @@ mod tests {
         assert_eq!(pm.gpu.dvfm_states[4].active_ratio, 0.0);
         assert_eq!(pm.gpu.dvfm_states[5].freq_mhz, 1278);
         assert_eq!(pm.gpu.dvfm_states[5].active_ratio, 0.0);
+    }
+
+    #[test]
+    fn read_file_m2ultra() {
+        // Read the file.
+        let content = std::fs::read_to_string("./tests/data/powermetrics-output-m2ultra.xml")
+            .expect("failed to read the file");
+        let pm: Metrics = plist::from_bytes(content.as_bytes()).expect("failed to parse the plist");
+
+        // assert_eq!(&pm.hw_model[..], "MacBookPro17,1");
+
+        let c0 = &pm.processor.clusters[0];
+        assert_eq!(&c0.name[..], "E0-Cluster");
+        assert_eq!(c0.freq_mhz(), 990.818);
+        // assert_eq!(c0.active_ratio(), 1.0 - 0.772993);
+
+        // cluster dvfm_states.
+        assert_eq!(c0.dvfm_states[0].freq_mhz, 912);
+        assert_eq!(c0.dvfm_states[0].active_ratio, 0.88102);
+        assert_eq!(c0.dvfm_states[1].freq_mhz, 1284);
+        assert_eq!(c0.dvfm_states[1].active_ratio, 0.0153791);
+        assert_eq!(c0.dvfm_states[2].freq_mhz, 1752);
+        assert_eq!(c0.dvfm_states[2].active_ratio, 0.0324065);
+        assert_eq!(c0.dvfm_states[3].freq_mhz, 2004);
+        assert_eq!(c0.dvfm_states[3].active_ratio, 0.00133004);
+        assert_eq!(c0.dvfm_states[4].freq_mhz, 2256);
+        assert_eq!(c0.dvfm_states[4].active_ratio, 0.012331);
+
+        assert_eq!(c0.cpus[0].cpu_id, 0);
+        assert_eq!(c0.cpus[1].cpu_id, 1);
+        assert_eq!(c0.cpus[2].cpu_id, 2);
+        assert_eq!(c0.cpus[3].cpu_id, 3);
+        assert_eq!(c0.cpus[0].freq_mhz(), 979.723);
+        assert_eq!(c0.cpus[1].freq_mhz(), 1041.27);
+        assert_eq!(c0.cpus[2].freq_mhz(), 1028.45);
+        assert_eq!(c0.cpus[3].freq_mhz(), 958.188);
+        assert_eq!(c0.cpus[0].active_ratio(), 1.0 - 0.440453);
+        assert_eq!(c0.cpus[1].active_ratio(), 1.0 - 0.56774);
+        assert_eq!(c0.cpus[2].active_ratio(), 1.0 - 0.695484);
+        // cpu dvfm_states.
+        assert_eq!(c0.cpus[0].dvfm_states[0].freq_mhz, 912);
+        assert_eq!(c0.cpus[0].dvfm_states[0].active_ratio, 0.516857);
+        assert_eq!(c0.cpus[0].dvfm_states[1].freq_mhz, 1284);
+        assert_eq!(c0.cpus[0].dvfm_states[1].active_ratio, 0.0105143);
+        assert_eq!(c0.cpus[0].dvfm_states[2].freq_mhz, 1752);
+        assert_eq!(c0.cpus[0].dvfm_states[2].active_ratio, 0.0192085);
+
+        let c1 = &pm.processor.clusters[1];
+        assert_eq!(&c1.name[..], "P0-Cluster");
+        assert_eq!(c1.freq_mhz(), 2775.02);
+        // assert_eq!(c1.active_ratio(), 1.0 - 0.983957);
+
+        // cluster dvfm_states.
+        assert_eq!(c1.cpus[0].cpu_id, 4);
+        assert_eq!(c1.cpus[1].cpu_id, 5);
+        assert_eq!(c1.cpus[2].cpu_id, 6);
+        assert_eq!(c1.cpus[3].cpu_id, 7);
+        assert_eq!(c1.cpus[0].freq_mhz(), 2189.62);
+        assert_eq!(c1.cpus[1].freq_mhz(), 3470.68);
+        assert_eq!(c1.cpus[2].freq_mhz(), 3084.83);
+        assert_eq!(c1.cpus[3].freq_mhz(), 3160.17);
+
+        assert_eq!(pm.processor.ane_mj, 0);
+        assert_eq!(pm.processor.cpu_mj, 855);
+        assert_eq!(pm.processor.gpu_mj, 72607);
+        assert_eq!(pm.processor.package_mw, 71759.8);
+
+        assert_eq!(&pm.thermal_pressure[..], "Nominal");
+
+        assert_eq!(pm.gpu.freq_mhz, 1360.85);
+        assert_approx_eq!(pm.gpu.active_ratio(), 1_f64 - 0.0536782, 1e-5_f64);
+        // cpu dvfm_states.
+        assert_eq!(pm.gpu.dvfm_states[0].freq_mhz, 444);
+        assert_eq!(pm.gpu.dvfm_states[0].active_ratio, 0.000297563);
+        assert_eq!(pm.gpu.dvfm_states[1].freq_mhz, 612);
+        assert_eq!(pm.gpu.dvfm_states[1].active_ratio, 0.0);
+        assert_eq!(pm.gpu.dvfm_states[2].freq_mhz, 808);
+        assert_eq!(pm.gpu.dvfm_states[2].active_ratio, 0.0);
+        assert_eq!(pm.gpu.dvfm_states[3].freq_mhz, 968);
+        assert_eq!(pm.gpu.dvfm_states[3].active_ratio, 0.0);
+        assert_eq!(pm.gpu.dvfm_states[4].freq_mhz, 1110);
+        assert_eq!(pm.gpu.dvfm_states[4].active_ratio, 0.0);
+        assert_eq!(pm.gpu.dvfm_states[5].freq_mhz, 1236);
+        assert_eq!(pm.gpu.dvfm_states[5].active_ratio, 0.00113613);
     }
 }
