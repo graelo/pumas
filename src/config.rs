@@ -34,36 +34,36 @@ pub enum Command {
 /// UI configuration.
 #[derive(Debug, clap::Args)]
 pub struct RunConfig {
-    /// Update rate (milliseconds): min: 100.
+    /// Update rate [ms], min=100.
     ///
-    /// Rate at which metrics are sampled and displayed.
+    /// PowerMetrics samples at this rate.
     #[arg(short='i', long="sample-rate", default_value = "1000",
         value_parser = clap::value_parser!(u16).range(100..))]
     pub sample_rate_ms: u16,
 
-    /// History buffer size: default: 128.
+    /// History buffer size.
     ///
     /// Number of recent samples to keep in history for each metric.
     #[arg(long, default_value = "128")]
     pub history_size: usize,
 
-    /// Accent color for labels: ASCII code in 0~255, default: green.
+    /// ASCII code for labels, max: 255, default: green.
     #[arg(long, default_value = "2")]
     pub accent_color: u8,
 
-    /// Gauge foreground color: ASCII code in 0~255, default: green.
+    /// ASCII code, max=255, default: green.
     #[arg(long, default_value = "2")]
     pub gauge_fg_color: u8,
 
-    /// Gauge background color: ASCII code in 0~255, default: white.
+    /// ASCII code, max=255, default: white.
     #[arg(long, default_value = "7")]
     pub gauge_bg_color: u8,
 
-    /// History foreground color: ASCII code in 0~255, default: blue.
+    /// ASCII code, max=255, default: blue.
     #[arg(long, default_value = "4")]
     pub history_fg_color: u8,
 
-    /// History background color: ASCII code in 0~255, default: white.
+    /// ASCII code, max=255, default: white.
     #[arg(long, default_value = "7")]
     pub history_bg_color: u8,
 
