@@ -272,9 +272,7 @@ impl CpuMetrics {
     pub(crate) fn freq_ratio(&self) -> f64 {
         let min = self.min_frequency() as f64;
         let max = self.max_frequency() as f64;
-        ((self.freq_mhz - min).max(0.0) / (max - min).max(1.0))
-            .max(0.0)
-            .min(1.0)
+        ((self.freq_mhz - min).max(0.0) / (max - min).max(1.0)).clamp(0.0, 1.0)
     }
 }
 
@@ -327,9 +325,7 @@ impl GpuMetrics {
     pub(crate) fn freq_ratio(&self) -> f64 {
         let min = self.min_frequency() as f64;
         let max = self.max_frequency() as f64;
-        ((self.freq_mhz - min).max(0.0) / (max - min).max(1.0))
-            .max(0.0)
-            .min(1.0)
+        ((self.freq_mhz - min).max(0.0) / (max - min).max(1.0)).clamp(0.0, 1.0)
     }
 }
 

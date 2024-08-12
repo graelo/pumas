@@ -10,7 +10,8 @@ on:
 jobs:
   test:
     name: Quality checks & tests
-    runs-on: self-hosted
+    # runs-on: self-hosted
+    runs-on: macos-14
     strategy:
       matrix:
         rust: [stable]
@@ -57,7 +58,7 @@ jobs:
 
       - name: Quality - cargo deny check
         run: |
-          curl -sSfL https://github.com/EmbarkStudios/cargo-deny/releases/download/0.14.21/cargo-deny-0.14.21-aarch64-apple-darwin.tar.gz | gtar zx --no-anchored cargo-deny --strip-components=1
+          curl -sSfL https://github.com/EmbarkStudios/cargo-deny/releases/download/0.16.1/cargo-deny-0.16.1-aarch64-apple-darwin.tar.gz | gtar zx --no-anchored cargo-deny --strip-components=1
           chmod +x cargo-deny
           mv cargo-deny ~/.cargo/bin/
           cargo deny check

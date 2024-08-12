@@ -12,7 +12,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: self-hosted
+          # - os: self-hosted
+          - os: macos-14
             target: aarch64-apple-darwin
             rust: stable
             suffix: ''
