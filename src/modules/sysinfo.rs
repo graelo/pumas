@@ -3,7 +3,7 @@
 //! Currently, this provides:
 //! - Memory usage
 //! - CPU usage per core, which is more accurate than the CPU usage obtained
-//! via powermetrics on M2 chips.
+//!   via powermetrics on M2 chips.
 
 use sysinfo::{CpuRefreshKind, MemoryRefreshKind, System};
 

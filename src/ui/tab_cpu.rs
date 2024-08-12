@@ -252,7 +252,7 @@ fn draw_freq_table(f: &mut Frame, metrics: &Metrics, area: Rect) {
         .map(|f| format!("{:4}", *f))
         .collect::<Vec<_>>()
         .join(" ");
-    let row_content = vec![
+    let row_content = [
         ("E-Cluster:", e_clus),
         ("P-Cluster:", p_clus),
         ("", "".into()),

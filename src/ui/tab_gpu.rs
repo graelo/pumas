@@ -151,7 +151,7 @@ fn draw_freq_table(f: &mut Frame, gpu_metrics: &GpuMetrics, area: Rect) {
         .map(|f| format!("{:4}", *f))
         .collect::<Vec<_>>()
         .join(" ");
-    let row_content = vec![
+    let row_content = [
         ("GPU:", gpu_freq_values),
         ("", "".into()),
         (
