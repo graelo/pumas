@@ -10,7 +10,8 @@ on:
 jobs:
   test:
     name: Quality checks & tests
-    runs-on: self-hosted
+    # runs-on: self-hosted
+    runs-on: macos-14
     strategy:
       matrix:
         rust: [stable]
