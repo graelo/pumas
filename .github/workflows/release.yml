@@ -12,8 +12,7 @@ jobs:
     strategy:
       matrix:
         include:
-          # - os: self-hosted
-          - os: macos-14
+          - os: macos-latest
             target: aarch64-apple-darwin
             rust: stable
             suffix: ''
@@ -26,10 +25,10 @@ jobs:
           components: rustfmt, clippy
 
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Cache crates from crates.io
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         continue-on-error: false
         with:
           path: |
@@ -44,7 +43,7 @@ jobs:
         run: cargo build --release
 
       - name: Compress to zip (macOS)
-        if: ${{ matrix.os == 'self-hosted' }}
+        if: ${{ matrix.os == 'macos-latest' }}
         run:
           zip -A ${{ github.event.repository.name }}-${{ matrix.target }}.${{ matrix.archive_ext }} target/release/${{ github.event.repository.name }}
 
@@ -55,7 +54,7 @@ jobs:
         shell: bash
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.repository.name }}-${{ matrix.target }}.${{ matrix.archive_ext }}
           path: ${{ github.event.repository.name }}-${{ matrix.target }}.${{ matrix.archive_ext }}
@@ -63,14 +62,14 @@ jobs:
   release:
     name: Create a GitHub Release
     # if: github.ref == 'refs/heads/main'
-    runs-on: self-hosted
+    runs-on: macos-latest
     permissions:
       contents: write
     needs:
       - prepare-artifacts
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           # convco needs all history to create the changelog
           fetch-depth: 0
@@ -78,21 +77,21 @@ jobs:
       - name: Extract version
         id: extract-version
         run: |
-          printf "::set-output name=%s::%s\n" tag-name "${GITHUB_REF#refs/tags/}"
+          echo "tag-name=${GITHUB_REF#refs/tags/}" >> ${GITHUB_OUTPUT}
 
       - name: Download convco
         run: |
           git show-ref
-          curl -sSfLO https://github.com/convco/convco/releases/download/v0.4.1/convco-macos.zip
+          curl -sSfLO https://github.com/convco/convco/releases/latest/download/convco-macos.zip
           unzip convco-macos.zip
           chmod +x convco
 
       - name: Use convco to create the changelog
         run: |
-          ./convco changelog --max-versions 1 --include-hidden-sections > CHANGELOG.md
+          ./convco changelog -c .convco --max-versions 1 --include-hidden-sections > CHANGELOG.md
           rm convco convco-macos.zip
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: ${{ github.event.repository.name }}-aarch64-apple-darwin.zip
 
@@ -105,16 +104,16 @@ jobs:
   homebrew:
     name: Bump Homebrew formula
     # if: github.ref == 'refs/heads/main'
-    runs-on: self-hosted
+    runs-on: macos-latest
     needs:
       - release
     steps:
       - name: Extract version
         id: extract-version
         run: |
-          printf "::set-output name=%s::%s\n" tag-name "${GITHUB_REF#refs/tags/}"
+          echo "tag-name=${GITHUB_REF#refs/tags/}" >> ${GITHUB_OUTPUT}
 
-      - uses: mislav/bump-homebrew-formula-action@v2
+      - uses: mislav/bump-homebrew-formula-action@v3
         if: "!contains(github.ref, '-')" # skip prereleases
         with:
           formula-name: pumas
