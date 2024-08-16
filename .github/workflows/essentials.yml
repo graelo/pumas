@@ -10,8 +10,7 @@ on:
 jobs:
   test:
     name: Quality checks & tests
-    # runs-on: self-hosted
-    runs-on: macos-14
+    runs-on: macos-latest
     strategy:
       matrix:
         rust: [stable]
@@ -23,12 +22,14 @@ jobs:
           components: rustfmt, clippy
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          fetch-depth: ${{ github.event.pull_request.commits }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          # fetch-depth: ${{ github.event.pull_request.commits }}
 
       - name: Cache crates from crates.io
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         continue-on-error: false
         with:
           path: |
@@ -50,10 +51,12 @@ jobs:
       - name: Quality - convco check
         run: |
           git show-ref
-          curl -sSfLO https://github.com/convco/convco/releases/download/v0.4.1/convco-macos.zip
+          echo Commit message: "$(git log -1 --pretty=%B)"
+          curl -sSfLO https://github.com/convco/convco/releases/latest/download/convco-macos.zip
           unzip convco-macos.zip
           chmod +x convco
-          ./convco check
+          ./convco --version
+          ./convco check -c .convco
           rm convco
 
       - name: Quality - cargo deny check
