@@ -16,6 +16,6 @@ pub(crate) fn draw(f: &mut Frame, app: &mut App) {
     if app.metrics.is_none() {
         startup_screen::draw(f);
     } else {
-        main_screen::draw(f, app, f.size());
+        main_screen::draw(f, app, f.area());
     }
 }

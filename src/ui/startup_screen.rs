@@ -20,7 +20,7 @@ const SPACER_HEIGHT: u16 = 2;
 /// Draw the startup screen.
 pub(crate) fn draw(f: &mut Frame) {
     let total_size = LOGO2_HEIGHT + SPACER_HEIGHT + PUMAS_TEXT_HEIGHT + SPACER_HEIGHT + 1;
-    let centering_offset = (f.size().height - total_size) / 2;
+    let centering_offset = (f.area().height - total_size) / 2;
 
     let vertical_chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -30,7 +30,7 @@ pub(crate) fn draw(f: &mut Frame) {
             Constraint::Length(SPACER_HEIGHT),
             Constraint::Length(1),
         ])
-        .split(f.size());
+        .split(f.area());
     let logo_area = vertical_chunks[1];
     let message_area = vertical_chunks[3];
 
@@ -48,7 +48,7 @@ fn draw_logo(f: &mut Frame, area: Rect) {
     let horizontal_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Length((f.size().width - LOGO2_WIDTH) / 2), // to center
+            Constraint::Length((f.area().width - LOGO2_WIDTH) / 2), // to center
             Constraint::Length(LOGO2_WIDTH),
             // Constraint::Min(0),
         ])
