@@ -41,6 +41,12 @@ or
 cargo install pumas
 ```
 
+or
+
+```sh
+x install pumas
+```
+
 ## Quickstart
 
 ```sh
