@@ -12,7 +12,7 @@ pub(crate) struct TabsState<'a> {
 }
 
 impl<'a> TabsState<'a> {
-    fn new(titles: Vec<&'a str>) -> TabsState {
+    fn new(titles: Vec<&'a str>) -> TabsState<'a> {
         TabsState { titles, index: 0 }
     }
     fn next(&mut self) {
