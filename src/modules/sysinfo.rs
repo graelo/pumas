@@ -33,18 +33,18 @@ pub(crate) struct SystemState {
 impl SystemState {
     pub(crate) fn new() -> Self {
         let mut system = System::new();
-        system.refresh_cpu_specifics(CpuRefreshKind::new().with_cpu_usage());
+        system.refresh_cpu_specifics(CpuRefreshKind::default().with_cpu_usage());
         system.refresh_memory_specifics(MemoryRefreshKind::everything());
         Self { system }
     }
 
     pub(crate) fn latest_metrics(&mut self) -> Metrics {
         self.system
-            .refresh_cpu_specifics(CpuRefreshKind::new().with_cpu_usage());
+            .refresh_cpu_specifics(CpuRefreshKind::default().with_cpu_usage());
         self.system
-            .refresh_memory_specifics(MemoryRefreshKind::new().with_ram());
+            .refresh_memory_specifics(MemoryRefreshKind::default().with_ram());
         self.system
-            .refresh_memory_specifics(MemoryRefreshKind::new().with_swap());
+            .refresh_memory_specifics(MemoryRefreshKind::default().with_swap());
 
         let cpu_metrics = self
             .system
