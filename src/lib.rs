@@ -19,19 +19,12 @@
 //!
 //! Pumas is lightweight and has minimal performance impact.
 //!
-//! ## Installation
-//!
-//! ```sh
-//! brew install graelo/tap/pumas
-//! ```
-//!
-//! or
-//!
-//! ```sh
-//! cargo install pumas
-//! ```
-//!
 //! ## Quickstart
+//!
+//! See [installation methods](#installation-methods) below.
+//!
+//! Sudo is required to run Pumas, as it uses Apple's `powermetrics`
+//! to gather metrics.
 //!
 //! ```sh
 //! sudo pumas run
@@ -65,9 +58,81 @@
 //!
 //! ![SoC](./images/screenshot-soc.png)
 //!
-//! Startup:
+//! ## Installation Methods
 //!
-//! ![Startup](./images/screenshot-startup.png)
+//! ### Homebrew Tap
+//!
+//! - Run:
+//!
+//! ```sh
+//! brew install graelo/tap/pumas
+//! ```
+//!
+//! ### Cargo Install
+//!
+//! - Run:
+//!
+//! ```sh
+//! cargo install pumas
+//! ```
+//!
+//! ### Manual Build from Source
+//!
+//! - Steps:
+//!
+//! 1. Clone the repository:
+//!
+//! ```sh
+//! git clone https://github.com/graelo/pumas.git
+//! ```
+//!
+//! 2. Change directory:
+//!
+//! ```sh
+//! cd pumas
+//! ```
+//!
+//! 3. Build the binary:
+//!
+//! ```sh
+//! cargo build --release
+//! ```
+//!
+//! 4. Copy `target/release/pumas` to a directory in your `PATH`.
+//!
+//! ### Prebuilt Binary Download
+//!
+//! - Steps:
+//!
+//! 1. Go to the [GitHub Releases](https://github.com/graelo/pumas/releases) page.
+//! 2. Download the latest macOS archive for your architecture.
+//! 3. Extract the archive:
+//!
+//! ```sh
+//! unzip pumas-aarch64-apple-darwin.zip
+//! ```
+//!
+//! 4. Copy the binary to your `PATH` (e.g., `/usr/local/bin`):
+//!
+//! ```sh
+//! sudo cp pumas /usr/local/bin/
+//! ```
+//!
+//! 5. Verify installation:
+//!
+//! ```sh
+//! pumas --version
+//! ```
+//!
+//! ### x-cmd
+//!
+//! This assumes you use [x-cmd](https://www.x-cmd.com/install/pumas)
+//!
+//! - Run:
+//!
+//! ```sh
+//! x install pumas
+//! ```
 //!
 //! ## Usage
 //!
