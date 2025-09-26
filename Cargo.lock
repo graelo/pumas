@@ -442,7 +442,7 @@ dependencies = [
 
 [[package]]
 name = "pumas"
-version = "0.2.5"
+version = "0.3.0"
 dependencies = [
  "assert_approx_eq",
  "clap",
