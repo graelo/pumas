@@ -42,7 +42,7 @@ const PKG_TEXT_HEIGHT: u16 = 1;
 /// │        ▁▅   ▁           ▇▂      ▁ ▁  ▁                ▃▁                                                                   │
 /// └────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 /// ┌ GPU & ANE ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-/// │GPU: 0.4 % @ 444 MHz / 10.88 mW (peak: 12.3 % / 301.91 mW)      ANE: 0.0 % / 0.00 W (peak: 0.0 % / 0.00 W)                  │
+/// │GPU: 0.4 % @ 444 MHz | 10.88 mW (peak: 12.3 % | 301.91 mW)      ANE: 0.0 % | 0.00 W (peak: 0.0 % | 0.00 W)                  │
 /// │                              0%                                                             0%                             │
 /// │                                                                                                                            │
 /// │                                                                                                                            │
@@ -366,7 +366,7 @@ fn draw_gpu_ane_usage_block(
     let sig = history.get("gpu_active_percent").unwrap();
     let sig_gpu_power = history.get("gpu_w").unwrap();
     let title = format!(
-        "GPU: {} @ {} / {} (peak: {} / {})",
+        "GPU: {} @ {} | {} (peak: {} | {})",
         units::percent1(gpu.active_ratio * 100.0),
         units::mhz(gpu.freq_mhz),
         units::watts2(metrics.consumption.gpu_w),
@@ -400,7 +400,7 @@ fn draw_gpu_ane_usage_block(
     let sig = history.get("ane_active_percent").unwrap();
     let sig_ane_power = history.get("ane_w").unwrap();
     let title = format!(
-        "ANE: {} / {} (peak: {} / {})",
+        "ANE: {} | {} (peak: {} | {})",
         units::percent1(ane_active_ratio * 100.0),
         units::watts2(metrics.consumption.ane_w),
         units::percent1(sig.peak),
@@ -462,7 +462,9 @@ fn draw_mem_usage_block(
     colors: &AppColors,
     area: Rect,
 ) {
-    let block = Block::default().title(" RAM & SWAP ").borders(Borders::ALL);
+    let block = Block::default()
+        .title(" Memory & SWAP ")
+        .borders(Borders::ALL);
     f.render_widget(block, area);
 
     let horizontal_chunks = Layout::default()
@@ -498,7 +500,7 @@ fn draw_mem_usage_block(
         let sig = history.get("ram_usage_bytes").unwrap();
         let ram_usage_ratio = mem.ram_usage_ratio();
         let title = format!(
-            "RAM: {} = {} / {} (peak: {} = {})",
+            "Memory Used: {} = {} / {} (peak: {} = {})",
             units::percent1(ram_usage_ratio * 100.0),
             units::bibytes1(mem.ram_used as f64),
             units::bibytes1(mem.ram_total as f64),

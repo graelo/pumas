@@ -47,7 +47,6 @@ fn draw_vm_stats_section(f: &mut Frame, app: &App, area: Rect) {
 
         let activity_monitor_used =
             vm_stats.activity_monitor_memory_used() as f64 / (1024.0 * 1024.0 * 1024.0);
-        let calculated_sum = app_memory_gb + wired_gb + compressed_gb;
 
         let content = vec![
             Line::from(vec![
@@ -93,9 +92,6 @@ fn draw_vm_stats_section(f: &mut Frame, app: &App, area: Rect) {
                     Style::default().fg(app.colors.accent()),
                 ),
                 Span::raw(format!("{:.2} GB", activity_monitor_used)),
-                Span::styled("  (calc: ", Style::default().fg(app.colors.history_fg())),
-                Span::raw(format!("{:.2} GB", calculated_sum)),
-                Span::styled(")", Style::default().fg(app.colors.history_fg())),
             ]),
             Line::from(""),
             Line::from(vec![Span::styled(
