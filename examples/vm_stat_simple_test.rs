@@ -81,7 +81,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "Formula: Anonymous + Wired + Compressed = {:.1} + {:.1} + {:.1}",
         app_memory_gb, wired_memory_gb, compressed_gb
     );
-    println!("");
+    println!();
     println!("Note: This approximation may differ from Activity Monitor's displayed");
     println!("'Memory Used' value, as Activity Monitor includes additional factors");
     println!("and uses different accounting methods. The approximation is most");
