@@ -345,28 +345,6 @@ impl From<&plist_parsing::DvfmState> for DvfmState {
     }
 }
 
-pub(crate) enum ThermalPressure {
-    Nominal,
-    Moderate,
-    Heavy,
-    Sleeping,
-    Trapping,
-    Undefined,
-}
-
-impl From<&str> for ThermalPressure {
-    fn from(value: &str) -> Self {
-        match value {
-            "Nominal" => Self::Nominal,
-            "Moderate" => Self::Moderate,
-            "Heavy" => Self::Heavy,
-            "Sleeping" => Self::Sleeping,
-            "Trapping" => Self::Trapping,
-            _ => Self::Undefined,
-        }
-    }
-}
-
 /// Memory metrics: RAM and Swap.
 #[derive(Debug, Default, Serialize)]
 pub(crate) struct MemoryMetrics {

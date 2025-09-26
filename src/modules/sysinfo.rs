@@ -56,11 +56,22 @@ impl SystemState {
             })
             .collect();
 
-        let memory_metrics = MemoryMetrics {
-            ram_total: self.system.total_memory(), // Note: this never changes.
-            ram_used: self.system.used_memory(),
-            swap_total: self.system.total_swap(),
-            swap_used: self.system.used_swap(),
+        // Use vm_stat for better memory accounting on macOS, fallback to sysinfo if it fails
+        let memory_metrics = if let Ok(vm_stats) = super::vm_stat::VmStats::collect() {
+            MemoryMetrics {
+                ram_total: vm_stats.total_memory(),
+                ram_used: vm_stats.activity_monitor_memory_used(),
+                swap_total: self.system.total_swap(),
+                swap_used: self.system.used_swap(),
+            }
+        } else {
+            // Fallback to sysinfo if vm_stat fails
+            MemoryMetrics {
+                ram_total: self.system.total_memory(),
+                ram_used: self.system.used_memory(),
+                swap_total: self.system.total_swap(),
+                swap_used: self.system.used_swap(),
+            }
         };
 
         Metrics {

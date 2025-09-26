@@ -96,7 +96,7 @@ impl<'a> App<'a> {
     pub fn new(soc_info: SocInfo, colors: UiColors, history_size: usize) -> Self {
         Self {
             should_quit: false,
-            tabs: TabsState::new(vec!["Overview", "CPU", "GPU", "SoC"]),
+            tabs: TabsState::new(vec!["Overview", "CPU", "GPU", "Memory", "SoC"]),
             colors: AppColors { raw_colors: colors },
             last_update: std::time::Instant::now(),
             metrics: None,

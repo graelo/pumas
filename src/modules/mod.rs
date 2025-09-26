@@ -7,3 +7,4 @@
 pub(crate) mod powermetrics;
 pub(crate) mod soc;
 pub(crate) mod sysinfo;
+pub(crate) mod vm_stat;

@@ -1,11 +1,12 @@
-//! User interface.
+//! Ui.
 
-mod main_screen;
-mod startup_screen;
-mod tab_cpu;
-mod tab_gpu;
-mod tab_overview;
-mod tab_soc;
+pub(crate) mod main_screen;
+pub(crate) mod startup_screen;
+pub(crate) mod tab_cpu;
+pub(crate) mod tab_gpu;
+pub(crate) mod tab_memory;
+pub(crate) mod tab_overview;
+pub(crate) mod tab_soc;
 
 use ratatui::Frame;
 
