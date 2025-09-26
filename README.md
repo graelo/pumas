@@ -18,8 +18,8 @@ reimplemented version of [asitop] in Rust.
 | Utilization | CPU Clusters, GPU, ANE       | ✓         | History & current values. ANE util. is measured via power |
 | Power       | CPU, GPU, ANE, total package | ✓         | History & current values                                  |
 | Frequency   | CPU Clusters, GPU            | ✓         | Current avg. values                                       |
-| Frequency   | CPU Clusters, GPU            | planned   | Residency distrib. histograms                             |
-| Memory      | RAM & Swap: size and usage   | ✓         | Apple removed memory bandwidth from powermetrics.         |
+| Frequency   | CPU Clusters, GPU            | missing   | Residency distrib. histograms                             |
+| Memory      | RAM & Swap: size and usage   | ✓         | Activity Monitor compatible memory accounting via vm_stat  |
 
 To gather data, Pumas uses both the macOS built-in `powermetrics` utility, and the `sysinfo`
 crate (same data as `htop`).
@@ -63,6 +63,13 @@ GPU Tab: GPU utilization (with short history) and frequency
 ![GPU-dark](./images/screenshot-gpu-dark.png)
 
 ![GPU-light](./images/screenshot-gpu-light.png)
+
+Memory Tab: detailed memory statistics compatible with Activity Monitor,
+showing VM statistics breakdown and sysinfo data
+
+![Memory-dark](./images/screenshot-memory-dark.png)
+
+![Memory-light](./images/screenshot-memory-light.png)
 
 SoC Tab: misc info about the SoC
 
@@ -251,7 +258,7 @@ Thanks to user @woshiniming007 for the suggestion!
 
 - per-cluster CPU utilization
 - per-core CPU utilization
-- RAM & Swap usage & size
+- RAM & Swap usage & size (fallback)
 
 `powermetrics` is used to measure the following:
 
@@ -273,6 +280,10 @@ Some information is guesstimate and hardcoded as there doesn't seem to be a offi
 it on the system:
 
 - CPU, GPU & ANE max power draw
+
+`vm_stat` is used to measure the following:
+
+- Memory statistics compatible with Activity Monitor (anonymous, wired, compressed pages)
 
 ## License
 
