@@ -10,7 +10,7 @@ use ratatui::{
 
 use crate::app::App;
 
-use super::{tab_cpu, tab_gpu, tab_overview, tab_soc};
+use super::{tab_cpu, tab_gpu, tab_memory, tab_overview, tab_soc};
 
 /// Draw the main UI.
 pub(crate) fn draw(f: &mut Frame, app: &App, area: Rect) {
@@ -77,7 +77,8 @@ pub(crate) fn draw(f: &mut Frame, app: &App, area: Rect) {
         0 => tab_overview::draw_overview_tab(f, app, main_area),
         1 => tab_cpu::draw_cpu_tab(f, app, main_area),
         2 => tab_gpu::draw_gpu_tab(f, app, main_area),
-        3 => tab_soc::draw_soc_tab(f, app, main_area),
+        3 => tab_memory::draw_memory_tab(f, app, main_area),
+        4 => tab_soc::draw_soc_tab(f, app, main_area),
         _ => {}
     };
 }
