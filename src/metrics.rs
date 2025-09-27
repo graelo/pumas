@@ -356,7 +356,11 @@ pub(crate) struct MemoryMetrics {
 
 impl MemoryMetrics {
     pub(crate) fn ram_usage_ratio(&self) -> f64 {
-        self.ram_used as f64 / self.ram_total as f64
+        if self.ram_total == 0 {
+            return 0.0; // Avoid division by zero
+        }
+        let ratio = self.ram_used as f64 / self.ram_total as f64;
+        ratio.min(1.0) // Cap at 100% to prevent gauge issues
     }
     pub(crate) fn swap_usage_ratio(&self) -> f64 {
         if self.swap_total == 0 {
