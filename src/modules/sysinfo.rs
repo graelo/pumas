@@ -59,7 +59,7 @@ impl SystemState {
         // Use vm_stat for better memory accounting on macOS, fallback to sysinfo if it fails
         let memory_metrics = if let Ok(vm_stats) = super::vm_stat::VmStats::collect() {
             MemoryMetrics {
-                ram_total: vm_stats.total_memory(),
+                ram_total: self.system.total_memory(), // Use sysinfo for total memory (more reliable)
                 ram_used: vm_stats.activity_monitor_memory_used(),
                 swap_total: self.system.total_swap(),
                 swap_used: self.system.used_swap(),
