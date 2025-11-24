@@ -1,21 +1,21 @@
 name: Release
 on:
   push:
-   tags:
-     - 'v*'
+    tags:
+      - "v*"
 
 jobs:
   prepare-artifacts:
     name: Prepare release artifacts
     # if: github.ref == 'refs/heads/main'
-    runs-on: '${{ matrix.os }}'
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
           - os: macos-latest
             target: aarch64-apple-darwin
             rust: stable
-            suffix: ''
+            suffix: ""
             archive_ext: zip
     steps:
       - name: Rust install
@@ -32,20 +32,19 @@ jobs:
         continue-on-error: false
         with:
           path: |
-             ~/.cargo/bin/
-             ~/.cargo/registry/index/
-             ~/.cargo/registry/cache/
-             ~/.cargo/git/db/
-             target/
-          key: '${{ runner.os }}-${{ matrix.target }}-cargo-${{ matrix.rust }}-hash-${{ hashFiles(''**/Cargo.lock'') }}'
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: "${{ runner.os }}-${{ matrix.target }}-cargo-${{ matrix.rust }}-hash-${{ hashFiles('**/Cargo.lock') }}"
 
       - name: Build Release
         run: cargo build --release
 
       - name: Compress to zip (macOS)
         if: ${{ matrix.os == 'macos-latest' }}
-        run:
-          zip -A ${{ github.event.repository.name }}-${{ matrix.target }}.${{ matrix.archive_ext }} target/release/${{ github.event.repository.name }}
+        run: zip -A ${{ github.event.repository.name }}-${{ matrix.target }}.${{ matrix.archive_ext }} target/release/${{ github.event.repository.name }}
 
       - name: List files
         run: |
