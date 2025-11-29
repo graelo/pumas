@@ -75,6 +75,27 @@ SoC Tab: misc info about the SoC
 
 ![SoC](./images/screenshot-soc.png)
 
+## Prometheus Exporter
+
+Pumas can run as a Prometheus exporter to expose metrics for scraping.
+
+```sh
+sudo pumas server --port 2333
+```
+
+Metrics will be available at `http://localhost:2333/metrics`.
+
+### Grafana Dashboard
+
+A comprehensive Grafana dashboard is available in `examples/grafana_dashboard_pro.json`.
+It provides detailed visualization of:
+- GPU SM Activity & Frequency
+- Power Consumption breakdown
+- CPU Active Ratio & Frequency per core
+- Memory & Swap Usage
+- Disk Usage
+- Thermal Pressure & GPU DVFM Distribution
+
 ## Installation Methods
 
 ### Homebrew Tap
