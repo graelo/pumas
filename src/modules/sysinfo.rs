@@ -5,13 +5,19 @@
 //! - CPU usage per core, which is more accurate than the CPU usage obtained
 //!   via powermetrics on M2 chips.
 
-use sysinfo::{CpuRefreshKind, MemoryRefreshKind, System};
+use sysinfo::{CpuRefreshKind, MemoryRefreshKind, System, Disks};
 
 pub(crate) struct CpuMetrics {
     /// CPU ID (0 - ...)
     pub(crate) id: u16,
     /// Activity ratio (0.0 - 1.0).
     pub(crate) active_ratio: f32,
+}
+
+pub(crate) struct DiskMetrics {
+    pub(crate) name: String,
+    pub(crate) total_space: u64,
+    pub(crate) available_space: u64,
 }
 
 pub(crate) struct MemoryMetrics {
@@ -24,10 +30,12 @@ pub(crate) struct MemoryMetrics {
 pub(crate) struct Metrics {
     pub(crate) cpu_metrics: Vec<CpuMetrics>,
     pub(crate) memory_metrics: MemoryMetrics,
+    pub(crate) disk_metrics: Vec<DiskMetrics>,
 }
 
 pub(crate) struct SystemState {
     system: System,
+    disks: Disks,
 }
 
 impl SystemState {
@@ -35,7 +43,8 @@ impl SystemState {
         let mut system = System::new();
         system.refresh_cpu_specifics(CpuRefreshKind::default().with_cpu_usage());
         system.refresh_memory_specifics(MemoryRefreshKind::everything());
-        Self { system }
+        let disks = Disks::new_with_refreshed_list();
+        Self { system, disks }
     }
 
     pub(crate) fn latest_metrics(&mut self) -> Metrics {
@@ -45,6 +54,7 @@ impl SystemState {
             .refresh_memory_specifics(MemoryRefreshKind::default().with_ram());
         self.system
             .refresh_memory_specifics(MemoryRefreshKind::default().with_swap());
+        self.disks.refresh(true);
 
         let cpu_metrics = self
             .system
@@ -55,6 +65,12 @@ impl SystemState {
                 active_ratio: cpu.cpu_usage() / 100.0_f32,
             })
             .collect();
+
+        let disk_metrics = self.disks.iter().map(|disk| DiskMetrics {
+            name: disk.name().to_string_lossy().to_string(),
+            total_space: disk.total_space(),
+            available_space: disk.available_space(),
+        }).collect();
 
         // Use vm_stat for better memory accounting on macOS, fallback to sysinfo if it fails
         let memory_metrics = if let Ok(vm_stats) = super::vm_stat::VmStats::collect() {
@@ -77,6 +93,7 @@ impl SystemState {
         Metrics {
             cpu_metrics,
             memory_metrics,
+            disk_metrics,
         }
     }
 }

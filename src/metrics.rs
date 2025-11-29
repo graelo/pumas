@@ -36,6 +36,8 @@ pub(crate) struct Metrics {
     pub(crate) thermal_pressure: String,
     /// Memory metrics.
     pub(crate) memory: MemoryMetrics,
+    /// Disk metrics.
+    pub(crate) disk: Vec<DiskMetrics>,
 }
 
 impl FromStr for Metrics {
@@ -69,6 +71,7 @@ impl Metrics {
         sysinfo_metrics: sysinfo::Metrics,
     ) -> Result<Self> {
         self.memory = MemoryMetrics::from(sysinfo_metrics.memory_metrics);
+        self.disk = sysinfo_metrics.disk_metrics.into_iter().map(DiskMetrics::from).collect();
         self.set_cpus_active_ratio(&sysinfo_metrics.cpu_metrics)
     }
 
@@ -164,6 +167,7 @@ impl From<plist_parsing::Metrics> for Metrics {
         };
 
         let memory_metrics = MemoryMetrics::default();
+        let disk_metrics = Vec::new();
 
         Self {
             e_clusters,
@@ -172,6 +176,7 @@ impl From<plist_parsing::Metrics> for Metrics {
             consumption,
             thermal_pressure: value.thermal_pressure,
             memory: memory_metrics,
+            disk: disk_metrics,
         }
     }
 }
@@ -377,6 +382,24 @@ impl From<sysinfo::MemoryMetrics> for MemoryMetrics {
             ram_used: value.ram_used,
             swap_total: value.swap_total,
             swap_used: value.swap_used,
+        }
+    }
+}
+
+/// Disk metrics.
+#[derive(Debug, Serialize)]
+pub(crate) struct DiskMetrics {
+    pub(crate) name: String,
+    pub(crate) total_space: u64,
+    pub(crate) available_space: u64,
+}
+
+impl From<sysinfo::DiskMetrics> for DiskMetrics {
+    fn from(value: sysinfo::DiskMetrics) -> Self {
+        Self {
+            name: value.name,
+            total_space: value.total_space,
+            available_space: value.available_space,
         }
     }
 }
