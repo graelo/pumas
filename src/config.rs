@@ -29,6 +29,18 @@ pub enum Command {
         #[arg(value_enum, value_parser = clap::value_parser!(Shell))]
         shell: Shell,
     },
+
+    /// Run as a Prometheus exporter.
+    Server {
+        /// Port to listen on.
+        #[arg(short, long, default_value = "2333")]
+        port: u16,
+
+        /// Update rate [ms], min=100.
+        #[arg(short='i', long="sample-rate", default_value = "1000",
+            value_parser = clap::value_parser!(u16).range(100..))]
+        sample_rate_ms: u16,
+    },
 }
 
 /// UI configuration.

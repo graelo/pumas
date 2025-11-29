@@ -28,6 +28,10 @@ use crate::{
     ui, Result,
 };
 
+use prometheus::{Encoder, Gauge, GaugeVec, Opts, Registry, TextEncoder};
+use tiny_http::{Header, Response, Server};
+use std::sync::Arc;
+
 /// Launch the main loop.
 ///
 /// If `json` is false (default), configure the App struct and run the main loop which updates
@@ -66,6 +70,153 @@ enum Event {
     Input(Key),
     // Tick,
     Metrics(metrics::Metrics),
+}
+
+/// Launch the HTTP server and export metrics as JSON.
+pub fn run_server(port: u16, sample_rate_ms: u16) -> Result<()> {
+    let _soc_info = SocInfo::new()?;
+    let registry = Registry::new();
+
+    // Define metrics
+    let cpu_active_ratio = GaugeVec::new(
+        Opts::new("pumas_cpu_active_ratio", "CPU active ratio"),
+        &["cluster", "cpu_id"],
+    )
+    .unwrap();
+    registry.register(Box::new(cpu_active_ratio.clone())).unwrap();
+
+    let cpu_freq = GaugeVec::new(
+        Opts::new("pumas_cpu_frequency_mhz", "CPU frequency in MHz"),
+        &["cluster", "cpu_id"],
+    )
+    .unwrap();
+    registry.register(Box::new(cpu_freq.clone())).unwrap();
+
+    let gpu_active_ratio = Gauge::new("pumas_gpu_active_ratio", "GPU active ratio").unwrap();
+    registry.register(Box::new(gpu_active_ratio.clone())).unwrap();
+
+    let gpu_freq = Gauge::new("pumas_gpu_frequency_mhz", "GPU frequency in MHz").unwrap();
+    registry.register(Box::new(gpu_freq.clone())).unwrap();
+
+    let gpu_dvfm_ratio = GaugeVec::new(
+        Opts::new("pumas_gpu_dvfm_ratio", "GPU DVFM active ratio"),
+        &["freq_mhz"]
+    ).unwrap();
+    registry.register(Box::new(gpu_dvfm_ratio.clone())).unwrap();
+
+    let gpu_sm_activity = Gauge::new("pumas_gpu_sm_activity", "GPU SM Activity (Active Ratio)").unwrap();
+    registry.register(Box::new(gpu_sm_activity.clone())).unwrap();
+
+    let power_consumption = GaugeVec::new(
+        Opts::new("pumas_power_consumption_watts", "Power consumption in Watts"),
+        &["component"]
+    ).unwrap();
+    registry.register(Box::new(power_consumption.clone())).unwrap();
+
+    let memory_usage = GaugeVec::new(
+        Opts::new("pumas_memory_usage_bytes", "Memory usage in Bytes"),
+        &["type", "state"] // type: ram/swap, state: used/total
+    ).unwrap();
+    registry.register(Box::new(memory_usage.clone())).unwrap();
+    
+    let disk_usage = GaugeVec::new(
+        Opts::new("pumas_disk_usage_bytes", "Disk usage in Bytes"),
+        &["disk", "state"] // state: total/available/used
+    ).unwrap();
+    registry.register(Box::new(disk_usage.clone())).unwrap();
+
+    let thermal_pressure = Gauge::new("pumas_thermal_pressure", "Thermal pressure").unwrap();
+    registry.register(Box::new(thermal_pressure.clone())).unwrap();
+
+    let (tx, rx) = mpsc::channel();
+    thread::spawn(move || {
+        stream_metrics(Duration::from_millis(sample_rate_ms as u64), tx)
+    });
+
+    // Start HTTP server
+    let server = Server::http(format!("0.0.0.0:{}", port)).unwrap();
+    let registry = Arc::new(registry);
+
+    let registry_clone = registry.clone();
+    thread::spawn(move || {
+        for request in server.incoming_requests() {
+            if request.url() == "/metrics" {
+                let mut buffer = vec![];
+                let encoder = TextEncoder::new();
+                let metric_families = registry_clone.gather();
+                encoder.encode(&metric_families, &mut buffer).unwrap();
+
+                let response = Response::from_data(buffer).with_header(
+                    Header::from_bytes(&b"Content-Type"[..], &b"text/plain; version=0.0.4"[..])
+                        .unwrap(),
+                );
+                request.respond(response).unwrap();
+            } else {
+                let response = Response::from_string("Try /metrics").with_status_code(404);
+                request.respond(response).unwrap();
+            }
+        }
+    });
+
+    loop {
+        if let Event::Metrics(metrics) = rx.recv().unwrap() {
+            // Update metrics
+            for cluster in &metrics.e_clusters {
+                for cpu in &cluster.cpus {
+                    cpu_active_ratio
+                        .with_label_values(&["E", &cpu.id.to_string()])
+                        .set(cpu.active_ratio);
+                    cpu_freq
+                        .with_label_values(&["E", &cpu.id.to_string()])
+                        .set(cpu.freq_mhz as f64);
+                }
+            }
+            for cluster in &metrics.p_clusters {
+                for cpu in &cluster.cpus {
+                    cpu_active_ratio
+                        .with_label_values(&["P", &cpu.id.to_string()])
+                        .set(cpu.active_ratio);
+                    cpu_freq
+                        .with_label_values(&["P", &cpu.id.to_string()])
+                        .set(cpu.freq_mhz as f64);
+                }
+            }
+
+            gpu_active_ratio.set(metrics.gpu.active_ratio);
+            gpu_sm_activity.set(metrics.gpu.active_ratio);
+            gpu_freq.set(metrics.gpu.freq_mhz as f64);
+
+            for state in &metrics.gpu.dvfm_states {
+                gpu_dvfm_ratio.with_label_values(&[&state.freq_mhz.to_string()]).set(state.active_ratio);
+            }
+
+            power_consumption.with_label_values(&["cpu"]).set(metrics.consumption.cpu_w as f64);
+            power_consumption.with_label_values(&["gpu"]).set(metrics.consumption.gpu_w as f64);
+            power_consumption.with_label_values(&["ane"]).set(metrics.consumption.ane_w as f64);
+            power_consumption.with_label_values(&["package"]).set(metrics.consumption.package_w as f64);
+
+            memory_usage.with_label_values(&["ram", "used"]).set(metrics.memory.ram_used as f64);
+            memory_usage.with_label_values(&["ram", "total"]).set(metrics.memory.ram_total as f64);
+            memory_usage.with_label_values(&["swap", "used"]).set(metrics.memory.swap_used as f64);
+            memory_usage.with_label_values(&["swap", "total"]).set(metrics.memory.swap_total as f64);
+            
+            for disk in &metrics.disk {
+                disk_usage.with_label_values(&[&disk.name, "total"]).set(disk.total_space as f64);
+                disk_usage.with_label_values(&[&disk.name, "available"]).set(disk.available_space as f64);
+                disk_usage.with_label_values(&[&disk.name, "used"]).set((disk.total_space - disk.available_space) as f64);
+            }
+
+            let pressure = match metrics.thermal_pressure.as_str() {
+                "Nominal" => 0.0,
+                "Moderate" => 1.0,
+                "Heavy" => 2.0,
+                "Trapping" => 3.0,
+                "Sleeping" => 4.0,
+                _ => -1.0,
+            };
+            thermal_pressure.set(pressure);
+        }
+    }
 }
 
 /// Start the event stream sources and launch the UI event loop.

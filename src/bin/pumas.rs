@@ -15,6 +15,10 @@ fn main() -> Result<()> {
             monitor::run(args)?;
         }
 
+        Command::Server { port, sample_rate_ms } => {
+            monitor::run_server(port, sample_rate_ms)?;
+        }
+
         Command::GenerateCompletion { shell } => {
             let mut app = Config::command();
             let name = app.get_name().to_string();
