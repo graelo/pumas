@@ -64,24 +64,32 @@ jobs:
           rm convco
 
       - name: Quality - cargo deny check
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION=$(curl -s https://api.github.com/repos/EmbarkStudios/cargo-deny/releases/latest | jq -r '.tag_name')
+          VERSION=$(curl -sH "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/EmbarkStudios/cargo-deny/releases/latest | jq -r '.tag_name')
+          if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+            echo "::error::Failed to fetch cargo-deny version from GitHub API"
+            exit 1
+          fi
+          echo "Installing cargo-deny $VERSION"
           curl -sSfL "https://github.com/EmbarkStudios/cargo-deny/releases/download/${VERSION}/cargo-deny-${VERSION}-aarch64-apple-darwin.tar.gz" | \
             gtar zx --no-anchored cargo-deny --strip-components=1
           chmod +x cargo-deny
           mv cargo-deny ~/.cargo/bin/
           cargo deny check
 
-      # - name: Quality - cargo outdated
-      #   timeout-minutes: 20
-      #   run: |
-      #     VERSION=$(curl -s https://api.github.com/repos/kbknapp/cargo-outdated/releases/latest | jq -r '.tag_name')
-      #     curl -sSfL "https://github.com/kbknapp/cargo-outdated/releases/download/${VERSION}/cargo-outdated-${VERSION#v}-aarch64-apple-darwin.tar.gz" | \
-      #       gtar zx
-      #     chmod +x cargo-outdated
-      #     mv cargo-outdated ~/.cargo/bin/
-      #     rm -rf ~/.cargo/advisory-db
-      #     cargo outdated --exit-code 1
+      - name: Quality - cargo outdated
+        timeout-minutes: 20
+        run: |
+          cargo install --locked cargo-outdated || true
+          #     VERSION=$(curl -s https://api.github.com/repos/kbknapp/cargo-outdated/releases/latest | jq -r '.tag_name')
+          #     curl -sSfL "https://github.com/kbknapp/cargo-outdated/releases/download/${VERSION}/cargo-outdated-${VERSION#v}-aarch64-apple-darwin.tar.gz" | \
+          #       gtar zx
+          #     chmod +x cargo-outdated
+          #     mv cargo-outdated ~/.cargo/bin/
+          #     rm -rf ~/.cargo/advisory-db
+          cargo outdated --exit-code 1
 
       - name: Quality - cargo pants
         run: |
