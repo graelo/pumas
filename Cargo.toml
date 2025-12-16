@@ -1,6 +1,6 @@
 [package]
 name = "pumas"
-version = "0.3.2"
+version = "0.3.3"
 edition = "2021"
 rust-version = "1.74.0"
 description = "A power usage monitor for Apple Silicon."
