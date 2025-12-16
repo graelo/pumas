@@ -28,7 +28,7 @@ impl<T: Num + ToPrimitive + PartialOrd + Copy> Signal<T> {
         if self.points.len() == self.points.capacity() {
             self.points.pop_front();
         }
-        self.points.push_back(value.to_u64().unwrap());
+        self.points.push_back(value.to_u64().unwrap_or(0));
         self.points.make_contiguous();
     }
 }
