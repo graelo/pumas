@@ -23,6 +23,7 @@ use termion::{
 use crate::{
     app::App,
     config::RunConfig,
+    error::Error as CrateError,
     metrics,
     modules::{powermetrics, soc::SocInfo, sysinfo},
     ui, Result,
@@ -145,7 +146,11 @@ fn start_event_threads(tick_rate: Duration) -> mpsc::Receiver<Event> {
     //     thread::sleep(tick_rate);
     // });
 
-    thread::spawn(move || stream_metrics(tick_rate, tx));
+    thread::spawn(move || {
+        if let Err(err) = stream_metrics(tick_rate, tx) {
+            eprintln!("powermetrics error: {err}");
+        }
+    });
 
     rx
 }
@@ -164,7 +169,7 @@ fn start_event_threads(tick_rate: Duration) -> mpsc::Receiver<Event> {
 ///
 /// Powermetrics outputs a plist file, but it is not valid XML, so we fix the issues before sending
 /// them to the plist parser.
-fn stream_metrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
+fn stream_metrics(tick_rate: Duration, tx: mpsc::Sender<Event>) -> Result<()> {
     let sample_rate_ms = format!("{}", tick_rate.as_millis());
 
     let binary = "/usr/bin/powermetrics";
@@ -183,9 +188,9 @@ fn stream_metrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
         .args(&args)
         .stdout(process::Stdio::piped())
         .spawn()
-        .unwrap();
+        .map_err(CrateError::PowermetricsSpawn)?;
 
-    let stdout = cmd.stdout.as_mut().unwrap();
+    let stdout = cmd.stdout.as_mut().ok_or(CrateError::PowermetricsStdout)?;
     let stdout_reader = BufReader::new(stdout);
     let stdout_lines = stdout_reader.lines();
 
@@ -213,7 +218,7 @@ fn stream_metrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
                 Ok(metrics) => metrics,
                 Err(err) => {
                     eprintln!("{err}");
-                    cmd.kill().unwrap();
+                    cmd.kill().map_err(CrateError::PowermetricsKill)?;
                     break;
                 }
             };
@@ -224,20 +229,21 @@ fn stream_metrics(tick_rate: Duration, tx: mpsc::Sender<Event>) {
                 Ok(metrics) => metrics,
                 Err(err) => {
                     eprintln!("{err}");
-                    cmd.kill().unwrap();
+                    cmd.kill().map_err(CrateError::PowermetricsKill)?;
                     break;
                 }
             };
 
             if let Err(err) = tx.send(Event::Metrics(metrics)) {
                 eprintln!("{err}");
-                cmd.kill().unwrap();
+                cmd.kill().map_err(CrateError::PowermetricsKill)?;
                 break;
             }
         }
     }
 
-    cmd.try_wait().unwrap();
+    cmd.try_wait().map_err(CrateError::PowermetricsKill)?;
+    Ok(())
 }
 
 // pub fn exec_stream<P: AsRef<Path>>(binary: P, args: Vec<&'static str>) {
