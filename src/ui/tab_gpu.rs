@@ -2,16 +2,16 @@
 
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Modifier, Style},
+    style::{Color, Modifier, Style},
     symbols,
-    text::Span,
+    text::{Line, Span},
     widgets::{Block, Borders, Cell, LineGauge, Paragraph, Row, Sparkline, Table},
     Frame,
 };
 
 use crate::{
     app::{App, AppColors, History},
-    metrics::GpuMetrics,
+    metrics::{GpuMetrics, Metrics},
     units,
 };
 
@@ -20,14 +20,10 @@ const ACTIVITY_HISTORY_LENGTH: u16 = 8;
 const FREQUENCY_LABEL_WIDTH: u16 = 6; // "freq: "
 const FREQUENCY_VALUE_WIDTH: u16 = 10; // "1070 MHz "
 const FREQUENCY_HISTORY_LENGTH: u16 = 8;
-// const FREQUENCY_TABLE_HEIGHT: u16 = 4;
+const POWER_HISTORY_LENGTH: u16 = 8;
 
 /// Draw the GPU tab.
 pub(crate) fn draw_gpu_tab(f: &mut Frame, app: &App, area: Rect) {
-    // let text = Text::from("Coming soon: GPU Power and frequency distribution.");
-    // let par = Paragraph::new(text).block(Block::default().title("Paragraph").borders(Borders::ALL));
-    // f.render_widget(par, area);
-
     let metrics = match &app.metrics {
         Some(metrics) => metrics,
         None => return,
@@ -36,31 +32,44 @@ pub(crate) fn draw_gpu_tab(f: &mut Frame, app: &App, area: Rect) {
     let gpu_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),
-            Constraint::Length(5),
-            Constraint::Min(0),
+            Constraint::Length(4), // GPU activity + frequency + power
+            Constraint::Length(3), // Thermal pressure
+            Constraint::Length(5), // Frequency table
+            Constraint::Min(0),    // Remaining space
         ])
         .split(area);
-    let gpu_freq_area = gpu_chunks[0];
-    let freq_table_area = gpu_chunks[1];
+    let gpu_area = gpu_chunks[0];
+    let thermal_area = gpu_chunks[1];
+    let freq_table_area = gpu_chunks[2];
 
-    draw_gpu(f, &metrics.gpu, &app.history, &app.colors, gpu_freq_area);
+    draw_gpu(f, metrics, &app.history, &app.colors, gpu_area);
+    draw_thermal_pressure(f, metrics, &app.colors, thermal_area);
     draw_freq_table(f, &metrics.gpu, freq_table_area);
 }
 
-fn draw_gpu(f: &mut Frame, gpu: &GpuMetrics, history: &History, colors: &AppColors, area: Rect) {
+fn draw_gpu(f: &mut Frame, metrics: &Metrics, history: &History, colors: &AppColors, area: Rect) {
     let block = Block::default().title("GPU: ").borders(Borders::ALL);
     f.render_widget(block, area);
 
+    let gpu = &metrics.gpu;
+
+    // Split into two rows: activity+frequency and power+peak.
+    let vertical_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(1), Constraint::Length(1)])
+        .margin(1)
+        .split(area);
+    let top_row = vertical_chunks[0];
+    let bottom_row = vertical_chunks[1];
+
     //
-    // GPU activity.
+    // Top row: GPU activity + frequency.
     //
 
     let activity_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)])
-        .margin(1)
-        .split(area);
+        .split(top_row);
 
     let activity_area = activity_chunks[0];
     let frequency_area = activity_chunks[1];
@@ -142,6 +151,70 @@ fn draw_gpu(f: &mut Frame, gpu: &GpuMetrics, history: &History, colors: &AppColo
         // .label(label)
         .ratio(gpu.freq_ratio());
     f.render_widget(gauge, freq_gauge_area);
+
+    //
+    // Bottom row: GPU power + peak values.
+    //
+
+    let power_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)])
+        .split(bottom_row);
+    let power_area = power_chunks[0];
+    let peak_area = power_chunks[1];
+
+    // GPU power with sparkline.
+    let power_inner_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Length(POWER_HISTORY_LENGTH + 1),
+            Constraint::Min(0),
+        ])
+        .split(power_area);
+    let power_hist_area = power_inner_chunks[0];
+    let power_value_area = power_inner_chunks[1];
+
+    let sig = history.get("gpu_w").unwrap();
+    let power_history_sparkline = Sparkline::default()
+        .style(
+            Style::default()
+                .fg(colors.history_fg())
+                .bg(colors.history_bg()),
+        )
+        .bar_set(symbols::bar::NINE_LEVELS)
+        .data(sig.as_slice_last_n(POWER_HISTORY_LENGTH as usize))
+        .max((SPARKLINE_MAX_OVERSHOOT * sig.max) as u64);
+    f.render_widget(power_history_sparkline, power_hist_area);
+
+    let power_value_text = units::watts2(metrics.consumption.gpu_w);
+    let par = Paragraph::new(Span::from(power_value_text));
+    f.render_widget(par, power_value_area);
+
+    // Peak values display.
+    let sig_activity = history.get("gpu_active_percent").unwrap();
+    let sig_power = history.get("gpu_w").unwrap();
+    let peak_text = format!(
+        "Peak: {} | {}",
+        units::percent1(sig_activity.peak),
+        units::watts2(sig_power.peak)
+    );
+    let par = Paragraph::new(Span::from(peak_text));
+    f.render_widget(par, peak_area);
+}
+
+/// Draw thermal pressure indicator with color coding.
+fn draw_thermal_pressure(f: &mut Frame, metrics: &Metrics, colors: &AppColors, area: Rect) {
+    let color = match metrics.thermal_pressure.as_str() {
+        "Nominal" => colors.accent(),
+        _ => Color::Yellow,
+    };
+    let text = Line::from(vec![
+        Span::raw("Pressure: "),
+        Span::styled(&metrics.thermal_pressure, Style::default().fg(color)),
+    ]);
+    let paragraph =
+        Paragraph::new(text).block(Block::default().title(" Thermals ").borders(Borders::ALL));
+    f.render_widget(paragraph, area);
 }
 
 fn draw_freq_table(f: &mut Frame, gpu_metrics: &GpuMetrics, area: Rect) {

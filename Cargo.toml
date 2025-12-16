@@ -67,3 +67,5 @@ codegen-units = 1
 # costs performance, so let’s skip stack traces and the ability to catch panics
 # for reduced code size and better cache usage:
 panic = "abort"
+
+strip = true
