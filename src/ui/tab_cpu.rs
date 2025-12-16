@@ -10,7 +10,8 @@ use ratatui::{
 };
 
 use crate::{
-    app::{App, AppColors, History},
+    app::{App, AppColors, History, HistoryExt},
+    metric_key::MetricKey,
     metrics::{ClusterMetrics, CpuMetrics, Metrics},
     units,
 };
@@ -175,8 +176,7 @@ fn draw_cpu(f: &mut Frame, cpu: &CpuMetrics, history: &History, colors: &AppColo
     let acti_histo_area = activity_chunks[0];
     let acti_gauge_area = activity_chunks[1];
 
-    let sig_name = format!("{}_active_percent", cpu.id);
-    let sig = history.get(&sig_name).unwrap();
+    let sig = history.get_or_default(&MetricKey::CpuActivePercent(cpu.id));
     let activity_history_sparkline = Sparkline::default()
         .style(
             Style::default()
@@ -219,8 +219,7 @@ fn draw_cpu(f: &mut Frame, cpu: &CpuMetrics, history: &History, colors: &AppColo
     let par = Paragraph::new(Span::from(freq_label_text));
     f.render_widget(par, freq_label_area);
 
-    let sig_name = format!("{}_freq_percent", cpu.id);
-    let sig = history.get(&sig_name).unwrap();
+    let sig = history.get_or_default(&MetricKey::CpuFreqPercent(cpu.id));
     let freq_history_sparkline = Sparkline::default()
         .style(
             Style::default()

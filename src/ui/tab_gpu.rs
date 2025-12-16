@@ -10,7 +10,8 @@ use ratatui::{
 };
 
 use crate::{
-    app::{App, AppColors, History},
+    app::{App, AppColors, History, HistoryExt},
+    metric_key::MetricKey,
     metrics::{GpuMetrics, Metrics},
     units,
 };
@@ -84,7 +85,7 @@ fn draw_gpu(f: &mut Frame, metrics: &Metrics, history: &History, colors: &AppCol
     let acti_histo_area = activity_chunks[0];
     let acti_gauge_area = activity_chunks[1];
 
-    let sig = history.get("gpu_active_percent").unwrap();
+    let sig = history.get_or_default(&MetricKey::GpuActivePercent);
     let activity_history_sparkline = Sparkline::default()
         .style(
             Style::default()
@@ -127,7 +128,7 @@ fn draw_gpu(f: &mut Frame, metrics: &Metrics, history: &History, colors: &AppCol
     let par = Paragraph::new(Span::from(freq_label_text));
     f.render_widget(par, freq_label_area);
 
-    let sig = history.get("gpu_freq_percent").unwrap();
+    let sig = history.get_or_default(&MetricKey::GpuFreqPercent);
     let freq_history_sparkline = Sparkline::default()
         .style(
             Style::default()
@@ -174,7 +175,7 @@ fn draw_gpu(f: &mut Frame, metrics: &Metrics, history: &History, colors: &AppCol
     let power_hist_area = power_inner_chunks[0];
     let power_value_area = power_inner_chunks[1];
 
-    let sig = history.get("gpu_w").unwrap();
+    let sig = history.get_or_default(&MetricKey::GpuPowerW);
     let power_history_sparkline = Sparkline::default()
         .style(
             Style::default()
@@ -191,8 +192,8 @@ fn draw_gpu(f: &mut Frame, metrics: &Metrics, history: &History, colors: &AppCol
     f.render_widget(par, power_value_area);
 
     // Peak values display.
-    let sig_activity = history.get("gpu_active_percent").unwrap();
-    let sig_power = history.get("gpu_w").unwrap();
+    let sig_activity = history.get_or_default(&MetricKey::GpuActivePercent);
+    let sig_power = history.get_or_default(&MetricKey::GpuPowerW);
     let peak_text = format!(
         "Peak: {} | {}",
         units::percent1(sig_activity.peak),
