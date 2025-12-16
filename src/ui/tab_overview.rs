@@ -10,7 +10,8 @@ use ratatui::{
 };
 
 use crate::{
-    app::{App, AppColors, History},
+    app::{App, AppColors, History, HistoryExt},
+    metric_key::{ClusterId, MetricKey},
     metrics,
     modules::soc::SocInfo,
     units,
@@ -140,7 +141,7 @@ fn draw_cpu_clusters_usage_block(
     let num_cluster_blocks =
         num_blocks_for(metrics.e_clusters.len()) + num_blocks_for(metrics.p_clusters.len());
 
-    let sig = history.get("cpu_w").unwrap();
+    let sig = history.get_or_default(&MetricKey::CpuPowerW);
     let title = "CPU Clusters";
     let title_with_power = format!(
         " {title}: {} (peak: {}) ",
@@ -174,20 +175,27 @@ fn draw_cpu_clusters_usage_block(
     let mut clu_area_iter = cpu_cluster_chunks.iter();
 
     // Draw the metrics for the Efficiency cluster (or clusters).
-    for clu_slice in metrics.e_clusters.chunks(2) {
-        let area = clu_area_iter.next().unwrap();
+    for (chunk_idx, clu_slice) in metrics.e_clusters.chunks(2).enumerate() {
+        let area = clu_area_iter
+            .next()
+            .expect("layout: expected area for E-cluster block");
 
         match clu_slice.len() {
             1 => {
                 let cluster = &clu_slice[0];
-                draw_cluster_overall_metrics(f, cluster, history, colors, *area);
+                let cluster_id = ClusterId::efficiency((chunk_idx * 2) as u8);
+                draw_cluster_overall_metrics(f, cluster, cluster_id, history, colors, *area);
             }
             2 => {
                 let (left_cluster, right_cluster) = (&clu_slice[0], &clu_slice[1]);
+                let left_id = ClusterId::efficiency((chunk_idx * 2) as u8);
+                let right_id = ClusterId::efficiency((chunk_idx * 2 + 1) as u8);
                 draw_cluster_pair_overall_metrics(
                     f,
                     left_cluster,
+                    left_id,
                     right_cluster,
+                    right_id,
                     history,
                     colors,
                     *area,
@@ -200,20 +208,27 @@ fn draw_cpu_clusters_usage_block(
     // Draw the metrics for the Performance cluster (or clusters).
     // Yes this is duplicate code, but the alternative is to have a function with many arguments
     // which is just used here.
-    for clu_slice in metrics.p_clusters.chunks(2) {
-        let area = clu_area_iter.next().unwrap();
+    for (chunk_idx, clu_slice) in metrics.p_clusters.chunks(2).enumerate() {
+        let area = clu_area_iter
+            .next()
+            .expect("layout: expected area for P-cluster block");
 
         match clu_slice.len() {
             1 => {
                 let cluster = &clu_slice[0];
-                draw_cluster_overall_metrics(f, cluster, history, colors, *area);
+                let cluster_id = ClusterId::performance((chunk_idx * 2) as u8);
+                draw_cluster_overall_metrics(f, cluster, cluster_id, history, colors, *area);
             }
             2 => {
                 let (left_cluster, right_cluster) = (&clu_slice[0], &clu_slice[1]);
+                let left_id = ClusterId::performance((chunk_idx * 2) as u8);
+                let right_id = ClusterId::performance((chunk_idx * 2 + 1) as u8);
                 draw_cluster_pair_overall_metrics(
                     f,
                     left_cluster,
+                    left_id,
                     right_cluster,
+                    right_id,
                     history,
                     colors,
                     *area,
@@ -235,6 +250,7 @@ fn draw_cpu_clusters_usage_block(
 fn draw_cluster_overall_metrics(
     f: &mut Frame,
     cluster: &metrics::ClusterMetrics,
+    cluster_id: ClusterId,
     history: &History,
     colors: &AppColors,
     area: Rect,
@@ -251,8 +267,7 @@ fn draw_cluster_overall_metrics(
     let bottom_area = chunks[1];
 
     // Cluster cores Usage Gauge.
-    let sig_name = format!("{}_active_percent", cluster.name);
-    let sig = history.get(&sig_name).unwrap();
+    let sig = history.get_or_default(&MetricKey::ClusterActivePercent(cluster_id));
     let title = format!(
         "{}: {} @ {} (peak: {})",
         cluster.name,
@@ -290,10 +305,13 @@ fn draw_cluster_overall_metrics(
 ///  ▁ ▄▅▄ ▁    ▂   ▃▃                                          ▃   ▅
 /// ██▅█████▄▆▄▅█▄▆███▆▇▅▇▅▅▅█▆█▃▅▃▅▄▅▅▅▅█▄▅▃▅▅▆  ▃▄▁▂▁▄▃▁▇▃▂▃▁▆█▂▃▆█▂▂▂▂▂▃▁▂▁▁ ▂▂▂▂▂▃▂▁▁▂▂▃▂
 ///
+#[allow(clippy::too_many_arguments)]
 fn draw_cluster_pair_overall_metrics(
     f: &mut Frame,
     left_cluster: &metrics::ClusterMetrics,
+    left_id: ClusterId,
     right_cluster: &metrics::ClusterMetrics,
+    right_id: ClusterId,
     history: &History,
     colors: &AppColors,
     area: Rect,
@@ -310,8 +328,8 @@ fn draw_cluster_pair_overall_metrics(
     let left_area = horizontal_chunks[0];
     let right_area = horizontal_chunks[2];
 
-    draw_cluster_overall_metrics(f, left_cluster, history, colors, left_area);
-    draw_cluster_overall_metrics(f, right_cluster, history, colors, right_area);
+    draw_cluster_overall_metrics(f, left_cluster, left_id, history, colors, left_area);
+    draw_cluster_overall_metrics(f, right_cluster, right_id, history, colors, right_area);
 }
 
 /// Draw the GPU & ANE usage block.
@@ -363,8 +381,8 @@ fn draw_gpu_ane_usage_block(
 
     // left: GPU.
     let gpu = &metrics.gpu;
-    let sig = history.get("gpu_active_percent").unwrap();
-    let sig_gpu_power = history.get("gpu_w").unwrap();
+    let sig = history.get_or_default(&MetricKey::GpuActivePercent);
+    let sig_gpu_power = history.get_or_default(&MetricKey::GpuPowerW);
     let title = format!(
         "GPU: {} @ {} | {} (peak: {} | {})",
         units::percent1(gpu.active_ratio * 100.0),
@@ -397,8 +415,8 @@ fn draw_gpu_ane_usage_block(
 
     // Right: ANE.
     let ane_active_ratio = metrics.consumption.ane_w as f64 / soc_info.max_ane_w;
-    let sig = history.get("ane_active_percent").unwrap();
-    let sig_ane_power = history.get("ane_w").unwrap();
+    let sig = history.get_or_default(&MetricKey::AneActivePercent);
+    let sig_ane_power = history.get_or_default(&MetricKey::AnePowerW);
     let title = format!(
         "ANE: {} | {} (peak: {} | {})",
         units::percent1(ane_active_ratio * 100.0),
@@ -497,7 +515,7 @@ fn draw_mem_usage_block(
 
     // left: RAM.
     {
-        let sig = history.get("ram_usage_bytes").unwrap();
+        let sig = history.get_or_default(&MetricKey::RamUsageBytes);
         let ram_usage_ratio = mem.ram_usage_ratio();
         let title = format!(
             "Memory Used: {} = {} / {} (peak: {} = {})",
@@ -532,7 +550,7 @@ fn draw_mem_usage_block(
 
     // right: Swap.
     {
-        let sig = history.get("swap_usage_bytes").unwrap();
+        let sig = history.get_or_default(&MetricKey::SwapUsageBytes);
         let swap_usage_ratio = mem.swap_usage_ratio();
         let title = format!(
             "SWAP: {} = {} / {} (peak: {})",
@@ -592,7 +610,7 @@ fn draw_package_power_block(
     let title_area = vertical_chunks[0];
     let sparkline_area = vertical_chunks[1];
 
-    let sig = history.get("package_w").unwrap();
+    let sig = history.get_or_default(&MetricKey::PackagePowerW);
     let title = format!(
         "CPU+GPU+ANE: {} (peak: {})",
         units::watts2(metrics.consumption.package_w),

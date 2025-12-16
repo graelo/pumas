@@ -10,7 +10,8 @@ use ratatui::{
 };
 
 use crate::{
-    app::{App, AppColors, History},
+    app::{App, AppColors, History, HistoryExt},
+    metric_key::MetricKey,
     metrics::{ClusterMetrics, CpuMetrics, Metrics},
     units,
 };
@@ -87,15 +88,21 @@ pub(crate) fn draw_cpu_tab(f: &mut Frame, app: &App, area: Rect) {
     let mut clu_area_iter = cpu_cluster_chunks.iter();
 
     for cluster in metrics.e_clusters.iter() {
-        let cluster_area = clu_area_iter.next().unwrap();
+        let cluster_area = clu_area_iter
+            .next()
+            .expect("layout: expected area for E-cluster");
         draw_cpu_cluster(f, cluster, &app.history, &app.colors, *cluster_area);
     }
     for cluster in metrics.p_clusters.iter() {
-        let cluster_area = clu_area_iter.next().unwrap();
+        let cluster_area = clu_area_iter
+            .next()
+            .expect("layout: expected area for P-cluster");
         draw_cpu_cluster(f, cluster, &app.history, &app.colors, *cluster_area);
     }
 
-    let freq_table_area = clu_area_iter.next().unwrap();
+    let freq_table_area = clu_area_iter
+        .next()
+        .expect("layout: expected area for frequency table");
     draw_freq_table(f, metrics, *freq_table_area);
 }
 
@@ -121,7 +128,9 @@ fn draw_cpu_cluster(
     let mut cpu_area_iter = cpu_chunks.iter();
 
     for cpu in cluster.cpus.iter() {
-        let cpu_area = cpu_area_iter.next().unwrap();
+        let cpu_area = cpu_area_iter
+            .next()
+            .expect("layout: expected area for CPU core");
         draw_cpu(f, cpu, history, colors, *cpu_area);
     }
 }
@@ -167,8 +176,7 @@ fn draw_cpu(f: &mut Frame, cpu: &CpuMetrics, history: &History, colors: &AppColo
     let acti_histo_area = activity_chunks[0];
     let acti_gauge_area = activity_chunks[1];
 
-    let sig_name = format!("{}_active_percent", cpu.id);
-    let sig = history.get(&sig_name).unwrap();
+    let sig = history.get_or_default(&MetricKey::CpuActivePercent(cpu.id));
     let activity_history_sparkline = Sparkline::default()
         .style(
             Style::default()
@@ -211,8 +219,7 @@ fn draw_cpu(f: &mut Frame, cpu: &CpuMetrics, history: &History, colors: &AppColo
     let par = Paragraph::new(Span::from(freq_label_text));
     f.render_widget(par, freq_label_area);
 
-    let sig_name = format!("{}_freq_percent", cpu.id);
-    let sig = history.get(&sig_name).unwrap();
+    let sig = history.get_or_default(&MetricKey::CpuFreqPercent(cpu.id));
     let freq_history_sparkline = Sparkline::default()
         .style(
             Style::default()

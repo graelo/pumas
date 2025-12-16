@@ -291,6 +291,7 @@
 mod app;
 pub mod config;
 pub mod error;
+mod metric_key;
 mod metrics;
 mod modules;
 pub mod monitor;

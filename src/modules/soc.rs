@@ -150,7 +150,7 @@ mod tests {
     fn parse_cpu_info_ok() {
         let buffer = "Apple M1\n8\n4\n4\n";
 
-        let actual = parse_cpu_info(buffer).unwrap();
+        let actual = parse_cpu_info(buffer).expect("Parsing CPU Info should succeed");
         let expected = ("Apple M1".to_string(), 8, 4, 4);
 
         assert_eq!(actual, expected);
@@ -179,7 +179,7 @@ mod tests {
           Connection Type: Internal
     ";
 
-        let actual = parse_gpu_info(buffer).unwrap();
+        let actual = parse_gpu_info(buffer).expect("Parsing GPU Info should succeed");
         let expected = 8;
 
         assert_eq!(actual, expected);

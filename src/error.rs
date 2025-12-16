@@ -43,4 +43,16 @@ pub enum Error {
         /// Source error.
         source: io::Error,
     },
+
+    /// Error spawning powermetrics subprocess.
+    #[error("failed to spawn powermetrics: `{0}`")]
+    PowermetricsSpawn(io::Error),
+
+    /// Error accessing powermetrics stdout.
+    #[error("powermetrics stdout not available")]
+    PowermetricsStdout,
+
+    /// Error killing powermetrics subprocess.
+    #[error("failed to kill powermetrics: `{0}`")]
+    PowermetricsKill(io::Error),
 }

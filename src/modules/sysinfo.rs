@@ -51,7 +51,7 @@ impl SystemState {
             .cpus()
             .iter()
             .map(|cpu| CpuMetrics {
-                id: cpu.name().parse::<u16>().unwrap() - 1_u16,
+                id: cpu.name().parse::<u16>().unwrap_or(0).saturating_sub(1),
                 active_ratio: cpu.cpu_usage() / 100.0_f32,
             })
             .collect();

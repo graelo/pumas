@@ -2,9 +2,31 @@
 
 use std::collections::HashMap;
 
-use crate::{config::UiColors, metrics::Metrics, modules::soc::SocInfo, signal};
+use crate::{
+    config::UiColors,
+    metric_key::{ClusterId, MetricKey},
+    metrics::Metrics,
+    modules::soc::SocInfo,
+    signal,
+};
 
-pub(crate) type History = HashMap<String, signal::Signal<f32>>;
+pub(crate) type History = HashMap<MetricKey, signal::Signal<f32>>;
+
+/// Default empty signal for safe history access.
+static DEFAULT_SIGNAL: std::sync::LazyLock<signal::Signal<f32>> =
+    std::sync::LazyLock::new(|| signal::Signal::with_capacity(0, 0.0));
+
+/// Extension trait for safe history access.
+pub(crate) trait HistoryExt {
+    /// Returns a reference to the signal for the given key, or a default empty signal if not found.
+    fn get_or_default(&self, key: &MetricKey) -> &signal::Signal<f32>;
+}
+
+impl HistoryExt for History {
+    fn get_or_default(&self, key: &MetricKey) -> &signal::Signal<f32> {
+        self.get(key).unwrap_or(&DEFAULT_SIGNAL)
+    }
+}
 
 pub(crate) struct TabsState<'a> {
     pub(crate) titles: Vec<&'a str>,
@@ -143,11 +165,11 @@ impl<'a> App<'a> {
         // Active ratios.
         //
 
-        for e_cluster in &metrics.e_clusters {
+        for (idx, e_cluster) in metrics.e_clusters.iter().enumerate() {
             // Cluster activity ratio.
-            let sig_name = format!("{}_active_percent", e_cluster.name);
+            let key = MetricKey::ClusterActivePercent(ClusterId::efficiency(idx as u8));
             self.history
-                .entry(sig_name)
+                .entry(key)
                 .or_insert(signal::Signal::with_capacity(
                     self.history_size,
                     /* max */ 100.0,
@@ -156,9 +178,8 @@ impl<'a> App<'a> {
 
             for cpu in &e_cluster.cpus {
                 // Per-core activity ratio.
-                let sig_name = format!("{}_active_percent", cpu.id);
                 self.history
-                    .entry(sig_name)
+                    .entry(MetricKey::CpuActivePercent(cpu.id))
                     .or_insert(signal::Signal::with_capacity(
                         self.history_size,
                         /* max */ 100.0,
@@ -166,9 +187,8 @@ impl<'a> App<'a> {
                     .push(100.0 * cpu.active_ratio as f32);
 
                 // Per-core frequency.
-                let sig_name = format!("{}_freq_percent", cpu.id);
                 self.history
-                    .entry(sig_name)
+                    .entry(MetricKey::CpuFreqPercent(cpu.id))
                     .or_insert(signal::Signal::with_capacity(
                         self.history_size,
                         /* max */ 100.0,
@@ -177,11 +197,11 @@ impl<'a> App<'a> {
             }
         }
 
-        for p_cluster in &metrics.p_clusters {
+        for (idx, p_cluster) in metrics.p_clusters.iter().enumerate() {
             // Cluster activity ratio.
-            let sig_name = format!("{}_active_percent", p_cluster.name);
+            let key = MetricKey::ClusterActivePercent(ClusterId::performance(idx as u8));
             self.history
-                .entry(sig_name)
+                .entry(key)
                 .or_insert(signal::Signal::with_capacity(
                     self.history_size,
                     /* max */ 100.0,
@@ -190,9 +210,8 @@ impl<'a> App<'a> {
 
             for cpu in &p_cluster.cpus {
                 // Per-core activity ratio.
-                let sig_name = format!("{}_active_percent", cpu.id);
                 self.history
-                    .entry(sig_name)
+                    .entry(MetricKey::CpuActivePercent(cpu.id))
                     .or_insert(signal::Signal::with_capacity(
                         self.history_size,
                         /* max */ 100.0,
@@ -200,9 +219,8 @@ impl<'a> App<'a> {
                     .push(100.0 * cpu.active_ratio as f32);
 
                 // Per-core frequency.
-                let sig_name = format!("{}_freq_percent", cpu.id);
                 self.history
-                    .entry(sig_name)
+                    .entry(MetricKey::CpuFreqPercent(cpu.id))
                     .or_insert(signal::Signal::with_capacity(
                         self.history_size,
                         /* max */ 100.0,
@@ -212,7 +230,7 @@ impl<'a> App<'a> {
         }
 
         self.history
-            .entry("gpu_active_percent".to_string())
+            .entry(MetricKey::GpuActivePercent)
             .or_insert(signal::Signal::with_capacity(
                 self.history_size,
                 /* max */ 100.0,
@@ -221,7 +239,7 @@ impl<'a> App<'a> {
 
         // GPU frequency.
         self.history
-            .entry("gpu_freq_percent".to_string())
+            .entry(MetricKey::GpuFreqPercent)
             .or_insert(signal::Signal::with_capacity(
                 self.history_size,
                 /* max */ 100.0,
@@ -229,7 +247,7 @@ impl<'a> App<'a> {
             .push(100.0 * metrics.gpu.freq_ratio() as f32);
 
         self.history
-            .entry("ane_active_percent".to_string())
+            .entry(MetricKey::AneActivePercent)
             .or_insert(signal::Signal::with_capacity(
                 self.history_size,
                 /* max */ 100.0,
@@ -241,7 +259,7 @@ impl<'a> App<'a> {
         //
 
         self.history
-            .entry("cpu_w".to_string())
+            .entry(MetricKey::CpuPowerW)
             .or_insert(signal::Signal::with_capacity(
                 self.history_size,
                 /* max */ self.soc_info.max_cpu_w as f32,
@@ -249,7 +267,7 @@ impl<'a> App<'a> {
             .push(metrics.consumption.cpu_w);
 
         self.history
-            .entry("gpu_w".to_string())
+            .entry(MetricKey::GpuPowerW)
             .or_insert(signal::Signal::with_capacity(
                 self.history_size,
                 /* max */ self.soc_info.max_gpu_w as f32,
@@ -257,7 +275,7 @@ impl<'a> App<'a> {
             .push(metrics.consumption.gpu_w);
 
         self.history
-            .entry("ane_w".to_string())
+            .entry(MetricKey::AnePowerW)
             .or_insert(signal::Signal::with_capacity(
                 self.history_size,
                 /* max */ self.soc_info.max_ane_w as f32,
@@ -265,7 +283,7 @@ impl<'a> App<'a> {
             .push(metrics.consumption.ane_w);
 
         self.history
-            .entry("package_w".to_string())
+            .entry(MetricKey::PackagePowerW)
             .or_insert(signal::Signal::with_capacity(
                 self.history_size,
                 /* max */ self.soc_info.max_package_w as f32,
@@ -277,7 +295,7 @@ impl<'a> App<'a> {
         //
 
         self.history
-            .entry("ram_usage_bytes".to_string())
+            .entry(MetricKey::RamUsageBytes)
             .or_insert(signal::Signal::with_capacity(
                 self.history_size,
                 /* max */ metrics.memory.ram_total as f32,
@@ -286,7 +304,7 @@ impl<'a> App<'a> {
 
         // In practice, the max value isn't used as it changes over time.
         self.history
-            .entry("swap_usage_bytes".to_string())
+            .entry(MetricKey::SwapUsageBytes)
             .or_insert(signal::Signal::with_capacity(
                 self.history_size,
                 /* max */ metrics.memory.swap_total as f32,

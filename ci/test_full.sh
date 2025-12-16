@@ -3,7 +3,7 @@
 set -e
 
 CRATE=pumas
-MSRV=1.74
+MSRV=1.80
 
 get_rust_version() {
   local array=($(rustc --version));
@@ -28,7 +28,7 @@ if ! check_version $MSRV ; then
 fi
 
 FEATURES=()
-# check_version 1.74 && FEATURES+=(libm)
+# check_version 1.80 && FEATURES+=(libm)
 echo "Testing supported features: ${FEATURES[*]}"
 
 set -x

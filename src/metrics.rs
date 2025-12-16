@@ -258,7 +258,7 @@ impl CpuMetrics {
             .iter()
             .map(|state| state.freq_mhz)
             .max()
-            .unwrap()
+            .expect("dvfm_states should not be empty")
     }
 
     pub(crate) fn min_frequency(&self) -> u16 {
@@ -266,7 +266,7 @@ impl CpuMetrics {
             .iter()
             .map(|state| state.freq_mhz)
             .min()
-            .unwrap()
+            .expect("dvfm_states should not be empty")
     }
 
     pub(crate) fn freq_ratio(&self) -> f64 {
@@ -311,7 +311,7 @@ impl GpuMetrics {
             .iter()
             .map(|state| state.freq_mhz)
             .max()
-            .unwrap()
+            .expect("dvfm_states should not be empty")
     }
 
     pub(crate) fn min_frequency(&self) -> u16 {
@@ -319,7 +319,7 @@ impl GpuMetrics {
             .iter()
             .map(|state| state.freq_mhz)
             .min()
-            .unwrap()
+            .expect("dvfm_states should not be empty")
     }
 
     pub(crate) fn freq_ratio(&self) -> f64 {
@@ -389,12 +389,7 @@ mod tests {
     fn test_powermetrics() {
         let content = std::fs::read_to_string("./tests/data/powermetrics-output-m1.xml")
             .expect("failed to read the file");
-        let powermetrics = Metrics::from_str(&content).unwrap();
-        // let pm: Metrics = plist::from_bytes(content.as_bytes()).expect("failed to parse the plist");
-
-        // let metrics: plist_parsing::Metrics =
-        //     plist::from_file("tests/data/powermetrics-output-m1.xml").unwrap();
-        // let powermetrics = Metrics::from(metrics);
+        let powermetrics = Metrics::from_str(&content).expect("failed to parse the plist");
 
         // E cluster 0.
         assert_eq!(powermetrics.e_clusters[0].freq_mhz, 1022.87);
