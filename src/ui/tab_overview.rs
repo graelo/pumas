@@ -175,7 +175,9 @@ fn draw_cpu_clusters_usage_block(
 
     // Draw the metrics for the Efficiency cluster (or clusters).
     for clu_slice in metrics.e_clusters.chunks(2) {
-        let area = clu_area_iter.next().unwrap();
+        let area = clu_area_iter
+            .next()
+            .expect("layout: expected area for E-cluster block");
 
         match clu_slice.len() {
             1 => {
@@ -201,7 +203,9 @@ fn draw_cpu_clusters_usage_block(
     // Yes this is duplicate code, but the alternative is to have a function with many arguments
     // which is just used here.
     for clu_slice in metrics.p_clusters.chunks(2) {
-        let area = clu_area_iter.next().unwrap();
+        let area = clu_area_iter
+            .next()
+            .expect("layout: expected area for P-cluster block");
 
         match clu_slice.len() {
             1 => {
