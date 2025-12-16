@@ -91,10 +91,11 @@ jobs:
           #     rm -rf ~/.cargo/advisory-db
           cargo outdated --exit-code 1
 
-      - name: Quality - cargo pants
+      - name: Quality - cargo audit
         run: |
-          cargo install --locked cargo-pants || true
-          cargo pants
+          cargo install --locked cargo-audit || true
+          rm -rf ~/.cargo/advisory-db
+          cargo audit
 
       - name: Build (dev)
         run: cargo build --all-features
