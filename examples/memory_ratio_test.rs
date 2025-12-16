@@ -26,7 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             if let Some(val) = line.split(':').nth(1) {
                 pages_wired = val.trim().trim_end_matches('.').parse().unwrap_or(0);
             }
-        } else if line.contains("Pages stored in compressor:") {
+        } else if line.contains("Pages occupied by compressor:") {
             if let Some(val) = line.split(':').nth(1) {
                 pages_compressed = val.trim().trim_end_matches('.').parse().unwrap_or(0);
             }

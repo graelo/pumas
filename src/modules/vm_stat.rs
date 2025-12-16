@@ -53,7 +53,7 @@ impl VmStats {
         stats.pages_file_backed = values.get("File-backed pages").copied().unwrap_or(0);
         stats.pages_anonymous = values.get("Anonymous pages").copied().unwrap_or(0);
         stats.pages_compressed = values
-            .get("Pages stored in compressor")
+            .get("Pages occupied by compressor")
             .copied()
             .unwrap_or(0);
         stats.pages_free = values.get("Pages free").copied().unwrap_or(0);
