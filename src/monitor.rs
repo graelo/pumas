@@ -114,7 +114,6 @@ fn main_exporter_loop(
 }
 
 fn export(soc_info: &SocInfo, metrics: metrics::Metrics) {
-    // let json = serde_json::to_string(&metrics).unwrap();
     let json = serde_json::json!({
         "soc": soc_info,
         "metrics": metrics,
