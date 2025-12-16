@@ -28,7 +28,7 @@ thiserror = "2"
 
 plist = { version = "1", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
-si-scale = "0.2"
+si-scale = "0.3"
 
 # ui
 termion = "4"
