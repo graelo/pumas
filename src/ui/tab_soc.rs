@@ -14,7 +14,7 @@ use crate::{app::App, units};
 ///
 /// A simple table with the SoC's name, number of cores, etc.
 pub(crate) fn draw_soc_tab(f: &mut Frame, app: &App, area: Rect) {
-    let row_content = vec![
+    let row_content = [
         ("SoC brand name:", app.soc_info.cpu_brand_name.clone()),
         ("CPU cores:", format!("{}", app.soc_info.num_cpu_cores)),
         (

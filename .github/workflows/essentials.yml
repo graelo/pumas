@@ -25,20 +25,19 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-          # fetch-depth: ${{ github.event.pull_request.commits }}
+          fetch-depth: ${{ github.event.pull_request.commits || 0 }}
 
       - name: Cache crates from crates.io
         uses: actions/cache@v4
         continue-on-error: false
         with:
           path: |
-             ~/.cargo/bin/
-             ~/.cargo/registry/index/
-             ~/.cargo/registry/cache/
-             ~/.cargo/git/db/
-             target/
-          key: '${{ runner.os }}-cargo-${{ matrix.rust }}-hash-${{ hashFiles(''**/Cargo.lock'') }}'
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: "${{ runner.os }}-cargo-${{ matrix.rust }}-hash-${{ hashFiles('**/Cargo.lock') }}"
 
       - name: Quality - cargo fmt
         run: |
@@ -50,33 +49,47 @@ jobs:
 
       - name: Quality - convco check
         run: |
-          git show-ref
+          git show-ref || true
           echo Commit message: "$(git log -1 --pretty=%B)"
           curl -sSfLO https://github.com/convco/convco/releases/latest/download/convco-macos.zip
           unzip convco-macos.zip
           chmod +x convco
           ./convco --version
-          ./convco check -c .convco
+          # For PRs, check only the PR commits; for main pushes, check all
+          if [ -n "${{ github.event.pull_request.commits }}" ]; then
+            ./convco check -c .convco -n ${{ github.event.pull_request.commits }}
+          else
+            ./convco check -c .convco
+          fi
           rm convco
 
       - name: Quality - cargo deny check
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          curl -sSfL https://github.com/EmbarkStudios/cargo-deny/releases/download/0.18.2/cargo-deny-0.18.2-aarch64-apple-darwin.tar.gz | gtar zx --no-anchored cargo-deny --strip-components=1
+          VERSION=$(curl -sH "Authorization: Bearer $GH_TOKEN" https://api.github.com/repos/EmbarkStudios/cargo-deny/releases/latest | jq -r '.tag_name')
+          if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+            echo "::error::Failed to fetch cargo-deny version from GitHub API"
+            exit 1
+          fi
+          echo "Installing cargo-deny $VERSION"
+          curl -sSfL "https://github.com/EmbarkStudios/cargo-deny/releases/download/${VERSION}/cargo-deny-${VERSION}-aarch64-apple-darwin.tar.gz" | \
+            gtar zx --no-anchored cargo-deny --strip-components=1
           chmod +x cargo-deny
           mv cargo-deny ~/.cargo/bin/
           cargo deny check
 
-      # - name: Quality - cargo outdated
-      #   timeout-minutes: 20
-      #   run: |
-      #     cargo install --locked cargo-outdated || true
-      #     rm -rf ~/.cargo/advisory-db
-      #     cargo outdated --exit-code 1
-
-      # - name: Quality - cargo udeps (needs nightly)
-      #   run: |
-      #     cargo install --locked cargo-udeps || true
-      #     cargo udeps
+      - name: Quality - cargo outdated
+        timeout-minutes: 20
+        run: |
+          cargo install --locked cargo-outdated || true
+          #     VERSION=$(curl -s https://api.github.com/repos/kbknapp/cargo-outdated/releases/latest | jq -r '.tag_name')
+          #     curl -sSfL "https://github.com/kbknapp/cargo-outdated/releases/download/${VERSION}/cargo-outdated-${VERSION#v}-aarch64-apple-darwin.tar.gz" | \
+          #       gtar zx
+          #     chmod +x cargo-outdated
+          #     mv cargo-outdated ~/.cargo/bin/
+          #     rm -rf ~/.cargo/advisory-db
+          cargo outdated --exit-code 1
 
       - name: Quality - cargo pants
         run: |
