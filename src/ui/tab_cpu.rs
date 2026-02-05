@@ -192,7 +192,8 @@ fn draw_cpu(f: &mut Frame, cpu: &CpuMetrics, history: &History, colors: &AppColo
     let label = format!("{:.1}%", active_ratio * 100.0);
     let gauge = LineGauge::default()
         .filled_style(Style::default().fg(colors.gauge_fg()).bg(colors.gauge_bg()))
-        .line_set(symbols::line::THICK)
+        .filled_symbol(symbols::line::THICK.horizontal)
+        .unfilled_symbol(symbols::line::THICK.horizontal)
         .label(label)
         .ratio(active_ratio);
     f.render_widget(gauge, acti_gauge_area);
@@ -239,7 +240,8 @@ fn draw_cpu(f: &mut Frame, cpu: &CpuMetrics, history: &History, colors: &AppColo
 
     let gauge = LineGauge::default()
         .filled_style(Style::default().fg(colors.gauge_fg()).bg(colors.gauge_bg()))
-        .line_set(symbols::line::THICK)
+        .filled_symbol(symbols::line::THICK.horizontal)
+        .unfilled_symbol(symbols::line::THICK.horizontal)
         // .label(label)
         .ratio(cpu.freq_ratio());
     f.render_widget(gauge, freq_gauge_area);
