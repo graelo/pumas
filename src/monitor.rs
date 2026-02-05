@@ -74,7 +74,10 @@ fn main_ui_loop<B: Backend>(
     terminal: &mut Terminal<B>,
     mut app: App,
     tick_rate: Duration,
-) -> std::result::Result<(), Box<dyn Error>> {
+) -> std::result::Result<(), Box<dyn Error>>
+where
+    <B as Backend>::Error: 'static,
+{
     let events = start_event_threads(tick_rate);
 
     loop {
