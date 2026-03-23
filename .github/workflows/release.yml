@@ -2,7 +2,7 @@ name: Release
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
 
 jobs:
   prepare-artifacts:
@@ -15,7 +15,7 @@ jobs:
           - os: macos-latest
             target: aarch64-apple-darwin
             rust: stable
-            suffix: ""
+            suffix: ''
             archive_ext: zip
     steps:
       - name: Rust install
@@ -37,7 +37,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: "${{ runner.os }}-${{ matrix.target }}-cargo-${{ matrix.rust }}-hash-${{ hashFiles('**/Cargo.lock') }}"
+          key: '${{ runner.os }}-${{ matrix.target }}-cargo-${{ matrix.rust }}-hash-${{ hashFiles(''**/Cargo.lock'') }}'
 
       - name: Build Release
         run: cargo build --release
@@ -76,7 +76,7 @@ jobs:
       - name: Extract version
         id: extract-version
         run: |
-          echo "tag-name=${GITHUB_REF#refs/tags/}" >> ${GITHUB_OUTPUT}
+          echo "tag-name=${GITHUB_REF#refs/tags/}" >> "${GITHUB_OUTPUT}"
 
       - name: Download convco
         run: |
@@ -96,8 +96,8 @@ jobs:
 
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "*.zip,*.tar.xz"
-          bodyFile: "CHANGELOG.md"
+          artifacts: '*.zip,*.tar.xz'
+          bodyFile: 'CHANGELOG.md'
           token: ${{ secrets.GITHUB_TOKEN }}
 
   homebrew:
@@ -110,10 +110,10 @@ jobs:
       - name: Extract version
         id: extract-version
         run: |
-          echo "tag-name=${GITHUB_REF#refs/tags/}" >> ${GITHUB_OUTPUT}
+          echo "tag-name=${GITHUB_REF#refs/tags/}" >> "${GITHUB_OUTPUT}"
 
-      - uses: mislav/bump-homebrew-formula-action@v3
-        if: "!contains(github.ref, '-')" # skip prereleases
+      - uses: mislav/bump-homebrew-formula-action@v4
+        if: '!contains(github.ref, ''-'')' # skip prereleases
         with:
           formula-name: pumas
           homebrew-tap: graelo/homebrew-tap
