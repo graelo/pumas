@@ -2,7 +2,7 @@ name: Release
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
 
 jobs:
   prepare-artifacts:
@@ -15,7 +15,7 @@ jobs:
           - os: macos-latest
             target: aarch64-apple-darwin
             rust: stable
-            suffix: ""
+            suffix: ''
             archive_ext: zip
     steps:
       - name: Rust install
@@ -25,10 +25,10 @@ jobs:
           components: rustfmt, clippy
 
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Cache crates from crates.io
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         continue-on-error: false
         with:
           path: |
@@ -37,7 +37,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: "${{ runner.os }}-${{ matrix.target }}-cargo-${{ matrix.rust }}-hash-${{ hashFiles('**/Cargo.lock') }}"
+          key: '${{ runner.os }}-${{ matrix.target }}-cargo-${{ matrix.rust }}-hash-${{ hashFiles(''**/Cargo.lock'') }}'
 
       - name: Build Release
         run: cargo build --release
@@ -53,7 +53,7 @@ jobs:
         shell: bash
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ github.event.repository.name }}-${{ matrix.target }}.${{ matrix.archive_ext }}
           path: ${{ github.event.repository.name }}-${{ matrix.target }}.${{ matrix.archive_ext }}
@@ -68,7 +68,7 @@ jobs:
       - prepare-artifacts
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           # convco needs all history to create the changelog
           fetch-depth: 0
@@ -76,7 +76,7 @@ jobs:
       - name: Extract version
         id: extract-version
         run: |
-          echo "tag-name=${GITHUB_REF#refs/tags/}" >> ${GITHUB_OUTPUT}
+          echo "tag-name=${GITHUB_REF#refs/tags/}" >> "${GITHUB_OUTPUT}"
 
       - name: Download convco
         run: |
@@ -90,14 +90,14 @@ jobs:
           ./convco changelog -c .convco --max-versions 1 --include-hidden-sections > CHANGELOG.md
           rm convco convco-macos.zip
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: ${{ github.event.repository.name }}-aarch64-apple-darwin.zip
 
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: "*.zip,*.tar.xz"
-          bodyFile: "CHANGELOG.md"
+          artifacts: '*.zip,*.tar.xz'
+          bodyFile: 'CHANGELOG.md'
           token: ${{ secrets.GITHUB_TOKEN }}
 
   homebrew:
@@ -110,10 +110,10 @@ jobs:
       - name: Extract version
         id: extract-version
         run: |
-          echo "tag-name=${GITHUB_REF#refs/tags/}" >> ${GITHUB_OUTPUT}
+          echo "tag-name=${GITHUB_REF#refs/tags/}" >> "${GITHUB_OUTPUT}"
 
-      - uses: mislav/bump-homebrew-formula-action@v3
-        if: "!contains(github.ref, '-')" # skip prereleases
+      - uses: mislav/bump-homebrew-formula-action@v4
+        if: '!contains(github.ref, ''-'')' # skip prereleases
         with:
           formula-name: pumas
           homebrew-tap: graelo/homebrew-tap

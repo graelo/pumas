@@ -19,9 +19,7 @@ db-path = "~/.cargo/advisory-db"
 db-urls = ["https://github.com/rustsec/advisory-db"]
 # A list of advisory IDs to ignore. Note that ignored advisories will still
 # output a note when they are encountered.
-ignore = [
-  "RUSTSEC-2024-0436", # paste is archived, but it is a dep of ratatui.
-]
+ignore = []
 # Threshold for security vulnerabilities, any vulnerability with a CVSS score
 # lower than the range specified will be ignored. Note that ignored advisories
 # will still output a note when they are encountered.
@@ -30,13 +28,13 @@ ignore = [
 # * Medium - CVSS Score 4.0 - 6.9
 # * High - CVSS Score 7.0 - 8.9
 # * Critical - CVSS Score 9.0 - 10.0
-#severity-threshold =
+# severity-threshold =
 
 # If this is true, then cargo deny will use the git executable to fetch advisory database.
 # If this is false, then it uses a built-in git library.
 # Setting this to true can be helpful if you have special authentication requirements that cargo-deny does not support.
 # See Git Authentication for more information about setting up git authentication.
-#git-fetch-with-cli = true
+# git-fetch-with-cli = true
 
 # This section is considered when running `cargo deny check licenses`
 # More documentation for the licenses section can be found here:
@@ -50,7 +48,6 @@ allow = [
   "Apache-2.0",
   "Unicode-3.0",
   "Zlib",
-  #"Apache-2.0 WITH LLVM-exception",
 ]
 # The confidence threshold for detecting a license from license text.
 # The higher the value, the more closely the license text must be to the
@@ -62,28 +59,28 @@ confidence-threshold = 0.8
 exceptions = [
   # Each entry is the crate and version constraint, and its specific allow
   # list
-  #{ allow = ["Zlib"], name = "adler32", version = "*" },
+  # { allow = ["Zlib"], name = "adler32", version = "*" },
 ]
 
 # Some crates don't have (easily) machine readable licensing information,
 # adding a clarification entry for it allows you to manually specify the
 # licensing information
-#[[licenses.clarify]]
+# [[licenses.clarify]]
 # The name of the crate the clarification applies to
-#name = "ring"
+# name = "ring"
 # The optional version constraint for the crate
-#version = "*"
+# version = "*"
 # The SPDX expression for the license requirements of the crate
-#expression = "MIT AND ISC AND OpenSSL"
+# expression = "MIT AND ISC AND OpenSSL"
 # One or more files in the crate's source used as the "source of truth" for
 # the license expression. If the contents match, the clarification will be used
 # when running the license check, otherwise the clarification will be ignored
 # and the crate will be checked normally, which may produce warnings or errors
 # depending on the rest of your configuration
-#license-files = [
+# license-files = [
 # Each entry is a crate relative path, and the (opaque) hash of its contents
-#{ path = "LICENSE", hash = 0xbd0eed23 }
-#]
+# { path = "LICENSE", hash = 0xbd0eed23 }
+# ]
 
 [licenses.private]
 # If true, ignores workspace crates that aren't published, or are only
@@ -95,7 +92,7 @@ ignore = false
 # is only published to private registries, and ignore is true, the crate will
 # not have its license(s) checked
 registries = [
-  #"https://sekretz.com/registry
+  # "https://sekretz.com/registry
 ]
 
 # This section is considered when running `cargo deny check bans`.
@@ -114,28 +111,28 @@ wildcards = "allow"
 highlight = "all"
 # List of crates that are allowed. Use with care!
 allow = [
-  #{ name = "ansi_term", version = "=0.11.0" },
+  # { name = "ansi_term", version = "=0.11.0" },
 ]
 # List of crates to deny
 deny = [
   # Each entry the name of a crate and a version range. If version is
   # not specified, all versions will be matched.
-  #{ name = "ansi_term", version = "=0.11.0" },
+  # { name = "ansi_term", version = "=0.11.0" },
   #
   # Wrapper crates can optionally be specified to allow the crate when it
   # is a direct dependency of the otherwise banned crate
-  #{ name = "ansi_term", version = "=0.11.0", wrappers = [] },
+  # { name = "ansi_term", version = "=0.11.0", wrappers = [] },
 ]
 # Certain crates/versions that will be skipped when doing duplicate detection.
 skip = [
-  #{ name = "ansi_term", version = "=0.11.0" },
+  # { name = "ansi_term", version = "=0.11.0" },
 ]
 # Similarly to `skip` allows you to skip certain crates during duplicate
 # detection. Unlike skip, it also includes the entire tree of transitive
 # dependencies starting at the specified crate, up to a certain depth, which is
 # by default infinite
 skip-tree = [
-  #{ name = "ansi_term", version = "=0.11.0", depth = 20 },
+  # { name = "ansi_term", version = "=0.11.0", depth = 20 },
 ]
 
 # This section is considered when running `cargo deny check sources`.
