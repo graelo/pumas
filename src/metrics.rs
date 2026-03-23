@@ -26,6 +26,8 @@ use crate::{
 pub(crate) struct Metrics {
     /// Efficiency Cluster metrics.
     pub(crate) e_clusters: Vec<ClusterMetrics>,
+    /// Medium Cluster metrics.
+    pub(crate) m_clusters: Vec<ClusterMetrics>,
     /// Performance Cluster metrics.
     pub(crate) p_clusters: Vec<ClusterMetrics>,
     /// GPU metrics.
@@ -59,6 +61,7 @@ impl Metrics {
     fn num_cpus(&self) -> usize {
         let mut total = 0;
         self.e_clusters.iter().for_each(|c| total += c.cpus.len());
+        self.m_clusters.iter().for_each(|c| total += c.cpus.len());
         self.p_clusters.iter().for_each(|c| total += c.cpus.len());
         total
     }
@@ -107,6 +110,14 @@ impl Metrics {
                 cpu.active_ratio = *sysinfo_active_ratio as f64;
             }
         }
+        for m_cluster in &mut self.m_clusters {
+            for cpu in &mut m_cluster.cpus {
+                let sysinfo_active_ratio = sysinfo_metrics.get(&cpu.id).ok_or_else(|| {
+                    Error::MisalignedCpuId(format!("CPU id not found: {}", cpu.id))
+                })?;
+                cpu.active_ratio = *sysinfo_active_ratio as f64;
+            }
+        }
         for p_cluster in &mut self.p_clusters {
             for cpu in &mut p_cluster.cpus {
                 let update_active_ratio = sysinfo_metrics.get(&cpu.id).ok_or_else(|| {
@@ -140,6 +151,15 @@ impl From<plist_parsing::Metrics> for Metrics {
             .map(ClusterMetrics::from)
             .collect::<Vec<_>>();
 
+        // Collect all M clusters.
+        let m_clusters = value
+            .processor
+            .clusters
+            .iter()
+            .filter(|c| c.name.starts_with('M'))
+            .map(ClusterMetrics::from)
+            .collect::<Vec<_>>();
+
         // Collect all P clusters.
         let p_clusters = value
             .processor
@@ -167,6 +187,7 @@ impl From<plist_parsing::Metrics> for Metrics {
 
         Self {
             e_clusters,
+            m_clusters,
             p_clusters,
             gpu,
             consumption,

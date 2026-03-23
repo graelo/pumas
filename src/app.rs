@@ -197,6 +197,38 @@ impl<'a> App<'a> {
             }
         }
 
+        for (idx, m_cluster) in metrics.m_clusters.iter().enumerate() {
+            // Cluster activity ratio.
+            let key = MetricKey::ClusterActivePercent(ClusterId::medium(idx as u8));
+            self.history
+                .entry(key)
+                .or_insert(signal::Signal::with_capacity(
+                    self.history_size,
+                    /* max */ 100.0,
+                ))
+                .push(100.0 * m_cluster.active_ratio());
+
+            for cpu in &m_cluster.cpus {
+                // Per-core activity ratio.
+                self.history
+                    .entry(MetricKey::CpuActivePercent(cpu.id))
+                    .or_insert(signal::Signal::with_capacity(
+                        self.history_size,
+                        /* max */ 100.0,
+                    ))
+                    .push(100.0 * cpu.active_ratio as f32);
+
+                // Per-core frequency.
+                self.history
+                    .entry(MetricKey::CpuFreqPercent(cpu.id))
+                    .or_insert(signal::Signal::with_capacity(
+                        self.history_size,
+                        /* max */ 100.0,
+                    ))
+                    .push(100.0 * cpu.freq_ratio() as f32);
+            }
+        }
+
         for (idx, p_cluster) in metrics.p_clusters.iter().enumerate() {
             // Cluster activity ratio.
             let key = MetricKey::ClusterActivePercent(ClusterId::performance(idx as u8));
