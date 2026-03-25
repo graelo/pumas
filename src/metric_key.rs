@@ -5,11 +5,10 @@
 
 /// Identifies a CPU cluster by its kind and index.
 ///
-/// Apple Silicon chips have efficiency (E) and performance (P) clusters before M5.
+/// Apple Silicon chips have efficiency (E) and performance (P) clusters.
 /// Single-die chips (M1, M2, M3) have one of each, while multi-die chips
 /// (M1 Ultra, M2 Ultra) have two of each.
-/// Starting with M5 there are super (P), medium (M), and efficiency (E) clusters.
-/// Single-die M5 has P+E clusters, while multi-die Pro/Max chips have P+M clusters.
+/// Starting with M5 Pro/Max there are also super (S) clusters above performance.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct ClusterId {
     pub kind: ClusterKind,
@@ -33,10 +32,10 @@ impl ClusterId {
         }
     }
 
-    /// Create a medium cluster ID.
-    pub const fn medium(index: u8) -> Self {
+    /// Create a super cluster ID.
+    pub const fn super_core(index: u8) -> Self {
         Self {
-            kind: ClusterKind::Medium,
+            kind: ClusterKind::Super,
             index,
         }
     }
@@ -49,8 +48,8 @@ pub(crate) enum ClusterKind {
     Efficiency,
     /// Performance cores (P-cluster).
     Performance,
-    /// Medium cores (M-cluster).
-    Medium,
+    /// Super cores (S-cluster).
+    Super,
 }
 
 /// Type-safe key for accessing metrics in the history.

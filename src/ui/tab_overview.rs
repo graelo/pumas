@@ -71,8 +71,8 @@ pub(crate) fn draw_overview_tab(f: &mut Frame, app: &App, area: Rect) {
 
     // Number of horizontal blocks for the CPU clusters.
     let num_clusters_blocks = (num_blocks_for(metrics.e_clusters.len())
-        + num_blocks_for(metrics.m_clusters.len())
-        + num_blocks_for(metrics.p_clusters.len())) as u16;
+        + num_blocks_for(metrics.p_clusters.len())
+        + num_blocks_for(metrics.s_clusters.len())) as u16;
 
     let cls_block_height = GAUGE_HEIGHT + SPARKLINE_HEIGHT;
     let cpu_block_height =
@@ -140,8 +140,8 @@ fn draw_cpu_clusters_usage_block(
     area: Rect,
 ) {
     let num_cluster_blocks = num_blocks_for(metrics.e_clusters.len())
-        + num_blocks_for(metrics.m_clusters.len())
-        + num_blocks_for(metrics.p_clusters.len());
+        + num_blocks_for(metrics.p_clusters.len())
+        + num_blocks_for(metrics.s_clusters.len());
 
     let sig = history.get_or_default(&MetricKey::CpuPowerW);
     let title = "CPU Clusters";
@@ -207,39 +207,6 @@ fn draw_cpu_clusters_usage_block(
         }
     }
 
-    // Draw the metrics for the M cluster (or clusters).
-    // Yes this is duplicate code, but the alternative is to have a function with many arguments
-    // which is just used here.
-    for (chunk_idx, clu_slice) in metrics.m_clusters.chunks(2).enumerate() {
-        let area = clu_area_iter
-            .next()
-            .expect("layout: expected area for M-cluster block");
-
-        match clu_slice.len() {
-            1 => {
-                let cluster = &clu_slice[0];
-                let cluster_id = ClusterId::medium((chunk_idx * 2) as u8);
-                draw_cluster_overall_metrics(f, cluster, cluster_id, history, colors, *area);
-            }
-            2 => {
-                let (left_cluster, right_cluster) = (&clu_slice[0], &clu_slice[1]);
-                let left_id = ClusterId::medium((chunk_idx * 2) as u8);
-                let right_id = ClusterId::medium((chunk_idx * 2 + 1) as u8);
-                draw_cluster_pair_overall_metrics(
-                    f,
-                    left_cluster,
-                    left_id,
-                    right_cluster,
-                    right_id,
-                    history,
-                    colors,
-                    *area,
-                );
-            }
-            _ => unreachable!(),
-        }
-    }
-
     // Draw the metrics for the Performance cluster (or clusters).
     // Yes this is duplicate code, but the alternative is to have a function with many arguments
     // which is just used here.
@@ -258,6 +225,39 @@ fn draw_cpu_clusters_usage_block(
                 let (left_cluster, right_cluster) = (&clu_slice[0], &clu_slice[1]);
                 let left_id = ClusterId::performance((chunk_idx * 2) as u8);
                 let right_id = ClusterId::performance((chunk_idx * 2 + 1) as u8);
+                draw_cluster_pair_overall_metrics(
+                    f,
+                    left_cluster,
+                    left_id,
+                    right_cluster,
+                    right_id,
+                    history,
+                    colors,
+                    *area,
+                );
+            }
+            _ => unreachable!(),
+        }
+    }
+
+    // Draw the metrics for the Super cluster (or clusters, M5 Pro/Max and above).
+    // Yes this is duplicate code, but the alternative is to have a function with many arguments
+    // which is just used here.
+    for (chunk_idx, clu_slice) in metrics.s_clusters.chunks(2).enumerate() {
+        let area = clu_area_iter
+            .next()
+            .expect("layout: expected area for S-cluster block");
+
+        match clu_slice.len() {
+            1 => {
+                let cluster = &clu_slice[0];
+                let cluster_id = ClusterId::super_core((chunk_idx * 2) as u8);
+                draw_cluster_overall_metrics(f, cluster, cluster_id, history, colors, *area);
+            }
+            2 => {
+                let (left_cluster, right_cluster) = (&clu_slice[0], &clu_slice[1]);
+                let left_id = ClusterId::super_core((chunk_idx * 2) as u8);
+                let right_id = ClusterId::super_core((chunk_idx * 2 + 1) as u8);
                 draw_cluster_pair_overall_metrics(
                     f,
                     left_cluster,

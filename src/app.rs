@@ -197,18 +197,18 @@ impl<'a> App<'a> {
             }
         }
 
-        for (idx, m_cluster) in metrics.m_clusters.iter().enumerate() {
+        for (idx, p_cluster) in metrics.p_clusters.iter().enumerate() {
             // Cluster activity ratio.
-            let key = MetricKey::ClusterActivePercent(ClusterId::medium(idx as u8));
+            let key = MetricKey::ClusterActivePercent(ClusterId::performance(idx as u8));
             self.history
                 .entry(key)
                 .or_insert(signal::Signal::with_capacity(
                     self.history_size,
                     /* max */ 100.0,
                 ))
-                .push(100.0 * m_cluster.active_ratio());
+                .push(100.0 * p_cluster.active_ratio());
 
-            for cpu in &m_cluster.cpus {
+            for cpu in &p_cluster.cpus {
                 // Per-core activity ratio.
                 self.history
                     .entry(MetricKey::CpuActivePercent(cpu.id))
@@ -229,18 +229,18 @@ impl<'a> App<'a> {
             }
         }
 
-        for (idx, p_cluster) in metrics.p_clusters.iter().enumerate() {
+        for (idx, s_cluster) in metrics.s_clusters.iter().enumerate() {
             // Cluster activity ratio.
-            let key = MetricKey::ClusterActivePercent(ClusterId::performance(idx as u8));
+            let key = MetricKey::ClusterActivePercent(ClusterId::super_core(idx as u8));
             self.history
                 .entry(key)
                 .or_insert(signal::Signal::with_capacity(
                     self.history_size,
                     /* max */ 100.0,
                 ))
-                .push(100.0 * p_cluster.active_ratio());
+                .push(100.0 * s_cluster.active_ratio());
 
-            for cpu in &p_cluster.cpus {
+            for cpu in &s_cluster.cpus {
                 // Per-core activity ratio.
                 self.history
                     .entry(MetricKey::CpuActivePercent(cpu.id))
