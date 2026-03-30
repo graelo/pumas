@@ -22,7 +22,7 @@ const ACTIVITY_HISTORY_LENGTH: u16 = 8;
 const FREQUENCY_LABEL_WIDTH: u16 = 6; // "freq: "
 const FREQUENCY_VALUE_WIDTH: u16 = 10; // "1070 MHz "
 const FREQUENCY_HISTORY_LENGTH: u16 = 8;
-const FREQUENCY_TABLE_HEIGHT: u16 = 4;
+const FREQUENCY_TABLE_HEIGHT: u16 = 5;
 
 /// Draw the per-core usage, and per-core frequency distribution.
 ///
@@ -73,6 +73,13 @@ pub(crate) fn draw_cpu_tab(f: &mut Frame, app: &App, area: Rect) {
                 .iter()
                 .map(|cl| Constraint::Length(2 + CPU_BLOCK_HEIGHT * cl.cpus.len() as u16)),
         )
+        // S-Clusters
+        .chain(
+            metrics
+                .s_clusters
+                .iter()
+                .map(|cl| Constraint::Length(2 + CPU_BLOCK_HEIGHT * cl.cpus.len() as u16)),
+        )
         // Frequency table
         .chain(std::iter::once(Constraint::Length(
             2 + FREQUENCY_TABLE_HEIGHT,
@@ -97,6 +104,12 @@ pub(crate) fn draw_cpu_tab(f: &mut Frame, app: &App, area: Rect) {
         let cluster_area = clu_area_iter
             .next()
             .expect("layout: expected area for P-cluster");
+        draw_cpu_cluster(f, cluster, &app.history, &app.colors, *cluster_area);
+    }
+    for cluster in metrics.s_clusters.iter() {
+        let cluster_area = clu_area_iter
+            .next()
+            .expect("layout: expected area for S-cluster");
         draw_cpu_cluster(f, cluster, &app.history, &app.colors, *cluster_area);
     }
 
@@ -248,10 +261,31 @@ fn draw_cpu(f: &mut Frame, cpu: &CpuMetrics, history: &History, colors: &AppColo
 }
 
 fn draw_freq_table(f: &mut Frame, metrics: &Metrics, area: Rect) {
-    let e_cluster_frequencies = metrics.e_clusters[0].cpus[0].frequencies_mhz();
-    let p_cluster_frequencies = metrics.p_clusters[0].cpus[0].frequencies_mhz();
+    let e_cluster_frequencies = metrics
+        .e_clusters
+        .first()
+        .and_then(|c| c.cpus.first())
+        .map(|c| c.frequencies_mhz())
+        .unwrap_or_default();
+    let s_cluster_frequencies = metrics
+        .s_clusters
+        .first()
+        .and_then(|c| c.cpus.first())
+        .map(|c| c.frequencies_mhz())
+        .unwrap_or_default();
+    let p_cluster_frequencies = metrics
+        .p_clusters
+        .first()
+        .and_then(|c| c.cpus.first())
+        .map(|c| c.frequencies_mhz())
+        .unwrap_or_default();
 
     let e_clus = e_cluster_frequencies
+        .iter()
+        .map(|f| format!("{:4}", *f))
+        .collect::<Vec<_>>()
+        .join(" ");
+    let s_clus = s_cluster_frequencies
         .iter()
         .map(|f| format!("{:4}", *f))
         .collect::<Vec<_>>()
@@ -261,15 +295,22 @@ fn draw_freq_table(f: &mut Frame, metrics: &Metrics, area: Rect) {
         .map(|f| format!("{:4}", *f))
         .collect::<Vec<_>>()
         .join(" ");
-    let row_content = [
-        ("E-Cluster:", e_clus),
-        ("P-Cluster:", p_clus),
-        ("", "".into()),
-        (
-            "Note:",
-            "Hardware-wise, CPUs quickly shift between the above frequencies.".into(),
-        ),
-    ];
+
+    let mut row_content: Vec<(&str, String)> = vec![];
+    if !e_clus.is_empty() {
+        row_content.push(("E-Cluster:", e_clus));
+    }
+    if !p_clus.is_empty() {
+        row_content.push(("P-Cluster:", p_clus));
+    }
+    if !s_clus.is_empty() {
+        row_content.push(("S-Cluster:", s_clus));
+    }
+    row_content.push(("", "".into()));
+    row_content.push((
+        "Note:",
+        "Hardware-wise, CPUs quickly shift between the above frequencies.".into(),
+    ));
 
     let rows = row_content.iter().map(|(left, ref right)| {
         Row::new(vec![

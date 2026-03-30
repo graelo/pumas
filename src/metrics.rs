@@ -28,6 +28,8 @@ pub(crate) struct Metrics {
     pub(crate) e_clusters: Vec<ClusterMetrics>,
     /// Performance Cluster metrics.
     pub(crate) p_clusters: Vec<ClusterMetrics>,
+    /// Super Cluster metrics (M5 Pro/Max and above).
+    pub(crate) s_clusters: Vec<ClusterMetrics>,
     /// GPU metrics.
     pub(crate) gpu: GpuMetrics,
     /// Power consumption in W of the CPU, GPU, ANE, and package.
@@ -60,6 +62,7 @@ impl Metrics {
         let mut total = 0;
         self.e_clusters.iter().for_each(|c| total += c.cpus.len());
         self.p_clusters.iter().for_each(|c| total += c.cpus.len());
+        self.s_clusters.iter().for_each(|c| total += c.cpus.len());
         total
     }
 
@@ -115,6 +118,14 @@ impl Metrics {
                 cpu.active_ratio = *update_active_ratio as f64;
             }
         }
+        for s_cluster in &mut self.s_clusters {
+            for cpu in &mut s_cluster.cpus {
+                let sysinfo_active_ratio = sysinfo_metrics.get(&cpu.id).ok_or_else(|| {
+                    Error::MisalignedCpuId(format!("CPU id not found: {}", cpu.id))
+                })?;
+                cpu.active_ratio = *sysinfo_active_ratio as f64;
+            }
+        }
 
         Ok(self)
     }
@@ -149,6 +160,15 @@ impl From<plist_parsing::Metrics> for Metrics {
             .map(ClusterMetrics::from)
             .collect::<Vec<_>>();
 
+        // Collect all S clusters (Super cores, M5 Pro/Max and above).
+        let s_clusters = value
+            .processor
+            .clusters
+            .iter()
+            .filter(|c| c.name.starts_with('S'))
+            .map(ClusterMetrics::from)
+            .collect::<Vec<_>>();
+
         let gpu = GpuMetrics::from(&value.gpu);
 
         let cpu_w = (value.processor.cpu_mj as f64 / interval_sec / 1e3) as f32;
@@ -168,6 +188,7 @@ impl From<plist_parsing::Metrics> for Metrics {
         Self {
             e_clusters,
             p_clusters,
+            s_clusters,
             gpu,
             consumption,
             thermal_pressure: value.thermal_pressure,
