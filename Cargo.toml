@@ -1,20 +1,19 @@
 [package]
 name = "pumas"
-version = "0.3.4"
+version = "0.4.0"
 edition = "2021"
 rust-version = "1.80.0"
 description = "A power usage monitor for Apple Silicon."
 readme = "README.md"
 
-license = "MIT"
-authors = ["graelo <graelo@grael.cc>"]
-repository = "https://github.com/graelo/pumas"
-homepage = "https://github.com/graelo/pumas"
 documentation = "https://docs.rs/pumas"
+homepage = "https://github.com/graelo/pumas"
+repository = "https://github.com/graelo/pumas"
+license = "MIT"
 
-keywords = ["mac", "power-usage", "monitor", "command-line"]
+keywords = ["command-line", "mac", "monitor", "power-usage"]
 categories = ["command-line-utilities"]
-exclude = ["/.github", "./images", "./assets"]
+exclude = ["./assets", "./images", "/.github"]
 
 [[bin]]
 name = "pumas"
@@ -31,12 +30,13 @@ serde = { version = "1", features = ["derive"] }
 si-scale = "0.3"
 
 # ui
+ratatui = { version = "0.30", default-features = false, features = ["termion"] }
 termion = "4"
-ratatui = { version = "0.30", default-features = false, features = ['termion'] }
 
+#
 num-traits = "0.2"
-sysinfo = "0.38"
 serde_json = "1.0.104"
+sysinfo = "0.38"
 
 [dev-dependencies]
 assert_approx_eq = "1.1.0"

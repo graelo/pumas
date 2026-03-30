@@ -37,7 +37,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: "${{ runner.os }}-cargo-${{ matrix.rust }}-hash-${{ hashFiles('**/Cargo.lock') }}"
+          key: '${{ runner.os }}-cargo-${{ matrix.rust }}-hash-${{ hashFiles(''**/Cargo.lock'') }}'
 
       - name: Quality - cargo fmt
         run: |
@@ -80,6 +80,7 @@ jobs:
           cargo deny check
 
       - name: Quality - cargo outdated
+        if: github.event_name == 'pull_request'
         timeout-minutes: 20
         run: |
           cargo install --locked cargo-outdated || true
