@@ -2,7 +2,7 @@
 
 use std::{
     error::Error,
-    io::{self, BufRead, BufReader},
+    io::{self, BufRead, BufReader, Write},
     process,
     sync::mpsc,
     thread,
@@ -51,12 +51,18 @@ pub fn run(args: RunConfig) -> Result<()> {
 
             let app = App::new(soc_info, args.colors(), args.history_size);
 
-            main_ui_loop(
+            let result = main_ui_loop(
                 &mut terminal,
                 app,
                 Duration::from_millis(args.sample_rate_ms as u64),
-            )
-            .expect("Cannot continue to run the app");
+            );
+
+            drop(terminal);
+            io::stdout().flush().ok(); // Avoid error message being cleaned by terminal cleanup.
+
+            if let Err(err) = result {
+                eprintln!("Error:\n    {}", err);
+            }
         }
     }
 
@@ -67,6 +73,8 @@ enum Event {
     Input(Key),
     // Tick,
     Metrics(metrics::Metrics),
+    // When metrics return an error
+    Error(Box<CrateError>),
 }
 
 /// Start the event stream sources and launch the UI event loop.
@@ -96,6 +104,9 @@ where
                 _ => {}
             },
             Event::Metrics(metrics) => app.on_metrics(metrics),
+            Event::Error(err) => {
+                return Err(err);
+            }
         }
         if app.should_quit {
             return Ok(());
@@ -150,8 +161,10 @@ fn start_event_threads(tick_rate: Duration) -> mpsc::Receiver<Event> {
     // });
 
     thread::spawn(move || {
-        if let Err(err) = stream_metrics(tick_rate, tx) {
-            eprintln!("powermetrics error: {err}");
+        if let Err(err) = stream_metrics(tick_rate, tx.clone()) {
+            if let Err(send_err) = tx.send(Event::Error(Box::new(err))) {
+                eprintln!("Error sending error event: {}", send_err);
+            }
         }
     });
 
@@ -190,6 +203,7 @@ fn stream_metrics(tick_rate: Duration, tx: mpsc::Sender<Event>) -> Result<()> {
     let mut cmd = process::Command::new(binary)
         .args(&args)
         .stdout(process::Stdio::piped())
+        .stderr(process::Stdio::piped())
         .spawn()
         .map_err(CrateError::PowermetricsSpawn)?;
 
@@ -245,7 +259,21 @@ fn stream_metrics(tick_rate: Duration, tx: mpsc::Sender<Event>) -> Result<()> {
         }
     }
 
-    cmd.try_wait().map_err(CrateError::PowermetricsKill)?;
+    let status = cmd.wait().map_err(CrateError::PowermetricsWait)?;
+    if !status.success() && status.code().is_some()
+    // if powermetrics is killed, status.code() is None
+    {
+        let mut err_msg = String::new();
+        if let Some(mut stderr) = cmd.stderr.take() {
+            use std::io::Read;
+            stderr.read_to_string(&mut err_msg).ok();
+        }
+
+        return Err(CrateError::PowermetricsNonZeroExit(
+            status.code().unwrap(),
+            err_msg.trim().to_string(),
+        ));
+    }
     Ok(())
 }
 

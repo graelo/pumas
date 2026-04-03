@@ -55,4 +55,12 @@ pub enum Error {
     /// Error killing powermetrics subprocess.
     #[error("failed to kill powermetrics: `{0}`")]
     PowermetricsKill(io::Error),
+
+    /// Error waiting for powermetrics subprocess to exit.
+    #[error("failed to wait for powermetrics: `{0}`")]
+    PowermetricsWait(io::Error),
+
+    /// Error powermetrics exited with non-zero status.
+    #[error("exited with non-zero status: `{0}`, stderr: \"{1}\"")]
+    PowermetricsNonZeroExit(i32, String),
 }
