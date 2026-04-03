@@ -61,6 +61,20 @@ pub fn run(args: RunConfig) -> Result<()> {
             io::stdout().flush().ok(); // Avoid error message being cleaned by terminal cleanup.
 
             if let Err(err) = result {
+                if let Some(crate_err) = err.downcast_ref::<CrateError>() {
+                    // Try to print more helpful error messages
+                    match crate_err {
+                        CrateError::PowermetricsNonZeroExit(code, stderr) => {
+                            eprintln!("powermetrics exited abnormally with code {code}. Stderr:\n    {stderr}");
+                            if *code == 1 {
+                                eprintln!("This is likely caused by a permission issue. Sudo is required to run Pumas, as it uses Apple's powermetrics to gather metrics. Please try running with sudo:\n\n    sudo pumas run\n");
+                            }
+                            return Ok(());
+                        }
+                        _ => {}
+                    }
+                }
+
                 eprintln!("Error:\n    {}", err);
             }
         }
