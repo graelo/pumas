@@ -92,6 +92,7 @@ where
                 Key::Left | Key::BackTab => app.on_left(),
                 Key::Right | Key::Char('\t') => app.on_right(),
                 Key::Char(c) => app.on_key(c),
+                Key::Ctrl(c) => app.on_ctrl(c),
                 _ => {}
             },
             Event::Metrics(metrics) => app.on_metrics(metrics),

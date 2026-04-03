@@ -140,6 +140,12 @@ impl<'a> App<'a> {
         }
     }
 
+    pub fn on_ctrl(&mut self, c: char) {
+        if c == 'c' {
+            self.should_quit = true;
+        }
+    }
+
     pub fn on_left(&mut self) {
         self.tabs.previous();
     }
