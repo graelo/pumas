@@ -40,7 +40,7 @@ to gather metrics.
 sudo pumas run
 ```
 
-Use the arrow keys to switch between tabs. Press `Esc`, `q` or `x` to quit.
+Use the arrow keys to switch between tabs. Press `Esc`, `q`, `x`, `Ctrl-C` to quit.
 
 ### Screenshots
 
