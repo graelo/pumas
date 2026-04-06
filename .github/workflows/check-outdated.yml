@@ -1,0 +1,32 @@
+# Runs cargo-outdated when the `check-outdated` label is added to a PR
+
+name: Outdated
+on:
+  workflow_dispatch:
+  pull_request_target:
+    types:
+      - labeled
+
+jobs:
+  check-outdated:
+    name: Check outdated deps
+    runs-on: macos-latest
+    if: github.event.label.name == 'check-outdated'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Quality - cargo outdated
+        timeout-minutes: 20
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(gh api repos/kbknapp/cargo-outdated/releases/latest --jq '.tag_name')
+          curl -sSfL "https://github.com/kbknapp/cargo-outdated/releases/download/${VERSION}/cargo-outdated-${VERSION#v}-aarch64-apple-darwin.tar.gz" | \
+            gtar zx
+          chmod +x cargo-outdated
+          mv cargo-outdated ~/.cargo/bin/
+          rm -rf ~/.cargo/advisory-db
+          cargo outdated --exit-code 1
