@@ -1,0 +1,19 @@
+# See the lints at https://github.com/rvben/rumdl/tree/main/docs
+[global]
+flavor = "mkdocs"
+disable = [
+  "MD007",  # prefer the flavor over MD007
+  "MD046",  # allow code blocks to be indented and fenced
+]
+
+[code-block-tools]
+enabled = true
+
+[code-block-tools.languages]
+python = { lint = ["ruff:check"], format = ["ruff:format"] }
+
+[MD013]
+line-length = 80
+code-blocks = false
+tables = false
+reflow = true
