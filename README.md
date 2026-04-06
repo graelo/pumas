@@ -10,8 +10,8 @@
 
 <!-- cargo-sync-readme start -->
 
-A nvtop-inspired command line tool for Apple Silicon Macs: aka M1, M2, ... This is basically a
-reimplemented version of [asitop] in Rust.
+A nvtop-inspired command line tool for Apple Silicon Macs: aka M1, M2, ... This
+is basically a reimplemented version of [asitop] in Rust.
 
 | Type        | Metrics                      | Available | Comments                                                  |
 | ---         | ---                          | ---       | ---                                                       |
@@ -21,11 +21,12 @@ reimplemented version of [asitop] in Rust.
 | Frequency   | CPU Clusters, GPU            | missing   | Residency distrib. histograms                             |
 | Memory      | RAM & Swap: size and usage   | ✓         | Activity Monitor compatible memory accounting via vm_stat  |
 
-To gather data, Pumas uses both the macOS built-in `powermetrics` utility, and the `sysinfo`
-crate (same data as `htop`).
+To gather data, Pumas uses both the macOS built-in `powermetrics` utility, and
+the `sysinfo` crate (same data as `htop`).
 
-The built-in `powermetrics` allows access to a variety of hardware performance counters. Note
-that Pumas requires `sudo` to run only due to `powermetrics` needing root access to run.
+The built-in `powermetrics` allows access to a variety of hardware performance
+counters. Note that Pumas requires `sudo` to run only due to `powermetrics`
+needing root access to run.
 
 Pumas is lightweight and has minimal performance impact.
 
@@ -40,7 +41,8 @@ to gather metrics.
 sudo pumas run
 ```
 
-Use the arrow keys to switch between tabs. Press `Esc`, `q` or `x` to quit.
+Use the arrow keys to switch between tabs. Press `Esc`, `q`, `x`, or `Ctrl-C`
+to quit.
 
 ### Screenshots
 
@@ -202,11 +204,12 @@ Options:
 
 ### JSON Mode
 
-In JSON mode, Pumas will stream metrics to stdout as JSON instead of running the UI. You can
-then pipe the metrics to `jq`, or create a node-exporter for Prometheus, etc.
+In JSON mode, Pumas will stream metrics to stdout as JSON instead of running
+the UI. You can then pipe the metrics to `jq`, or create a node-exporter for
+Prometheus, etc.
 
-For instance, the following command will stream the active ratio of the third CPU core of the
-first CPU cluster at each sample interval:
+For instance, the following command will stream the active ratio of the third
+CPU core of the first CPU cluster at each sample interval:
 
 ```sh
 $ sudo pumas run --json | jq '.metrics.e_clusters[0].cpus[2].active_ratio'
@@ -215,13 +218,14 @@ $ sudo pumas run --json | jq '.metrics.e_clusters[0].cpus[2].active_ratio'
 ^C
 ```
 
-The JSON schema and an example are available in the [schema](./schema) directory.
+The JSON schema and an example are available in the [schema](./schema)
+directory.
 
 ### Quick Launch
 
-Some users reported they want a shorter way to launch Pumas. A quick way to do that is to
-give your user the ability to sudo run without password the `pumas` command (and only that
-command, for security reasons).
+Some users reported they want a shorter way to launch Pumas. A quick way to do
+that is to give your user the ability to sudo run without password the `pumas`
+command (and only that command, for security reasons).
 
 To achieve this, let's create a "drop-in" file `/etc/sudoers.d/pumas`
 
@@ -235,11 +239,11 @@ Add the following line to the file, replacing `username` with your username:
 username ALL=(ALL) NOPASSWD: /opt/homebrew/bin/pumas
 ```
 
-If you later remove `pumas`, you just have to delete this file. It's not a great practice to
-modify `/etc/sudoers` directly.
+If you later remove `pumas`, you just have to delete this file. It's not a great
+practice to modify `/etc/sudoers` directly.
 
-Now you can run `sudo pumas run` without being asked your password. You're free to add an alias
-to your shell, such as
+Now you can run `sudo pumas run` without being asked your password. You're free
+to add an alias to your shell, such as
 
 ```sh
 alias pumas='sudo pumas run'
@@ -276,8 +280,8 @@ Thanks to user @woshiniming007 for the suggestion!
 
 - GPU core count
 
-Some information is guesstimate and hardcoded as there doesn't seem to be a official source for
-it on the system:
+Some information is guesstimate and hardcoded as there doesn't seem to be a
+official source for it on the system:
 
 - CPU, GPU & ANE max power draw
 
