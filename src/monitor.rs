@@ -1,8 +1,7 @@
 //! The monitor main loop.
 
 use std::{
-    error::Error,
-    io::{self, BufRead, BufReader},
+    io::{self, BufRead, BufReader, Write},
     process,
     sync::mpsc,
     thread,
@@ -37,11 +36,8 @@ use crate::{
 pub fn run(args: RunConfig) -> Result<()> {
     let soc_info = SocInfo::new()?;
 
-    match args.json {
-        true => {
-            main_exporter_loop(soc_info, Duration::from_millis(args.sample_rate_ms as u64))
-                .expect("Cannot continue exporting metrics");
-        }
+    let result = match args.json {
+        true => main_exporter_loop(soc_info, Duration::from_millis(args.sample_rate_ms as u64)),
         false => {
             let stdout = io::stdout().into_raw_mode()?.into_alternate_screen()?;
             let stdout = MouseTerminal::from(stdout);
@@ -51,12 +47,25 @@ pub fn run(args: RunConfig) -> Result<()> {
 
             let app = App::new(soc_info, args.colors(), args.history_size);
 
-            main_ui_loop(
+            let result = main_ui_loop(
                 &mut terminal,
                 app,
                 Duration::from_millis(args.sample_rate_ms as u64),
-            )
-            .expect("Cannot continue to run the app");
+            );
+
+            drop(terminal);
+            io::stdout().flush().ok();
+
+            result
+        }
+    };
+
+    if let Err(err) = result {
+        eprintln!("{err}");
+        if let CrateError::PowermetricsNonZeroExit(status, msg) = &err {
+            if status.code() == Some(1) && msg.contains("superuser") {
+                eprintln!("macOS requires superuser privileges to access power metrics.\n\n    sudo pumas run\n");
+            }
         }
     }
 
@@ -67,6 +76,7 @@ enum Event {
     Input(Key),
     // Tick,
     Metrics(metrics::Metrics),
+    Error(CrateError),
 }
 
 /// Start the event stream sources and launch the UI event loop.
@@ -74,46 +84,52 @@ fn main_ui_loop<B: Backend>(
     terminal: &mut Terminal<B>,
     mut app: App,
     tick_rate: Duration,
-) -> std::result::Result<(), Box<dyn Error>>
+) -> Result<()>
 where
-    <B as Backend>::Error: 'static,
+    CrateError: From<B::Error>,
 {
     let events = start_event_threads(tick_rate);
 
     loop {
         terminal.draw(|f| ui::draw(f, &mut app))?;
 
-        match events.recv()? {
-            // Event::Tick => app.on_tick(),
-            Event::Input(key) => match key {
+        match events.recv() {
+            Ok(Event::Input(key)) => match key {
                 Key::Esc => app.on_key('q'),
                 // Key::Up => app.on_up(),
                 // Key::Down => app.on_down(),
                 Key::Left | Key::BackTab => app.on_left(),
                 Key::Right | Key::Char('\t') => app.on_right(),
                 Key::Char(c) => app.on_key(c),
+                Key::Ctrl(c) => app.on_ctrl(c),
                 _ => {}
             },
-            Event::Metrics(metrics) => app.on_metrics(metrics),
+            Ok(Event::Metrics(metrics)) => app.on_metrics(metrics),
+            Ok(Event::Error(err)) => return Err(err),
+            Err(_) => break,
         }
         if app.should_quit {
             return Ok(());
         }
     }
+
+    Ok(())
 }
 
 /// Start the event stream sources and export metrics as JSON.
-fn main_exporter_loop(
-    soc_info: SocInfo,
-    tick_rate: Duration,
-) -> std::result::Result<(), Box<dyn Error>> {
+fn main_exporter_loop(soc_info: SocInfo, tick_rate: Duration) -> Result<()> {
     let events = start_event_threads(tick_rate);
 
     loop {
-        if let Event::Metrics(metrics) = events.recv()? {
-            export(&soc_info, metrics)
+        match events.recv() {
+            Ok(Event::Metrics(metrics)) => export(&soc_info, metrics),
+            Ok(Event::Error(err)) => return Err(err),
+            Ok(_) => {}
+            Err(_) => break,
         }
     }
+
+    Ok(())
 }
 
 fn export(soc_info: &SocInfo, metrics: metrics::Metrics) {
@@ -149,8 +165,10 @@ fn start_event_threads(tick_rate: Duration) -> mpsc::Receiver<Event> {
     // });
 
     thread::spawn(move || {
-        if let Err(err) = stream_metrics(tick_rate, tx) {
-            eprintln!("powermetrics error: {err}");
+        if let Err(err) = stream_metrics(tick_rate, tx.clone()) {
+            if let Err(send_err) = tx.send(Event::Error(err)) {
+                eprintln!("failed to send error event: {send_err}");
+            }
         }
     });
 
@@ -189,6 +207,7 @@ fn stream_metrics(tick_rate: Duration, tx: mpsc::Sender<Event>) -> Result<()> {
     let mut cmd = process::Command::new(binary)
         .args(&args)
         .stdout(process::Stdio::piped())
+        .stderr(process::Stdio::piped())
         .spawn()
         .map_err(CrateError::PowermetricsSpawn)?;
 
@@ -244,7 +263,19 @@ fn stream_metrics(tick_rate: Duration, tx: mpsc::Sender<Event>) -> Result<()> {
         }
     }
 
-    cmd.try_wait().map_err(CrateError::PowermetricsKill)?;
+    let status = cmd.wait()?;
+    if !status.success() && status.code().is_some() {
+        let mut err_msg = String::new();
+        if let Some(mut stderr) = cmd.stderr.take() {
+            use std::io::Read;
+            stderr.read_to_string(&mut err_msg).ok();
+        }
+        return Err(CrateError::PowermetricsNonZeroExit(
+            status,
+            err_msg.trim().to_string(),
+        ));
+    }
+
     Ok(())
 }
 

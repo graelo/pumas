@@ -1,6 +1,6 @@
 //! This crate's error type.
 
-use std::io;
+use std::{io, process};
 
 /// Describes all errors from this crate.
 ///
@@ -55,4 +55,8 @@ pub enum Error {
     /// Error killing powermetrics subprocess.
     #[error("failed to kill powermetrics: `{0}`")]
     PowermetricsKill(io::Error),
+
+    /// Error powermetrics exited with non-zero status.
+    #[error("powermetrics ({0}), error: `{1}`")]
+    PowermetricsNonZeroExit(process::ExitStatus, String),
 }
