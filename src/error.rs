@@ -1,6 +1,6 @@
 //! This crate's error type.
 
-use std::io;
+use std::{io, process};
 
 /// Describes all errors from this crate.
 ///
@@ -56,11 +56,7 @@ pub enum Error {
     #[error("failed to kill powermetrics: `{0}`")]
     PowermetricsKill(io::Error),
 
-    /// Error waiting for powermetrics subprocess to exit.
-    #[error("failed to wait for powermetrics: `{0}`")]
-    PowermetricsWait(io::Error),
-
     /// Error powermetrics exited with non-zero status.
-    #[error("exited with non-zero status: `{0}`, stderr: \"{1}\"")]
-    PowermetricsNonZeroExit(i32, String),
+    #[error("powermetrics ({0}), error: `{1}`")]
+    PowermetricsNonZeroExit(process::ExitStatus, String),
 }
