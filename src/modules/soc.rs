@@ -42,16 +42,34 @@ impl SocInfo {
 
         let num_gpu_cores = gpu_info()?;
 
+        // Approximate peak power ceilings (watts) for scaling gauges and sparklines — not
+        // measured TDP. Calibrated loosely against public summaries (e.g. MacNerd SoC peak table
+        // citing AnandTech / NotebookCheck / Apple; TechRadar on M4 Max CPU ~48 W) and split
+        // across CPU / GPU / ANE for separate widgets; sums sit near those “chip peak” ballparks.
+        //
+        // M5: base chip CPU ceiling from user testing (~25 W). M5 Pro / M5 Max:
+        // NotebookCheck CPU analysis (~75 W peak CPU for the shared 18-core complex; GPU analysis
+        // ~38 W Pro / ~72 W Max). M5 Ultra: chip not public — values are extrapolation only.
         let (max_cpu_w, max_gpu_w, max_ane_w) = match cpu_brand_name.as_str() {
             "Apple M1" => (20.0, 20.0, 8.0),
-            "Apple M1 Pro" => (30.0, 30.0, 8.0),
-            "Apple M1 Max" => (30.0, 60.0, 8.0),
-            "Apple M1 Ultra" => (60.0, 120.0, 8.0),
-            "Apple M2" => (25.0, 15.0, 8.0),
-            // The following are guesses based on the M1.
-            "Apple M2 Pro" => (25.0, 35.0, 8.0),
-            "Apple M2 Max" => (28.0, 65.0, 8.0),
-            "Apple M2 Ultra" => (35.0, 48.0, 8.0),
+            "Apple M1 Pro" => (22.0, 18.0, 8.0),
+            "Apple M1 Max" => (32.0, 52.0, 8.0),
+            "Apple M1 Ultra" => (70.0, 130.0, 15.0),
+            "Apple M2" => (22.0, 22.0, 8.0),
+            "Apple M2 Pro" => (38.0, 52.0, 10.0),
+            "Apple M2 Max" => (45.0, 90.0, 10.0),
+            "Apple M2 Ultra" => (75.0, 200.0, 20.0),
+            "Apple M3" => (14.0, 14.0, 8.0),
+            "Apple M3 Pro" => (16.0, 16.0, 8.0),
+            "Apple M3 Max" => (42.0, 66.0, 10.0),
+            "Apple M3 Ultra" => (65.0, 120.0, 15.0),
+            "Apple M4" => (18.0, 17.0, 8.0),
+            "Apple M4 Pro" => (35.0, 35.0, 10.0),
+            "Apple M4 Max" => (52.0, 83.0, 10.0),
+            "Apple M5" => (25.0, 22.0, 8.0),
+            "Apple M5 Pro" => (78.0, 40.0, 10.0),
+            "Apple M5 Max" => (78.0, 75.0, 12.0),
+            "Apple M5 Ultra" => (95.0, 175.0, 18.0),
             _ => (20.0, 20.0, 8.0),
         };
 
