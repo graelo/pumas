@@ -7,28 +7,34 @@ on:
       - main
   pull_request:
 
+permissions: {}
+
 jobs:
   test:
     name: Quality checks & tests
     runs-on: macos-latest
+    permissions:
+      contents: read
     strategy:
       matrix:
         rust: [stable]
     steps:
       - name: Rust install
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # master
         with:
           toolchain: ${{ matrix.rust }}
           components: rustfmt, clippy
 
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: ${{ github.event.pull_request.commits || 0 }}
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: Cache crates from crates.io
-        uses: actions/cache@v5
+        if: github.event_name == 'pull_request'
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         continue-on-error: false
         with:
           path: |
@@ -37,7 +43,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: '${{ runner.os }}-cargo-${{ matrix.rust }}-hash-${{ hashFiles(''**/Cargo.lock'') }}'
+          key: ${{ runner.os }}-cargo-${{ matrix.rust }}-hash-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Quality - cargo fmt
         run: |
@@ -45,39 +51,18 @@ jobs:
 
       - name: Quality - cargo clippy
         run: |
-          cargo clippy # -- -D warnings
+          cargo clippy -- -D warnings
 
       - name: Quality - convco check
         run: |
-          git show-ref || true
+          git show-ref
           echo Commit message: "$(git log -1 --pretty=%B)"
           curl -sSfLO https://github.com/convco/convco/releases/latest/download/convco-macos.zip
           unzip convco-macos.zip
           chmod +x convco
           ./convco --version
-          # For PRs, check only the PR commits; for main pushes, check all
-          if [ -n "${{ github.event.pull_request.commits }}" ]; then
-            ./convco check -c .convco -n ${{ github.event.pull_request.commits }}
-          else
-            ./convco check -c .convco
-          fi
+          ./convco check -c .convco
           rm convco
-
-      - name: Quality - cargo deny check
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          VERSION=$(gh api repos/EmbarkStudios/cargo-deny/releases/latest --jq '.tag_name')
-          curl -sSfL "https://github.com/EmbarkStudios/cargo-deny/releases/download/${VERSION}/cargo-deny-${VERSION}-aarch64-apple-darwin.tar.gz" | \
-            gtar zx --no-anchored cargo-deny --strip-components=1
-          chmod +x cargo-deny
-          mv cargo-deny ~/.cargo/bin/
-          cargo deny check
-
-      - name: Quality - cargo pants
-        run: |
-          cargo install --locked cargo-pants || true
-          cargo pants
 
       - name: Build (dev)
         run: cargo build --all-features
@@ -87,3 +72,44 @@ jobs:
 
       - name: Test
         run: ./ci/test_full.sh
+
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      cargo_lock: ${{ steps.filter.outputs.cargo_lock }}
+      workflows: ${{ steps.filter.outputs.workflows }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - id: filter
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
+        with:
+          filters: |
+            cargo_lock:
+              - 'Cargo.lock'
+            workflows:
+              - '.github/workflows/**'
+              - '.github/actions/**'
+              - '.poutine.yml'
+              - '.github/zizmor.yml'
+              - 'renovate.json'
+
+  cargo-audit:
+    needs: changes
+    if: needs.changes.outputs.cargo_lock == 'true'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/cargo-audit.yml
+
+  ci-security:
+    needs: changes
+    if: needs.changes.outputs.workflows == 'true'
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    uses: ./.github/workflows/ci-security.yml

@@ -2,13 +2,16 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+
+permissions: {}
 
 jobs:
   prepare-artifacts:
     name: Prepare release artifacts
-    # if: github.ref == 'refs/heads/main'
-    runs-on: ${{ matrix.os }}
+    runs-on: macos-latest
+    permissions:
+      contents: read
     strategy:
       matrix:
         include:
@@ -19,32 +22,26 @@ jobs:
             archive_ext: zip
     steps:
       - name: Rust install
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # master
         with:
           toolchain: stable
           components: rustfmt, clippy
 
-      - name: checkout
-        uses: actions/checkout@v6
-
-      - name: Cache crates from crates.io
-        uses: actions/cache@v5
-        continue-on-error: false
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: '${{ runner.os }}-${{ matrix.target }}-cargo-${{ matrix.rust }}-hash-${{ hashFiles(''**/Cargo.lock'') }}'
+          fetch-depth: 1
+          persist-credentials: false
 
       - name: Build Release
         run: cargo build --release
 
-      - name: Compress to zip (macOS)
-        if: ${{ matrix.os == 'macos-latest' }}
-        run: zip -A ${{ github.event.repository.name }}-${{ matrix.target }}.${{ matrix.archive_ext }} target/release/${{ github.event.repository.name }}
+      - name: Compress to zip
+        env:
+          REPO_NAME: ${{ github.event.repository.name }}
+          TARGET: ${{ matrix.target }}
+          ARCHIVE_EXT: ${{ matrix.archive_ext }}
+        run: zip -A "${REPO_NAME}-${TARGET}.${ARCHIVE_EXT}" "target/release/${REPO_NAME}"
 
       - name: List files
         run: |
@@ -53,25 +50,28 @@ jobs:
         shell: bash
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ${{ github.event.repository.name }}-${{ matrix.target }}.${{ matrix.archive_ext }}
           path: ${{ github.event.repository.name }}-${{ matrix.target }}.${{ matrix.archive_ext }}
+          retention-days: 3
 
   release:
     name: Create a GitHub Release
-    # if: github.ref == 'refs/heads/main'
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
+      attestations: write
     needs:
       - prepare-artifacts
     steps:
-      - name: checkout
-        uses: actions/checkout@v6
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           # convco needs all history to create the changelog
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Extract version
         id: extract-version
@@ -81,43 +81,63 @@ jobs:
       - name: Download convco
         run: |
           git show-ref
-          curl -sSfLO https://github.com/convco/convco/releases/latest/download/convco-macos.zip
-          unzip convco-macos.zip
+          curl -sSfLO https://github.com/convco/convco/releases/latest/download/convco-ubuntu.zip
+          unzip convco-ubuntu.zip
           chmod +x convco
 
       - name: Use convco to create the changelog
         run: |
           ./convco changelog -c .convco --max-versions 1 --include-hidden-sections > CHANGELOG.md
-          rm convco convco-macos.zip
+          rm convco convco-ubuntu.zip
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: ${{ github.event.repository.name }}-aarch64-apple-darwin.zip
 
-      - uses: ncipollo/release-action@v1
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          gh release create "${TAG_NAME}" \
+            --title "${TAG_NAME}" \
+            --notes-file CHANGELOG.md \
+            ./*.zip ./*.tar.xz
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
         with:
-          artifacts: '*.zip,*.tar.xz'
-          bodyFile: 'CHANGELOG.md'
-          token: ${{ secrets.GITHUB_TOKEN }}
+          subject-path: '*.zip,*.tar.xz'
 
   homebrew:
     name: Bump Homebrew formula
-    # if: github.ref == 'refs/heads/main'
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
     needs:
       - release
     steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
+        with:
+          client-id: ${{ secrets.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: graelo
+          repositories: homebrew-tap
+
       - name: Extract version
         id: extract-version
         run: |
           echo "tag-name=${GITHUB_REF#refs/tags/}" >> "${GITHUB_OUTPUT}"
 
-      - uses: mislav/bump-homebrew-formula-action@v4
+      - uses: mislav/bump-homebrew-formula-action@ccf2332299a883f6af50a1d2d41e5df7904dd769 # v4.1
         if: '!contains(github.ref, ''-'')' # skip prereleases
         with:
           formula-name: pumas
           homebrew-tap: graelo/homebrew-tap
-          # base-branch: main
+          push-to: graelo/homebrew-tap
           create-pullrequest: true
           download-url: https://github.com/graelo/pumas/archive/refs/tags/${{ steps.extract-version.outputs.tag-name }}.tar.gz
           commit-message: |
@@ -125,4 +145,4 @@ jobs:
 
             Created by https://github.com/mislav/bump-homebrew-formula-action
         env:
-          COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
+          COMMITTER_TOKEN: ${{ steps.app-token.outputs.token }}

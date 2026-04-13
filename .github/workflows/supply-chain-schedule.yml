@@ -1,0 +1,24 @@
+# Scheduled supply chain audits: dependency vulnerabilities and CI security.
+
+name: Supply Chain Audit
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 16 * * 2' # Tuesday at 16:00 UTC
+    - cron: '0 16 * * 5' # Friday at 16:00 UTC
+
+permissions: {}
+
+jobs:
+  cargo-audit:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/cargo-audit.yml
+
+  ci-security:
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    uses: ./.github/workflows/ci-security.yml
