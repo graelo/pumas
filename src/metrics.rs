@@ -8,9 +8,9 @@ use std::str::FromStr;
 use serde::Serialize;
 
 use crate::{
+    Result,
     error::Error,
     modules::{powermetrics::plist_parsing, sysinfo},
-    Result,
 };
 
 /// Reformulated metrics from the output of the `powermetrics` tool and `sysinfo`.

@@ -2,7 +2,7 @@
 
 use std::process;
 
-use crate::{error::Error, Result};
+use crate::{Result, error::Error};
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]

@@ -1,6 +1,6 @@
 //! A signal is a collection of points that can be used to draw a line graph.
 
-use num_traits::{cast::ToPrimitive, Bounded, Num};
+use num_traits::{Bounded, Num, cast::ToPrimitive};
 
 pub(crate) struct Signal<T>
 where

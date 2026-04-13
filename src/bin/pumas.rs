@@ -4,8 +4,9 @@ use clap::{CommandFactory, Parser};
 use clap_complete::generate;
 
 use pumas::{
+    Result,
     config::{Command, Config},
-    monitor, Result,
+    monitor,
 };
 
 fn main() -> Result<()> {
