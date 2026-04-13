@@ -1,0 +1,9 @@
+rules:
+  # TODO: replace with action-name-based ignore once available
+  # (zizmorcore/zizmor#1086). All occurrences are dtolnay/rust-toolchain,
+  # which is intentional for multi-version matrix builds.
+  superfluous-actions:
+    ignore:
+      - cargo-audit.yml
+      - essentials.yml
+      - release.yml

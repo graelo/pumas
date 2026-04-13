@@ -1,0 +1,53 @@
+# Reusable workflow: dependency audit via cargo-deny and cargo-pants.
+
+name: Cargo Audit
+
+on:
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  cargo-audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Rust install
+        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # master
+        with:
+          toolchain: stable
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Cache crates from crates.io
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-stable-audit-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: cargo deny check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(gh api repos/EmbarkStudios/cargo-deny/releases/latest --jq '.tag_name')
+          curl -sSfL "https://github.com/EmbarkStudios/cargo-deny/releases/download/${VERSION}/cargo-deny-${VERSION}-x86_64-unknown-linux-musl.tar.gz" | \
+            tar zx --no-anchored cargo-deny --strip-components=1
+          chmod +x cargo-deny
+          mv cargo-deny ~/.cargo/bin/
+          cargo deny check
+
+      - name: cargo pants
+        run: |
+          cargo install --locked cargo-pants || true
+          cargo pants

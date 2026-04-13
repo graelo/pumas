@@ -1,0 +1,38 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "gitAuthor": "graelo-ci-bot[bot] <274240725+graelo-ci-bot[bot]@users.noreply.github.com>",
+  "labels": [
+    "dependencies"
+  ],
+  "cargo": {
+    "enabled": true
+  },
+  "vulnerabilityAlerts": {
+    "enabled": false
+  },
+  "packageRules": [
+    {
+      "description": "Pin GitHub Actions to commit SHAs for supply chain safety",
+      "matchManagers": ["github-actions"],
+      "pinDigests": true
+    },
+    {
+      "description": "Group all patch updates into one PR",
+      "matchUpdateTypes": "patch",
+      "groupName": "patch updates"
+    },
+    {
+      "description": "Group all minor updates into one PR",
+      "matchUpdateTypes": [
+        "minor"
+      ],
+      "groupName": "minor updates"
+    }
+  ],
+  "schedule": [
+    "before 9pm on friday"
+  ]
+}
