@@ -90,6 +90,7 @@ jobs:
         with:
           filters: |
             cargo_lock:
+              - 'Cargo.toml'
               - 'Cargo.lock'
             workflows:
               - '.github/workflows/**'
