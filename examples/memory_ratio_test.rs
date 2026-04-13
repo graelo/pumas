@@ -14,22 +14,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut pages_compressed = 0u64;
 
     for line in output_str.lines() {
-        if let Some(ps) = line.strip_prefix("Mach Virtual Memory Statistics: (page size of ") {
-            if let Some(size_str) = ps.strip_suffix(" bytes)") {
-                page_size = size_str.parse().unwrap_or(4096);
-            }
-        } else if line.contains("Anonymous pages:") {
-            if let Some(val) = line.split(':').nth(1) {
-                pages_anonymous = val.trim().trim_end_matches('.').parse().unwrap_or(0);
-            }
-        } else if line.contains("Pages wired down:") {
-            if let Some(val) = line.split(':').nth(1) {
-                pages_wired = val.trim().trim_end_matches('.').parse().unwrap_or(0);
-            }
-        } else if line.contains("Pages occupied by compressor:") {
-            if let Some(val) = line.split(':').nth(1) {
-                pages_compressed = val.trim().trim_end_matches('.').parse().unwrap_or(0);
-            }
+        if let Some(ps) = line.strip_prefix("Mach Virtual Memory Statistics: (page size of ")
+            && let Some(size_str) = ps.strip_suffix(" bytes)")
+        {
+            page_size = size_str.parse().unwrap_or(4096);
+        } else if line.contains("Anonymous pages:")
+            && let Some(val) = line.split(':').nth(1)
+        {
+            pages_anonymous = val.trim().trim_end_matches('.').parse().unwrap_or(0);
+        } else if line.contains("Pages wired down:")
+            && let Some(val) = line.split(':').nth(1)
+        {
+            pages_wired = val.trim().trim_end_matches('.').parse().unwrap_or(0);
+        } else if line.contains("Pages occupied by compressor:")
+            && let Some(val) = line.split(':').nth(1)
+        {
+            pages_compressed = val.trim().trim_end_matches('.').parse().unwrap_or(0);
         }
     }
 

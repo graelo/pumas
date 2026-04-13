@@ -1,11 +1,11 @@
 //! Startup screen.
 
 use ratatui::{
+    Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     text,
     widgets::{Paragraph, Wrap},
-    Frame,
 };
 
 const LOGO2_HEIGHT: u16 = 17;

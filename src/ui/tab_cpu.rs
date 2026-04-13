@@ -1,12 +1,12 @@
 //! CPU cores tab.
 
 use ratatui::{
+    Frame,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Modifier, Style},
     symbols,
     text::Span,
     widgets::{Block, Borders, Cell, LineGauge, Paragraph, Row, Sparkline, Table},
-    Frame,
 };
 
 use crate::{
@@ -312,7 +312,7 @@ fn draw_freq_table(f: &mut Frame, metrics: &Metrics, area: Rect) {
         "Hardware-wise, CPUs quickly shift between the above frequencies.".into(),
     ));
 
-    let rows = row_content.iter().map(|(left, ref right)| {
+    let rows = row_content.iter().map(|(left, right)| {
         Row::new(vec![
             Cell::from(Span::from(*left)),
             Cell::from(Span::styled(
