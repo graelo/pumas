@@ -1,12 +1,12 @@
 //! GPU tab.
 
 use ratatui::{
+    Frame,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     symbols,
     text::{Line, Span},
     widgets::{Block, Borders, Cell, LineGauge, Paragraph, Row, Sparkline, Table},
-    Frame,
 };
 
 use crate::{
@@ -236,7 +236,7 @@ fn draw_freq_table(f: &mut Frame, gpu_metrics: &GpuMetrics, area: Rect) {
         ),
     ];
 
-    let rows = row_content.iter().map(|(left, ref right)| {
+    let rows = row_content.iter().map(|(left, right)| {
         Row::new(vec![
             Cell::from(Span::from(*left)),
             Cell::from(Span::styled(

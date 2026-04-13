@@ -9,8 +9,8 @@ use std::{
 };
 
 use ratatui::{
-    backend::{Backend, TermionBackend},
     Terminal,
+    backend::{Backend, TermionBackend},
 };
 use termion::{
     event::Key,
@@ -20,12 +20,13 @@ use termion::{
 };
 
 use crate::{
+    Result,
     app::App,
     config::RunConfig,
     error::Error as CrateError,
     metrics,
     modules::{powermetrics, soc::SocInfo, sysinfo},
-    ui, Result,
+    ui,
 };
 
 /// Launch the main loop.
@@ -62,10 +63,13 @@ pub fn run(args: RunConfig) -> Result<()> {
 
     if let Err(err) = result {
         eprintln!("{err}");
-        if let CrateError::PowermetricsNonZeroExit(status, msg) = &err {
-            if status.code() == Some(1) && msg.contains("superuser") {
-                eprintln!("macOS requires superuser privileges to access power metrics.\n\n    sudo pumas run\n");
-            }
+        if let CrateError::PowermetricsNonZeroExit(status, msg) = &err
+            && status.code() == Some(1)
+            && msg.contains("superuser")
+        {
+            eprintln!(
+                "macOS requires superuser privileges to access power metrics.\n\n    sudo pumas run\n"
+            );
         }
     }
 
@@ -165,10 +169,10 @@ fn start_event_threads(tick_rate: Duration) -> mpsc::Receiver<Event> {
     // });
 
     thread::spawn(move || {
-        if let Err(err) = stream_metrics(tick_rate, tx.clone()) {
-            if let Err(send_err) = tx.send(Event::Error(err)) {
-                eprintln!("failed to send error event: {send_err}");
-            }
+        if let Err(err) = stream_metrics(tick_rate, tx.clone())
+            && let Err(send_err) = tx.send(Event::Error(err))
+        {
+            eprintln!("failed to send error event: {send_err}");
         }
     });
 

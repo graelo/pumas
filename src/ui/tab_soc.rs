@@ -1,11 +1,11 @@
 //! SoC tab.
 
 use ratatui::{
+    Frame,
     layout::{Constraint, Rect},
     style::{Modifier, Style},
     text::Span,
     widgets::{Cell, Row, Table},
-    Frame,
 };
 
 use crate::{app::App, units};
@@ -31,7 +31,7 @@ pub(crate) fn draw_soc_tab(f: &mut Frame, app: &App, area: Rect) {
         ("Max ANE power:", units::watts(app.soc_info.max_ane_w)),
     ];
 
-    let rows = row_content.iter().map(|(left, ref right)| {
+    let rows = row_content.iter().map(|(left, right)| {
         Row::new(vec![
             Cell::from(Span::from(*left)),
             Cell::from(Span::styled(
