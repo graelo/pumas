@@ -10,13 +10,12 @@
   "cargo": {
     "enabled": true
   },
-  "vulnerabilityAlerts": {
-    "enabled": false
-  },
   "packageRules": [
     {
       "description": "Pin GitHub Actions to commit SHAs for supply chain safety",
-      "matchManagers": ["github-actions"],
+      "matchManagers": [
+        "github-actions"
+      ],
       "pinDigests": true
     },
     {
