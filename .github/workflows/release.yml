@@ -54,7 +54,7 @@ jobs:
         with:
           name: ${{ github.event.repository.name }}-${{ matrix.target }}.${{ matrix.archive_ext }}
           path: ${{ github.event.repository.name }}-${{ matrix.target }}.${{ matrix.archive_ext }}
-          retention-days: 3
+          retention-days: 1
 
   release:
     name: Create a GitHub Release
