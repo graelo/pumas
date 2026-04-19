@@ -56,10 +56,7 @@ const FREQUENCY_TABLE_HEIGHT: u16 = 5;
 /// └──────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ///
 pub(crate) fn draw_cpu_tab(f: &mut Frame, app: &App, area: Rect) {
-    let metrics = match &app.metrics {
-        Some(metrics) => metrics,
-        None => return,
-    };
+    let Some(metrics) = &app.metrics else { return };
 
     let constraints = metrics
         // E-Clusters

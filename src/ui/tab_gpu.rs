@@ -25,10 +25,7 @@ const POWER_HISTORY_LENGTH: u16 = 8;
 
 /// Draw the GPU tab.
 pub(crate) fn draw_gpu_tab(f: &mut Frame, app: &App, area: Rect) {
-    let metrics = match &app.metrics {
-        Some(metrics) => metrics,
-        None => return,
-    };
+    let Some(metrics) = &app.metrics else { return };
 
     let gpu_chunks = Layout::default()
         .direction(Direction::Vertical)
