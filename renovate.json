@@ -10,6 +10,7 @@
   "cargo": {
     "enabled": true
   },
+  "platformAutomerge": true,
   "packageRules": [
     {
       "description": "Pin GitHub Actions to commit SHAs for supply chain safety",
@@ -21,17 +22,16 @@
     {
       "description": "Group all patch updates into one PR",
       "matchUpdateTypes": "patch",
-      "groupName": "patch updates"
+      "groupName": "patch updates",
+      "automerge": true
     },
     {
       "description": "Group all minor updates into one PR",
       "matchUpdateTypes": [
         "minor"
       ],
-      "groupName": "minor updates"
+      "groupName": "minor updates",
+      "automerge": true
     }
-  ],
-  "schedule": [
-    "before 9pm on friday"
   ]
 }

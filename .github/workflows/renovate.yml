@@ -1,12 +1,12 @@
 # Runs Renovate to check for dependency updates.
-# Triggers weekly on Friday afternoons, or manually via workflow_dispatch.
+# Triggers daily at 19:00 UTC, or manually via workflow_dispatch.
 
 name: Renovate
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 16 * * 5' # every Friday at 16:00 UTC
+    - cron: '0 19 * * *' # daily at 19:00 UTC
 
 permissions: {}
 
