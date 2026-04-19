@@ -38,7 +38,7 @@ jobs:
           persist-credentials: false
 
       - name: Run poutine
-        uses: boostsecurityio/poutine-action@a563bfa02c3e093e52fb82f53eab0d3a0f348c34 # main (2026-04-07)
+        uses: boostsecurityio/poutine-action@e240ebd3eff8b2db5a8e5f6b28f58739d7db2247 # v1.1.4
 
       - name: Upload SARIF
         if: always()
