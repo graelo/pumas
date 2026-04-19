@@ -31,28 +31,36 @@ FEATURES=()
 # check_version 1.88 && FEATURES+=(libm)
 echo "Testing supported features: ${FEATURES[*]}"
 
+NEXTEST_PROFILE=""
+if [ -n "$CI" ]; then
+  NEXTEST_PROFILE="--profile ci"
+fi
+
 set -x
 
 # test the default
 cargo build
-cargo test --workspace
+cargo nextest run $NEXTEST_PROFILE
 
 # test `no_std`
 cargo build --no-default-features
-cargo test --no-default-features --workspace
+cargo nextest run $NEXTEST_PROFILE --no-default-features
 
 # test each isolated feature, with and without std
 for feature in "${FEATURES[@]}"; do
   # cargo build --no-default-features --features="std $feature"
-  # cargo test --no-default-features --features="std $feature"
+  # cargo nextest run $NEXTEST_PROFILE --no-default-features --features="std $feature"
 
   cargo build --no-default-features --features="$feature"
-  cargo test --no-default-features --features="$feature" --workspace
+  cargo nextest run $NEXTEST_PROFILE --no-default-features --features="$feature"
 done
 
 # test all supported features, with and without std
 # cargo build --features="std ${FEATURES[*]}"
-# cargo test --features="std ${FEATURES[*]}"
+# cargo nextest run $NEXTEST_PROFILE --features="std ${FEATURES[*]}"
 
 cargo build --features="${FEATURES[*]}"
-cargo test --features="${FEATURES[*]}" --workspace
+cargo nextest run $NEXTEST_PROFILE --features="${FEATURES[*]}"
+
+# doc tests (not supported by nextest)
+cargo test --doc

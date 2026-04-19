@@ -1,0 +1,12 @@
+# cargo-nextest configuration
+# https://nexte.st/docs/configuration/
+
+[profile.default]
+retries = 0
+test-threads = "num-cpus"
+fail-fast = false
+slow-timeout = { period = "60s", terminate-after = 2 }
+
+[profile.ci]
+retries = 2
+fail-fast = true
