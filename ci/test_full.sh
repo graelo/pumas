@@ -3,7 +3,7 @@
 set -e
 
 CRATE=pumas
-MSRV=1.88
+MSRV=1.95
 
 get_rust_version() {
   local array=($(rustc --version));
