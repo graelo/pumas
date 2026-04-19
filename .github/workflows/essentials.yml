@@ -70,6 +70,11 @@ jobs:
       - name: Build (release)
         run: cargo build --all-features --release
 
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@58e862542551f667fa44c8a2a4a1d64ad477c96a # v2.75.17
+        with:
+          tool: cargo-nextest@0.9.133
+
       - name: Test
         run: ./ci/test_full.sh
 
@@ -95,7 +100,7 @@ jobs:
             workflows:
               - '.github/workflows/**'
               - '.github/actions/**'
-              - '.poutine.yml'
+              - '.github/poutine.yml'
               - '.github/zizmor.yml'
               - 'renovate.json'
 
