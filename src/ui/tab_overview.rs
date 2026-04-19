@@ -64,10 +64,7 @@ const PKG_TEXT_HEIGHT: u16 = 1;
 /// └────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ///
 pub(crate) fn draw_overview_tab(f: &mut Frame, app: &App, area: Rect) {
-    let metrics = match &app.metrics {
-        Some(metrics) => metrics,
-        None => return,
-    };
+    let Some(metrics) = &app.metrics else { return };
 
     // Number of horizontal blocks for the CPU clusters.
     let num_clusters_blocks = (num_blocks_for(metrics.e_clusters.len())
