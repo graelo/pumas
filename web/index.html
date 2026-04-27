@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pumas Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>Pumas <span class="subtitle" id="socInfo">Loading...</span></h1>
+        </div>
+        <div class="header-right">
+            <span class="status-indicator">
+                <span class="status-dot starting" id="statusDot"></span>
+                <span id="statusText">connecting...</span>
+            </span>
+            <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">🌙</button>
+        </div>
+    </div>
+
+    <div class="dashboard-grid" id="dashboard">
+        <div class="chart-card" id="card-cpuUtil">
+            <h2 id="title-cpuUtil">CPU Utilization</h2>
+            <div class="chart-container" id="chart-cpuUtil"></div>
+        </div>
+        <div class="chart-card" id="card-cpuFreq">
+            <h2 id="title-cpuFreq">CPU Frequency</h2>
+            <div class="chart-container" id="chart-cpuFreq"></div>
+        </div>
+        <div class="chart-card" id="card-gpu">
+            <h2 id="title-gpu">GPU</h2>
+            <div class="chart-container" id="chart-gpu"></div>
+        </div>
+        <div class="chart-card" id="card-power">
+            <h2 id="title-power">Power Consumption</h2>
+            <div class="chart-container" id="chart-power"></div>
+        </div>
+        <div class="chart-card" id="card-memory">
+            <h2 id="title-memory">Memory</h2>
+            <div id="chart-memory">
+                <div class="memory-group">
+                    <div class="memory-item">
+                        <label>RAM</label>
+                        <div class="bar-track">
+                            <div class="bar-fill" id="mem-ram-fill" style="width: 0%"></div>
+                            <div class="bar-text" id="mem-ram-text">Loading...</div>
+                        </div>
+                    </div>
+                    <div class="memory-item">
+                        <label>Swap</label>
+                        <div class="bar-track">
+                            <div class="bar-fill" id="mem-swap-fill" style="width: 0%; background: linear-gradient(90deg, #ff7043, #e53935);"></div>
+                            <div class="bar-text" id="mem-swap-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="chart-card" id="card-thermal">
+            <h2 id="title-thermal">Thermal Pressure</h2>
+            <div id="chart-thermal">
+                <div class="thermal-bar">
+                    <span class="thermal-label nominal" id="thermal-label">Nominal</span>
+                    <div class="thermal-track">
+                        <div class="thermal-fill" id="thermal-fill" style="width: 10%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/config.js"></script>
+    <script src="assets/app.js"></script>
+</body>
+</html>

@@ -23,6 +23,13 @@ pub enum Command {
         args: RunConfig,
     },
 
+    /// Start a web dashboard server.
+    Web {
+        /// Configuration for the web server.
+        #[command(flatten)]
+        args: WebConfig,
+    },
+
     /// Print a shell completion script to stdout.
     GenerateCompletion {
         /// Shell for which you want completion.
@@ -83,6 +90,23 @@ impl RunConfig {
             history_bg: self.history_bg_color,
         }
     }
+}
+
+/// Web dashboard configuration.
+#[derive(Debug, clap::Args)]
+pub struct WebConfig {
+    /// Update rate [ms], min=100.
+    #[arg(short = 'i', long = "sample-rate", default_value = "1000",
+        value_parser = clap::value_parser!(u16).range(100..))]
+    pub sample_rate_ms: u16,
+
+    /// Listen address for the HTTP server.
+    #[arg(short = 'a', long = "listen-address", default_value = "127.0.0.1:9810")]
+    pub listen_address: String,
+
+    /// Override embedded web templates with files from this directory.
+    #[arg(long)]
+    pub web_dir: Option<String>,
 }
 
 /// Hold color configuration.

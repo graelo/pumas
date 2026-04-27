@@ -16,6 +16,10 @@ fn main() -> Result<()> {
             monitor::run(args)?;
         }
 
+        Command::Web { args } => {
+            monitor::run_web(args)?;
+        }
+
         Command::GenerateCompletion { shell } => {
             let mut app = Config::command();
             let name = app.get_name().to_string();

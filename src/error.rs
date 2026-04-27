@@ -59,4 +59,8 @@ pub enum Error {
     /// Error powermetrics exited with non-zero status.
     #[error("powermetrics ({0}), error: `{1}`")]
     PowermetricsNonZeroExit(process::ExitStatus, String),
+
+    /// Web server error.
+    #[error("web server error: `{0}`")]
+    WebServerError(String),
 }

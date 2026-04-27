@@ -19,10 +19,12 @@ use termion::{
     screen::IntoAlternateScreen,
 };
 
+use std::sync::{Arc, RwLock};
+
 use crate::{
     Result,
     app::App,
-    config::RunConfig,
+    config::{RunConfig, WebConfig},
     error::Error as CrateError,
     metrics,
     modules::{powermetrics, soc::SocInfo, sysinfo},
@@ -283,63 +285,107 @@ fn stream_metrics(tick_rate: Duration, tx: mpsc::Sender<Event>) -> Result<()> {
     Ok(())
 }
 
-// pub fn exec_stream<P: AsRef<Path>>(binary: P, args: Vec<&'static str>) {
-//     let mut cmd = process::Command::new(binary.as_ref())
-//         .args(&args)
-//         .stdout(process::Stdio::piped())
-//         .spawn()
-//         .unwrap();
-//
-//     {
-//         let stdout = cmd.stdout.as_mut().unwrap();
-//         let stdout_reader = BufReader::new(stdout);
-//         let stdout_lines = stdout_reader.lines();
-//
-//         let mut buffer: Vec<String> = vec![];
-//         for line in stdout_lines.flatten() {
-//             if line != "</plist>" {
-//                 // Process all lines but the last.
-//                 if line.starts_with(char::from(0)) {
-//                     // Trim the leading null character if present (happens only on the 1st line).
-//                     let line = line.trim_start_matches(char::from(0)).to_string();
-//                     buffer.push(line);
-//                 } else {
-//                     buffer.push(line);
-//                 }
-//             } else {
-//                 // Process the last line.
-//                 buffer.push(line);
-//
-//                 // Fix a powermetrics bug by removing the last `idle_ratio` line (n-5)th line.
-//                 let pos = buffer
-//                     .iter()
-//                     .rev()
-//                     .take(10)
-//                     .position(|line| line.starts_with("<key>idle_ratio</key>"));
-//                 if let Some(pos) = pos {
-//                     buffer.remove(buffer.len() - pos - 1);
-//                 }
-//
-//                 let text = buffer.join("\n");
-//                 buffer.clear();
-//                 if false {
-//                     println!("{}", text);
-//                     println!("--");
-//                 } else {
-//                     let powermetrics = match Metrics::from_bytes(text.as_bytes()) {
-//                         Ok(metrics) => metrics,
-//                         Err(err) => {
-//                             eprintln!("{err}");
-//                             eprintln!("{:?}", text.as_bytes());
-//                             cmd.kill().unwrap();
-//                             break;
-//                         }
-//                     };
-//                     println!("{}", powermetrics.cpu_mw);
-//                 }
-//             }
-//         }
-//     }
-//
-//     cmd.wait().unwrap();
-// }
+/// Run the web dashboard server.
+pub fn run_web(args: WebConfig) -> Result<()> {
+    let soc_info = SocInfo::new()?;
+    let tick_rate = Duration::from_millis(args.sample_rate_ms as u64);
+
+    let state = Arc::new(crate::web::SharedMetricsState {
+        metrics: RwLock::new(None),
+        soc_info,
+        web_dir: args.web_dir.map(std::path::PathBuf::from),
+    });
+
+    // Spawn metrics collection in a std thread (powermetrics requires sync I/O).
+    let st = state.clone();
+    thread::spawn(move || {
+        if let Err(err) = stream_powermetrics_to_state(tick_rate, &st) {
+            eprintln!("metrics collection error: {err}");
+        }
+    });
+
+    // Start axum server on tokio runtime.
+    let rt = tokio::runtime::Runtime::new()?;
+    rt.block_on(crate::web::serve(state, args.listen_address))
+        .map_err(|e| CrateError::WebServerError(e.to_string()))?;
+    Ok(())
+}
+
+/// Stream powermetrics output and write to shared state (for the web dashboard).
+fn stream_powermetrics_to_state(
+    tick_rate: Duration,
+    state: &Arc<crate::web::SharedMetricsState>,
+) -> Result<()> {
+    let sample_rate_ms = format!("{}", tick_rate.as_millis());
+
+    let binary = "/usr/bin/powermetrics";
+    let args = [
+        "--sample-rate",
+        sample_rate_ms.as_str(),
+        "--samplers",
+        "cpu_power,gpu_power,thermal",
+        "-f",
+        "plist",
+    ];
+
+    let mut cmd = process::Command::new(binary)
+        .args(&args)
+        .stdout(process::Stdio::piped())
+        .stderr(process::Stdio::piped())
+        .spawn()
+        .map_err(CrateError::PowermetricsSpawn)?;
+
+    let stdout = cmd.stdout.as_mut().ok_or(CrateError::PowermetricsStdout)?;
+    let stdout_reader = BufReader::new(stdout);
+    let stdout_lines = stdout_reader.lines();
+
+    let mut buffer = powermetrics::Buffer::new();
+    let mut system_state = sysinfo::SystemState::new();
+
+    for line in stdout_lines.map_while(std::result::Result::<String, io::Error>::ok) {
+        if line != "</plist>" {
+            buffer.append_line(line);
+        } else {
+            buffer.append_last_line(line);
+            let text = buffer.finalize();
+
+            let power_metrics = match metrics::Metrics::from_bytes(text.as_bytes()) {
+                Ok(metrics) => metrics,
+                Err(err) => {
+                    eprintln!("{err}");
+                    cmd.kill().map_err(CrateError::PowermetricsKill)?;
+                    break;
+                }
+            };
+
+            let sysinfo_metrics = system_state.latest_metrics();
+
+            let metrics = match power_metrics.merge_sysinfo_metrics(sysinfo_metrics) {
+                Ok(metrics) => metrics,
+                Err(err) => {
+                    eprintln!("{err}");
+                    cmd.kill().map_err(CrateError::PowermetricsKill)?;
+                    break;
+                }
+            };
+
+            // Write to shared state.
+            *state.metrics.write().unwrap() = Some(metrics);
+        }
+    }
+
+    let status = cmd.wait()?;
+    if !status.success() && status.code().is_some() {
+        let mut err_msg = String::new();
+        if let Some(mut stderr) = cmd.stderr.take() {
+            use std::io::Read;
+            stderr.read_to_string(&mut err_msg).ok();
+        }
+        return Err(CrateError::PowermetricsNonZeroExit(
+            status,
+            err_msg.trim().to_string(),
+        ));
+    }
+
+    Ok(())
+}

@@ -38,6 +38,12 @@ num-traits = "0.2"
 serde_json = "1.0.104"
 sysinfo = "0.38"
 
+# web dashboard
+axum = "0.7"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "fs"] }
+tower-http = { version = "0.5", features = ["fs", "cors"] }
+rust-embed = "8"
+
 [dev-dependencies]
 assert_approx_eq = "1.1.0"
 

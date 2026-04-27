@@ -301,6 +301,7 @@ mod modules;
 pub mod monitor;
 mod signal;
 mod ui;
+mod web;
 mod units;
 
 /// Result type for this crate.
