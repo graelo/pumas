@@ -11,6 +11,7 @@
     "enabled": true
   },
   "platformAutomerge": true,
+  "minimumReleaseAge": "3 days",
   "packageRules": [
     {
       "description": "Pin GitHub Actions to commit SHAs for supply chain safety",
