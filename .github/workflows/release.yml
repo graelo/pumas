@@ -6,6 +6,10 @@ on:
 
 permissions: {}
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   prepare-artifacts:
     name: Prepare release artifacts

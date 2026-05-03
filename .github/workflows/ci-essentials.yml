@@ -1,6 +1,6 @@
 # Any commit on main & PRs
 
-name: Essentials
+name: 'CI: Essentials'
 on:
   push:
     branches:
@@ -8,6 +8,10 @@ on:
   pull_request:
 
 permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -51,7 +55,7 @@ jobs:
 
       - name: Quality - cargo clippy
         run: |
-          cargo clippy -- -D warnings
+          cargo clippy --all-targets -- -D warnings
 
       - name: Quality - convco check
         run: |
@@ -71,7 +75,7 @@ jobs:
         run: cargo build --all-features --release
 
       - name: Install cargo-nextest
-        uses: taiki-e/install-action@481c34c1cf3a84c68b5e46f4eccfc82af798415a # v2.75.23
+        uses: taiki-e/install-action@1329c298aa20c3257846c9b2e0e55967df3e3c37 # v2.75.25
         with:
           tool: cargo-nextest@0.9.133
 
@@ -109,7 +113,7 @@ jobs:
     if: needs.changes.outputs.cargo_lock == 'true'
     permissions:
       contents: read
-    uses: ./.github/workflows/cargo-audit.yml
+    uses: ./.github/workflows/_cargo-audit.yml
 
   ci-security:
     needs: changes
@@ -118,4 +122,4 @@ jobs:
       security-events: write
       contents: read
       actions: read
-    uses: ./.github/workflows/ci-security.yml
+    uses: ./.github/workflows/_ci-security.yml
