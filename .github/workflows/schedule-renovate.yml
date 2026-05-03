@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   renovate:
-    name: Renovate
+    name: Run Renovate
     runs-on: ubuntu-latest
     environment: renovate
     permissions:
