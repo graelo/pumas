@@ -1,6 +1,6 @@
 # Scheduled supply chain audits: dependency vulnerabilities and CI security.
 
-name: Supply Chain Audit
+name: 'Schedule: Supply Chain Audit'
 
 on:
   workflow_dispatch:
@@ -9,6 +9,10 @@ on:
     - cron: '0 16 * * 5' # Friday at 16:00 UTC
 
 permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
 
 jobs:
   cargo-audit:
