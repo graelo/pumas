@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   prepare-artifacts:
-    name: Prepare release artifacts
+    name: Build artifacts
     runs-on: macos-latest
     permissions:
       contents: read
@@ -25,7 +25,7 @@ jobs:
             suffix: ''
             archive_ext: zip
     steps:
-      - name: Rust install
+      - name: Install Rust
         uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # master
         with:
           toolchain: stable
@@ -37,7 +37,7 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Build Release
+      - name: Build (release)
         run: cargo build --release
 
       - name: Compress to zip
@@ -61,7 +61,7 @@ jobs:
           retention-days: 1
 
   release:
-    name: Create a GitHub Release
+    name: Publish release
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -82,14 +82,14 @@ jobs:
         run: |
           echo "tag-name=${GITHUB_REF#refs/tags/}" >> "${GITHUB_OUTPUT}"
 
-      - name: Download convco
+      - name: Install convco
         run: |
           git show-ref
           curl -sSfLO https://github.com/convco/convco/releases/latest/download/convco-ubuntu.zip
           unzip convco-ubuntu.zip
           chmod +x convco
 
-      - name: Use convco to create the changelog
+      - name: Generate changelog
         run: |
           ./convco changelog -c .convco --max-versions 1 --include-hidden-sections > CHANGELOG.md
           rm convco convco-ubuntu.zip
@@ -98,7 +98,7 @@ jobs:
         with:
           name: ${{ github.event.repository.name }}-aarch64-apple-darwin.zip
 
-      - name: Create GitHub Release
+      - name: Create GitHub release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG_NAME: ${{ github.ref_name }}
@@ -108,7 +108,7 @@ jobs:
             --notes-file CHANGELOG.md \
             ./*.zip
 
-      - name: Attest build provenance
+      - name: Attest provenance
         uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
         with:
           subject-path: '*.zip'

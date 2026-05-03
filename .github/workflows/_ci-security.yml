@@ -21,7 +21,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Run zizmor
+      - name: Scan workflows (zizmor)
         uses: zizmorcore/zizmor-action@b1d7e1fb5de872772f31590499237e7cce841e8e # v0.5.3
 
   poutine:
@@ -37,7 +37,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Run poutine
+      - name: Scan workflows (poutine)
         uses: boostsecurityio/poutine-action@e240ebd3eff8b2db5a8e5f6b28f58739d7db2247 # v1.1.4
 
       - name: Upload SARIF
