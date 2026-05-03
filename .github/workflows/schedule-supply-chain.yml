@@ -14,11 +14,11 @@ jobs:
   cargo-audit:
     permissions:
       contents: read
-    uses: ./.github/workflows/cargo-audit.yml
+    uses: ./.github/workflows/_cargo-audit.yml
 
   ci-security:
     permissions:
       security-events: write
       contents: read
       actions: read
-    uses: ./.github/workflows/ci-security.yml
+    uses: ./.github/workflows/_ci-security.yml
