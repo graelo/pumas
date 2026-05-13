@@ -11,6 +11,7 @@
     "enabled": true
   },
   "platformAutomerge": true,
+  "automergeStrategy": "merge-commit",
   "minimumReleaseAge": "3 days",
   "packageRules": [
     {
@@ -22,7 +23,9 @@
     },
     {
       "description": "Group all patch updates into one PR",
-      "matchUpdateTypes": "patch",
+      "matchUpdateTypes": [
+        "patch"
+      ],
       "groupName": "patch updates",
       "automerge": true
     },
