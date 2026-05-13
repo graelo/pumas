@@ -45,7 +45,7 @@ jobs:
             tar zx --no-anchored cargo-deny --strip-components=1
           chmod +x cargo-deny
           mv cargo-deny ~/.cargo/bin/
-          cargo deny check
+          cargo deny --locked check
 
       - name: Security – cargo pants
         run: |
