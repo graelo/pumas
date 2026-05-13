@@ -1,0 +1,69 @@
+# Compatibility testing: multi-version matrix on macOS.
+#
+# Pumas is Apple-Silicon-only (uses macOS `powermetrics`), so the standard
+# `test-all-platforms` job would collapse to a single row identical to
+# `ci-essentials.yml` and is omitted here. Only `test-all-versions` runs,
+# pinned to `macos-latest` because the crate does not compile on Linux.
+#
+# Local:
+#   act push -W .github/workflows/ci-compatibility-matrix.yml -j test-all-versions
+
+name: 'CI: Compatibility Matrix'
+
+on:
+  push:
+    branches:
+      - 'compat/*'
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  test-all-versions:
+    name: macos-latest (${{ matrix.rust }})
+    runs-on: macos-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: ['1.95.0', beta, nightly]
+    steps:
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # master
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: rustfmt, clippy
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Quality – cargo fmt
+        run: |
+          cargo fmt --all -- --check
+
+      - name: Quality – cargo clippy
+        run: |
+          cargo clippy --locked --all-targets -- -D warnings
+
+      - name: Build (dev)
+        run: cargo build --locked
+
+      - name: Build (release)
+        run: cargo build --locked --release
+
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@1329c298aa20c3257846c9b2e0e55967df3e3c37 # v2.75.25
+        with:
+          tool: cargo-nextest@0.9.133
+
+      - name: Test
+        run: ./ci/test_full.sh
