@@ -36,7 +36,7 @@ termion = "4"
 #
 num-traits = "0.2"
 serde_json = "1.0.104"
-sysinfo = "0.38"
+sysinfo = "0.39"
 
 [dev-dependencies]
 assert_approx_eq = "1.1.0"
