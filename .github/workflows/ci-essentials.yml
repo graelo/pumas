@@ -19,14 +19,11 @@ jobs:
     runs-on: macos-latest
     permissions:
       contents: read
-    strategy:
-      matrix:
-        rust: [stable]
     steps:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # master
         with:
-          toolchain: ${{ matrix.rust }}
+          toolchain: stable
           components: rustfmt, clippy
 
       - name: Checkout
@@ -47,7 +44,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-${{ matrix.rust }}-hash-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-stable-hash-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Quality – cargo fmt
         run: |
