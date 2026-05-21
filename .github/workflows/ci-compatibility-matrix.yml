@@ -1,12 +1,12 @@
 # Compatibility testing: multi-version matrix on macOS.
 #
 # Pumas is Apple-Silicon-only (uses macOS `powermetrics`), so the standard
-# `test-all-platforms` job would collapse to a single row identical to
-# `ci-essentials.yml` and is omitted here. Only `test-all-versions` runs,
+# `test-platforms` job would collapse to a single row identical to
+# `ci-essentials.yml` and is omitted here. Only `test-rust-versions` runs,
 # pinned to `macos-latest` because the crate does not compile on Linux.
 #
 # Local:
-#   act push -W .github/workflows/ci-compatibility-matrix.yml -j test-all-versions
+#   act push -W .github/workflows/ci-compatibility-matrix.yml -j test-rust-versions
 
 name: 'CI: Compatibility Matrix'
 
@@ -22,8 +22,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-all-versions:
-    name: macos-latest (${{ matrix.rust }})
+  test-rust-versions:
     runs-on: macos-latest
     permissions:
       contents: read
