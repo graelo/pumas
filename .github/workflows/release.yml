@@ -91,7 +91,7 @@ jobs:
             ${{ env.STANDALONE }}
             ${{ env.ARCHIVE_FILE }}
 
-      - name: Upload – standalone
+      - name: Upload – binary
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{ env.STANDALONE }}
@@ -177,7 +177,7 @@ jobs:
           permission-contents: write
           permission-pull-requests: write
 
-      - name: Configure Homebrew, git, and gh for the bot
+      - name: Set up Homebrew bot
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
