@@ -29,25 +29,21 @@ jobs:
         continue-on-error: false
         with:
           path: |
-            ~/.cargo/bin/
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-stable-audit-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: Install cargo-deny
+        uses: taiki-e/install-action@c070f87102a1c75b3183910f391c1cb887fe13c8 # v2.77.6
+        with:
+          tool: cargo-deny@0.19.8
+
       - name: Security – cargo deny
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          VERSION=$(gh api repos/EmbarkStudios/cargo-deny/releases/latest --jq '.tag_name')
-          curl -sSfL "https://github.com/EmbarkStudios/cargo-deny/releases/download/${VERSION}/cargo-deny-${VERSION}-x86_64-unknown-linux-musl.tar.gz" | \
-            tar zx --no-anchored cargo-deny --strip-components=1
-          chmod +x cargo-deny
-          mv cargo-deny ~/.cargo/bin/
-          cargo deny --locked check
+        run: cargo deny --locked check
 
       - name: Security – cargo pants
         run: |
-          cargo install --locked cargo-pants || true
+          cargo install --locked cargo-pants || command -v cargo-pants
           cargo pants
