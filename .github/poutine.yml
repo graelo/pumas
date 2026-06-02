@@ -8,5 +8,4 @@ skip:
       - pkg:githubactions/zizmorcore/zizmor-action
       - pkg:githubactions/boostsecurityio/poutine-action
       - pkg:githubactions/renovatebot/github-action
-      - pkg:githubactions/mislav/bump-homebrew-formula-action
       - pkg:githubactions/taiki-e/install-action
