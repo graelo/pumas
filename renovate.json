@@ -11,7 +11,7 @@
     "enabled": true
   },
   "platformAutomerge": true,
-  "automergeStrategy": "merge-commit",
+  "automergeStrategy": "squash",
   "minimumReleaseAge": "3 days",
   "packageRules": [
     {
