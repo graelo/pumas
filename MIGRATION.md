@@ -190,6 +190,7 @@ pub struct CpuRow {
     pub act_spark_max: u64,                // 1.05*max
     pub freq_value: String,                // units::mhz(freq) e.g. "972 MHz"
     pub freq_ratio: f64,
+    pub freq_label: String,                // "{:3.0}%" of freq_ratio — ratatui LineGauge DEFAULT label (D9)
     pub freq_spark: Vec<u64>,              // last 8
     pub freq_spark_max: u64,               // 1.05*max
 }
@@ -198,6 +199,7 @@ pub struct GpuFrame {
     pub act_ratio: f64, pub act_label: String,           // "{:.1}%"
     pub act_spark: Vec<u64>, pub act_spark_max: u64,      // last 8, 1.05*max
     pub freq_value: String, pub freq_ratio: f64,
+    pub freq_label: String,                              // "{:3.0}%" of freq_ratio — default LineGauge label (D9)
     pub freq_spark: Vec<u64>, pub freq_spark_max: u64,    // last 8, 1.05*max
     pub power_value: String,                              // units::watts2(gpu_w)
     pub power_spark: Vec<u64>, pub power_spark_max: u64,  // last 8, 1.05*max
@@ -275,9 +277,14 @@ case `H=1`. Color: `history_fg` on `history_bg`.
 
 **Gauge (Overview block-bar):** width `W`; `filled = round(ratio*W)`; fill `filled`
 cells `gauge_fg`-on-`gauge_bg` and the rest `gauge_bg`; overlay the centered label
-`"{NN}%"` (integer percent, ratatui default) — the label text sits centered over the
-bar, its glyphs taking the gauge colors of whichever half they fall on. Height 2 rows
-(`GAUGE_HEIGHT`), label on the bar row.
+`"{NN}%"` (integer percent = `format!("{}%", (ratio*100).round())`, ratatui default) —
+the label text sits centered over the bar, its glyphs taking the gauge colors of
+whichever half they fall on. **The bar is exactly 1 row** (see D8): in the Overview,
+ratatui's borderless `Block::default().title(name)` consumes the top row for the cluster
+title and leaves a single inner row for the bar, so `GAUGE_HEIGHT=2` = title-text row +
+1 bar row. The frontend renders the title as a separate `Text` above a 1-row gauge.
+(The Phase 0 `gauge.rs` hardcodes a 2-row bar for the de-risk spike; Phase 2 must drive
+it at height 1 — D8.)
 
 **Line gauge (CPU/GPU rows):** single row of `━` (U+2501, `symbols::line::THICK.horizontal`).
 `filled = round(ratio*W)` cells in `gauge_fg`, remainder in `gauge_bg`. Activity rows
@@ -289,9 +296,9 @@ label then the line.)
 ## 6. Color mapping (`ui/theme.rs`)
 
 **Verified:** `iocraft::Color` re-exports `crossterm::style::Color` (style.rs:10).
-The indexed-color variant is **`Color::AnsiValue(u8)`** (crossterm 0.27,
-`color.rs:93`). This replaces ratatui's `Color::Indexed(u8)` used in
-`app.rs::AppColors::color`.
+The indexed-color variant is **`Color::AnsiValue(u8)`** (crossterm 0.29 in our
+tree, `color.rs:93`; the variant name is identical across 0.27–0.29). This
+replaces ratatui's `Color::Indexed(u8)` used in `app.rs::AppColors::color`.
 
 | Role | Source (`config::UiColors`) | Default | iocraft mapping |
 |---|---|---|---|
@@ -431,6 +438,31 @@ pub fn render_to_text(mut el: AnyElement<'static>, width: usize) -> String {
   representative widget, or by the user's live smoke check at the final gate. State this
   in every snapshot test so reviewers know color is out of scope there.
 
+### 7.9 Widths are a frontend concern (LOCKED — user ruled Option (a))
+
+iocraft cannot expose a flex-allocated width at element-**build** time (layout runs
+after build). Therefore the leaf widgets take **explicit dimensions**:
+- `gauge.rs`, `line_gauge.rs`: explicit `width` prop.
+- `sparkline.rs`: explicit `width` **and** `height` props.
+
+**The backend `Frame` does NOT carry any widths/heights.** It ships only data
+(`ratio`, `spark: Vec<u64>`, `spark_max`, pre-formatted strings). All pixel geometry is
+computed in the **frontend** from `hooks.use_terminal_size()` by a dedicated
+**`ui/layout.rs`** module that mirrors ratatui's constraint math:
+- `chunks(2)` cluster pairing and the 2-col gap between paired clusters (Overview);
+- panel border (±1 each edge) and inner `margin: 1` insets;
+- the fixed sub-widths used by the CPU/GPU rows (`id`=5, `freq:`=6, value=10,
+  sparkline history = 8+1), with the gauge/line-gauge taking the remainder;
+- the Overview vertical block heights (`GAUGE_HEIGHT=2`, `SPARKLINE_HEIGHT=3`, GPU/ANE/Mem
+  sparkline nominal 9, Package 3).
+
+`layout.rs` produces per-meter `(width, height)` and the view passes them down to the
+leaf components. This keeps the backend UI-agnostic and confines all constraint logic to
+one frontend module.
+
+**Corollary:** `ui/layout.rs` is **in Phase 2 scope** (it did not exist in Phase 0,
+which used fixed test widths). It is built incrementally per tab as each tab lands.
+
 ---
 
 ## 8. Phase gates
@@ -452,7 +484,11 @@ byte-identical (golden test); no tokio in the tree; `cargo clippy -D warnings` c
 **Phase 2 — Tabs, one at a time, snapshot-gated.** Order: title_bar, tab_bar, splash,
 then Overview → CPU → GPU → Memory → SoC. Each lands with a committed snapshot test and
 verifier parity sign-off against the matching screenshot before the next begins.
-**Gate per tab:** snapshot matches; verifier confirms parity vs the screenshot.
+Build **`ui/layout.rs`** (§7.9) incrementally as each tab needs it: it owns all
+width/height computation from `use_terminal_size()` mirroring ratatui's constraints; the
+`Frame` stays width-free.
+**Gate per tab:** snapshot matches; verifier confirms parity vs the screenshot; widths
+come from `layout.rs` (not from `Frame`).
 
 **Phase 3 — Remove ratatui & harden.** Delete `ratatui`/`termion` deps and all dead
 ratatui code (§3 deletion list). Zero dead code, zero clippy warnings. Run
@@ -491,6 +527,13 @@ final arbiter of pixel parity**, not these numbers.
 Vertical stack of 4 bordered blocks then `Min(0)` spacer. Block heights:
 `2 + (GAUGE_HEIGHT=2 + SPARKLINE_HEIGHT=3)` per cluster-row etc.
 
+**Only the four OUTER blocks are bordered** (CPU Clusters / GPU & ANE / Package+Thermals
+/ Memory & SWAP). Inner cells (each cluster, GPU, ANE, RAM, SWAP) are **NOT** individually
+bordered: the per-cell title (cluster name, `GPU: …`, `ANE: …`, RAM/SWAP line) is plain
+`Text` on its own row, and the gauge bar is the **single row beneath it** (D8). The Phase 0
+`panel_cluster_cell` snapshot wrapped one cell in a border purely to de-risk the border
+primitive — it is NOT the Overview's per-cell structure.
+
 | Block | Border title | Content | Frame fields |
 |---|---|---|---|
 | CPU Clusters | ` CPU Clusters: {w} (peak: {w}) ` | E then P then S clusters; each cluster = gauge(2 rows)+sparkline(3 rows); clusters paired **2-up** within each kind via `chunks(2)` (left/right halves split by a 2-col gap), single if odd | `overview.cpu_clusters_title`, `e_meters`, `p_meters`, `s_meters` |
@@ -515,7 +558,8 @@ Gauge title strings (exact, reuse `units.rs`):
     LineGauge ratio=`active_ratio`, label `"{:.1}%"`.
   - frequency `[6 "freq:"][hist 8+1][10 "{mhz}"][gauge fills rest]`: `freq:` label +
     sparkline(last 8 of `CpuFreqPercent`) + `units::mhz(freq)` + LineGauge ratio=`freq_ratio`
-    (no label).
+    with the **default `{:3.0}%` label** (D9 — pumas doesn't call `.label()`, so ratatui
+    draws its default percentage; e.g. screenshot shows `2138 MHz  29% ━━━`).
 - Then a `Frequencies` bordered table (height `2+5`), 2-col, rows: present clusters
   (`E-Cluster:`/`P-Cluster:`/`S-Cluster:` → space-joined `{:4}` DVFM freqs), a blank row,
   and `Note: Hardware-wise, CPUs quickly shift between the above frequencies.`; right
@@ -523,7 +567,8 @@ Gauge title strings (exact, reuse `units.rs`):
 
 ### 9.5 GPU — `tab_gpu.rs`
 - GPU block (border title `GPU: `, height 4): top row = activity (sparkline 8 + LineGauge
-  `{:.1}%`) | frequency (`freq:` + sparkline 8 + `{mhz}` + LineGauge); bottom row = power
+  `{:.1}%`) | frequency (`freq:` + sparkline 8 + `{mhz}` + LineGauge with default `{:3.0}%`
+  label, D9); bottom row = power
   (sparkline 8 + `watts2(gpu_w)`) | `Peak: {percent1} | {watts2}`.
 - Thermals block (height 3): `Pressure: {x}` accent/Yellow.
 - `Frequencies` table (height 5): rows `GPU:` (DVFM freqs), blank, `Note: …GPUs…`.
@@ -595,7 +640,36 @@ one representative color-assertion test so the gate isn't blind to color regress
 exactly; do not return elements borrowing from `props` or locals (the dead-branch
 `Sparkline<'a>` borrowed `&'a [f32]` — avoid; ship owned `Vec<u64>`).
 
+**D8 — Overview block-gauge bar is 1 row, not 2 (found in Phase 0 review).** Verified
+against ratatui `Block::inner` (`block.rs:540`): a borderless `Block` with a top title
+consumes the top row. In the Overview each cluster/GPU/ANE/RAM/SWAP gauge uses
+`Gauge::default().block(Block::default().title(name))`, so `GAUGE_HEIGHT=2` = **title-text
+row + 1 bar row**, and inner cells are NOT individually bordered. The Phase 0 `gauge.rs`
+hardcodes a **2-row** bar (correct for the isolated de-risk snapshot, which also put the
+title in a panel border). **Phase 2 action:** render the per-cell title as a separate
+`Text` line and drive the gauge bar at **height 1** (the centered label lands on that one
+row since `label_row = height/2 = 0`). Either parameterize the gauge's height or have the
+Overview view emit a 1-row variant. This is the highest-value Phase 2 correction.
+
+**D9 — Frequency LineGauge shows ratatui's DEFAULT `{:3.0}%` label (found in Phase 0
+review).** Plan §9.4/§9.5 (and an earlier draft of this doc) said the freq gauge has "no
+label". Wrong: pumas never calls `.label()` on the freq `LineGauge`, and ratatui
+(`ratatui-widgets gauge.rs:434`) then draws `format!("{:3.0}%", ratio*100)`. The CPU/GPU
+screenshots confirm it (`2138 MHz  29% ━━━`). The Phase 0 `line_gauge.rs` `label: None`
+path renders no label — fine as a primitive, but **Phase 2 must pass the formatted
+`{:3.0}%` string** for freq rows. `Frame` now carries `CpuRow.freq_label` /
+`GpuFrame.freq_label` (§4.3) built in the backend. (Line-gauge geometry is otherwise
+faithful: 1-col gap after label = ratatui `start = col+1`; fill = `floor(ratio*width)`.)
+
+**Phase 0 fidelity verdict (drift review of commit `6a92c8e`):** gauge centered-label
+(integer `{}%`, `label_row = height/2`, filled `█` fg=gauge_fg/bg=gauge_bg, swapped under
+label), 8-level `NINE_LEVELS` multi-row sparkline (`e=round(v/max*h*8)`, per-row
+`clamp(e-8*(h-1-r),0,8)`), and line-gauge (label + 1-col gap + `floor` fill, both edges
+`━`) all match ratatui-widgets faithfully. The Canvas-cell color test correctly guards
+fg/bg. **No Phase 0 code changes required** — D8/D9 are Phase 2 wiring concerns, now
+documented.
+
 **Risk I disagree with / flag in the plan:** the plan's parity section is written from
-memory and contains the D1 label error and implies the dead-branch gauge/sparkline are
-"reusable math" without qualification (D3). Both are corrected here. Everything else in
-the plan checks out against the code.
+memory and contains the D1 label error, the D9 "no label" error, and implies the
+dead-branch gauge/sparkline are "reusable math" without qualification (D3). All corrected
+here. Everything else in the plan checks out against the code.
