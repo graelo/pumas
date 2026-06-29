@@ -292,7 +292,11 @@
 //! [MIT license]: http://opensource.org/licenses/MIT
 //! [asitop]: https://github.com/tlkh/asitop
 
+// The ratatui `App` state is superseded by the iocraft `backend` + `PumasApp`
+// data plane; it stays compiled (no behavior change) until Phase 3 deletes it.
+#[allow(dead_code)]
 mod app;
+mod backend;
 pub mod config;
 pub mod error;
 mod metric_key;

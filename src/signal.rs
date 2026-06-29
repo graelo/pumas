@@ -1,53 +1,10 @@
 //! A signal is a collection of points that can be used to draw a line graph.
+//!
+//! The implementation moved to [`crate::backend::history`] during the
+//! iocraft migration; this module re-exports it so the (still-live) ratatui
+//! frontend keeps compiling. Removed in Phase 3.
 
-use num_traits::{Bounded, Num, cast::ToPrimitive};
-
-pub(crate) struct Signal<T>
-where
-    T: Num,
-{
-    pub(crate) peak: T,
-    pub(crate) max: T,
-    pub(crate) points: std::collections::VecDeque<u64>,
-}
-
-impl<T: Num + Bounded> Signal<T> {
-    pub(crate) fn with_capacity(capacity: usize, max: T) -> Self {
-        Self {
-            peak: T::zero(),
-            max,
-            points: std::collections::VecDeque::with_capacity(capacity),
-        }
-    }
-}
-
-impl<T: Num + ToPrimitive + PartialOrd + Copy> Signal<T> {
-    pub(crate) fn push(&mut self, value: T) {
-        self.peak = if self.peak > value { self.peak } else { value };
-
-        if self.points.len() == self.points.capacity() {
-            self.points.pop_front();
-        }
-        self.points.push_back(value.to_u64().unwrap_or(0));
-        self.points.make_contiguous();
-    }
-}
-
-impl<T: Num> Signal<T> {
-    fn as_slice(&self) -> &[u64] {
-        self.points.as_slices().0
-    }
-
-    /// Return the last n values as a u64 slice.
-    pub(crate) fn as_slice_last_n(&self, n: usize) -> &[u64] {
-        let len = self.points.len();
-        if len < n {
-            self.as_slice()
-        } else {
-            &self.as_slice()[len - n..]
-        }
-    }
-}
+pub(crate) use crate::backend::history::Signal;
 
 #[cfg(test)]
 mod tests {
