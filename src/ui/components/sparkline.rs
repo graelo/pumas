@@ -1,4 +1,4 @@
-//! Multi-row vertical sparkline (`▁▂▃▄▅▆▇█`), matching ratatui's `Sparkline`.
+//! Multi-row vertical sparkline (`▁▂▃▄▅▆▇█`), matching the original `Sparkline`.
 //!
 //! The dead branch used only 4 glyphs on a single row; this rebuilds the full
 //! 8-level (`NINE_LEVELS`) multi-row bars per `MIGRATION.md` §5.

@@ -1,4 +1,4 @@
-//! CPU tab (MIGRATION.md §9.4, ratatui `tab_cpu.rs`).
+//! CPU tab (MIGRATION.md §9.4, the original `tab_cpu.rs`).
 //!
 //! One bordered panel per cluster (E…, then P…, then S…), each holding one row
 //! per core, followed by a bordered `Frequencies` table. Every per-row width
@@ -10,7 +10,7 @@
 //! - frequency = `[6 "freq:"][sparkline 8 +1 gap][10 value][line_gauge: default
 //!   "{:3.0}%" label + bar]`.
 //!
-//! The line-gauge bar width is **variable**: ratatui fills `area - label - 1`,
+//! The line-gauge bar width is **variable**: the original fills `area - label - 1`,
 //! so the bar shrinks as the label grows (MIGRATION.md §9.4 traps 1 & 2).
 
 use iocraft::prelude::*;

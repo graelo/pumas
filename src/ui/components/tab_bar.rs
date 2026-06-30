@@ -1,16 +1,15 @@
-//! Tab bar (MIGRATION.md §9.2, ratatui `main_screen.rs:52-71`).
+//! Tab bar (MIGRATION.md §9.2, the original `main_screen.rs:52-71`).
 //!
 //! A `View` bordered on all edges (3 rows) whose single inner row holds the
-//! five tab labels. Mirrors ratatui's `Tabs` rendering exactly
-//! (`ratatui-widgets/src/tabs.rs::render_tabs`): each tab is `padding_left` +
+//! five tab labels. Mirrors the original `Tabs` rendering exactly: each tab is
+//! `padding_left` +
 //! title + `padding_right` (both a single space), tabs separated by the default
 //! divider `symbols::line::VERTICAL` (`│`). The active title is accent + bold;
 //! the surrounding padding/divider stay default. The net inner string is
 //! `" Overview │ CPU │ GPU │ Memory │ SoC "`.
 //!
 //! NOTE: MIGRATION.md §9.2 described the divider as `" | "` (ASCII pipe); the
-//! actual ratatui default is the box-drawing `│` (U+2502) — see the source ref
-//! above. We follow the code.
+//! actual default is the box-drawing `│` (U+2502). We follow the code.
 
 use iocraft::prelude::*;
 

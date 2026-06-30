@@ -2,7 +2,7 @@
 //!
 //! iocraft cannot expose a flex-allocated width at element-*build* time, so the
 //! leaf widgets (gauge/sparkline/line_gauge) take explicit dimensions. This
-//! module is the single place that mirrors ratatui's constraint math, turning a
+//! module is the single place that mirrors the original constraint math, turning a
 //! terminal `width` plus the [`OverviewFrame`] shape into the per-cell widths
 //! and heights the Overview view passes down. The backend [`Frame`] stays
 //! width-free; all pixel geometry lives here.
@@ -11,31 +11,31 @@
 
 use crate::backend::frame::OverviewFrame;
 
-/// 2-column gap between paired halves (ratatui `Constraint::Length(2)` in
+/// 2-column gap between paired halves (the original `Constraint::Length(2)` in
 /// `tab_overview.rs`).
 pub(crate) const GAP: usize = 2;
 
-/// ratatui `GAUGE_HEIGHT`: the borderless titled `Block` consumes its top row
+/// the original `GAUGE_HEIGHT`: the borderless titled `Block` consumes its top row
 /// for the title, leaving a single bar row, so this vertical budget is
 /// `title row + 1 bar row` (MIGRATION.md D8).
 const GAUGE_HEIGHT: usize = 2;
 
-/// ratatui `SPARKLINE_HEIGHT`.
+/// the original `SPARKLINE_HEIGHT`.
 const SPARKLINE_HEIGHT: usize = 3;
 
-/// ratatui `CLUSTER_SPACING`: a blank row between stacked cluster blocks.
+/// the original `CLUSTER_SPACING`: a blank row between stacked cluster blocks.
 const CLUSTER_SPACING: usize = 1;
 
-/// ratatui `PKG_TEXT_HEIGHT`: the Package block's title-text row.
+/// the original `PKG_TEXT_HEIGHT`: the Package block's title-text row.
 const PKG_TEXT_HEIGHT: usize = 1;
 
 /// Number of horizontal blocks for `n` clusters: `ceil(n / 2)` (the clusters
-/// are paired two-up). Mirrors ratatui's `num_blocks_for`.
+/// are paired two-up). Mirrors the original `num_blocks_for`.
 pub(crate) fn num_blocks_for(n: usize) -> usize {
     n.div_ceil(2)
 }
 
-/// Return the last `n` values of `data` (ratatui draws each sparkline from
+/// Return the last `n` values of `data` (the original draws each sparkline from
 /// `as_slice_last_n(area.width)`; the backend ships full history, so the view
 /// trims here to its allocated width).
 pub(crate) fn last_n(data: &[u64], n: usize) -> Vec<u64> {
@@ -59,9 +59,9 @@ pub(crate) struct OverviewLayout {
     /// Gauge bar height inside a cell (1 row — the title is a separate `Text`,
     /// MIGRATION.md D8).
     pub gauge_height: usize,
-    /// Effective sparkline height. ratatui's GPU/ANE/RAM/SWAP sparklines request
+    /// Effective sparkline height. The original GPU/ANE/RAM/SWAP sparklines request
     /// a nominal 9 rows but the outer block is only sized for
-    /// `GAUGE_HEIGHT + SPARKLINE_HEIGHT` inner rows, so ratatui clips them to
+    /// `GAUGE_HEIGHT + SPARKLINE_HEIGHT` inner rows, so the original clips them to
     /// `SPARKLINE_HEIGHT` (= 3). Every Overview sparkline therefore renders at 3.
     pub spark_height: usize,
     /// Outer width of the Package panel (`7/10` of `width`).
@@ -94,7 +94,7 @@ impl OverviewLayout {
         let cpu_block_height =
             cls_block_height * n_blocks + n_blocks.saturating_sub(1) * CLUSTER_SPACING;
 
-        // Package + Thermals share the row 7/10 vs 3/10 (ratatui Ratio).
+        // Package + Thermals share the row 7/10 vs 3/10 (the original Ratio).
         let package_width = width * 7 / 10;
         let thermals_width = width.saturating_sub(package_width);
 
@@ -134,15 +134,15 @@ const FREQ_VALUE_WIDTH: usize = 10;
 
 /// Sparkline history slot: `HISTORY_LENGTH (8) + 1` (`Constraint::Length(8+1)`).
 /// The sparkline emits exactly 8 cells; the `+1` is one trailing space before
-/// the gauge so the gauge column-aligns with ratatui (MIGRATION.md §9.4 trap 2).
+/// the gauge so the gauge column-aligns with the original (MIGRATION.md §9.4 trap 2).
 const HISTORY_SLOT: usize = 9;
 
 /// Geometry of one CPU core row (MIGRATION.md §9.4).
 ///
 /// Layout: `[id 5][activity: sparkline 8+1, line_gauge][frequency: "freq:" 6,
 /// sparkline 8+1, value 10, line_gauge]`. The two halves split the post-id
-/// remainder via ratatui's `Ratio(1,2)/Ratio(1,2)`, which gives the **first**
-/// (activity) half the odd column (verified against `ratatui::Layout::split`).
+/// remainder via the original `Ratio(1,2)/Ratio(1,2)`, which gives the **first**
+/// (activity) half the odd column (verified against the original `Layout::split`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct CpuRowLayout {
     /// Id column width (always [`ID_WIDTH`]).
@@ -168,7 +168,7 @@ impl CpuRowLayout {
     pub(crate) fn new(width: usize) -> Self {
         let content = width.saturating_sub(2); // inside the cluster L/R borders
         let other = content.saturating_sub(ID_WIDTH);
-        // ratatui Ratio(1,2)/Ratio(1,2): the activity half takes the odd column.
+        // the original Ratio(1,2)/Ratio(1,2): the activity half takes the odd column.
         let act_w = other.div_ceil(2);
         let freq_w = other - act_w;
         Self {
@@ -182,14 +182,14 @@ impl CpuRowLayout {
         }
     }
 
-    /// Activity line-gauge **bar** width: ratatui fills `area - label - 1`
+    /// Activity line-gauge **bar** width: the original fills `area - label - 1`
     /// (label + the always-present 1-col gap; MIGRATION.md §9.4 trap 1).
     pub(crate) fn act_bar(&self, label_len: usize) -> usize {
         self.act_gauge_w.saturating_sub(label_len + 1)
     }
 
     /// Frequency line-gauge **bar** width (`freq_gauge_w - label - 1`). The freq
-    /// label is ratatui's default `"{:3.0}%"` (always 4 cols), but we derive
+    /// label is the original default `"{:3.0}%"` (always 4 cols), but we derive
     /// from the actual length for safety.
     pub(crate) fn freq_bar(&self, label_len: usize) -> usize {
         self.freq_gauge_w.saturating_sub(label_len + 1)
@@ -324,7 +324,7 @@ mod tests {
     #[test]
     fn cpu_row_geometry_at_120() {
         // content = 118, other = 113, activity half = 57 (odd col), freq = 56.
-        // Verified against ratatui::Layout::split (examples/ratatui_split.rs).
+        // Verified against the original `Layout::split` (MIGRATION.md §9.4).
         let l = CpuRowLayout::new(120);
         assert_eq!(l.id_w, 5);
         assert_eq!(l.act_spark_slot, 9);

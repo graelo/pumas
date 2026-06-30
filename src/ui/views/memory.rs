@@ -1,4 +1,4 @@
-//! Memory tab (MIGRATION.md §9.6, ratatui `tab_memory.rs`).
+//! Memory tab (MIGRATION.md §9.6, the original `tab_memory.rs`).
 //!
 //! Two bordered text blocks inside a `margin(1)` inset: the Activity-Monitor-
 //! compatible `VM Statistics` block (height 18) and the `Sysinfo Statistics`
@@ -66,7 +66,7 @@ fn mem_block(
 
 /// Render the full Memory tab at `width`.
 pub(crate) fn memory(f: &MemoryFrame, width: usize, theme: Theme) -> AnyElement<'static> {
-    // ratatui applies `margin(1)`: a 1-col left/right inset and a 1-row top
+    // the original applies `margin(1)`: a 1-col left/right inset and a 1-row top
     // inset; the blocks therefore render at `width - 2`.
     let inner = width.saturating_sub(2);
     let vm = mem_block(

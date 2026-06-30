@@ -1,4 +1,4 @@
-//! Startup splash (MIGRATION.md §9.8, ratatui `startup_screen.rs`).
+//! Startup splash (MIGRATION.md §9.8, the original `startup_screen.rs`).
 //!
 //! Shown while the backend has not yet shipped a `Frame`. The 40×17 logo is
 //! built from three colored regions — top-left (blue, 15w), top-right (green,

@@ -3,7 +3,7 @@
 //! Maps the user-configurable [`UiColors`](crate::config::UiColors) (indexed
 //! ANSI codes) onto `iocraft::Color` values. `iocraft::Color` re-exports
 //! `crossterm::style::Color`, whose indexed variant is `Color::AnsiValue(u8)`
-//! (the equivalent of ratatui's `Color::Indexed(u8)`).
+//! (the equivalent of the original `Color::Indexed(u8)`).
 
 use iocraft::prelude::Color;
 

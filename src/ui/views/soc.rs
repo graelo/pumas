@@ -1,6 +1,6 @@
-//! SoC tab (MIGRATION.md §9.7, ratatui `tab_soc.rs`).
+//! SoC tab (MIGRATION.md §9.7, the original `tab_soc.rs`).
 //!
-//! A borderless 2-column table (label width 20, value width 16, ratatui default
+//! A borderless 2-column table (label width 20, value width 16, the original default
 //! `column_spacing = 1`), right column bold. The rows are session-static —
 //! built once by [`render_soc_rows`](crate::backend::frame::render_soc_rows) and
 //! threaded through as a one-time prop, not per-frame.
@@ -12,7 +12,7 @@ use crate::{
     ui::{theme::Theme, views::two_col_row},
 };
 
-/// SoC table label column width (ratatui `Constraint::Length(20)`).
+/// SoC table label column width (the original `Constraint::Length(20)`).
 const SOC_LABEL_WIDTH: usize = 20;
 
 /// Render the SoC tab at `width`.

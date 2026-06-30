@@ -1,4 +1,4 @@
-//! Bordered panel with a ratatui-style inline border title (`┌ Title ──┐`).
+//! Bordered panel with an inline border title (`┌ Title ──┐`).
 //!
 //! iocraft `View` has native border props but no `Block::title` equivalent, so
 //! the title is composed manually (MIGRATION.md §7.2): the panel is a `Column`
@@ -32,7 +32,7 @@ fn top_border_line(title: &str, width: usize) -> String {
 ///
 /// The body is any owned `'static` element (typically a `Column` of gauges and
 /// sparklines). `border_color` colors the box-drawing (and, for parity with
-/// ratatui's default styling, the title text — both are `Color::Reset` today).
+/// the original default styling, the title text — both are `Color::Reset` today).
 pub(crate) fn panel(
     title: &str,
     width: usize,

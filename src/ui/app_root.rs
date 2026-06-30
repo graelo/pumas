@@ -108,7 +108,7 @@ pub(crate) fn PumasApp(
     let machine_desc = header.machine_desc.clone();
     let w = usize::from(width);
 
-    // Splash full-screen until the first frame arrives (mirrors ratatui's
+    // Splash full-screen until the first frame arrives (mirrors the original
     // startup screen, which replaces the whole UI — no title/tab bar).
     let Some(frame) = frame_state.read().clone() else {
         return element! {

@@ -1,10 +1,10 @@
 //! Block-bar gauge with a centered `NN%` label (Overview tab).
 //!
-//! Faithful re-implementation of ratatui's `Gauge` (ratatui-widgets
-//! `gauge.rs::render_gauge`), which the dead branch did NOT match (it appended
+//! Faithful re-implementation of the original `Gauge` widget
+//! (`render_gauge`), which the dead branch did NOT match (it appended
 //! the label after the bar instead of centering it). Semantics:
 //!
-//! - The bar is `height` rows tall. ratatui's Overview wraps the gauge in a
+//! - The bar is `height` rows tall. The original Overview wraps the gauge in a
 //!   borderless titled `Block`, whose title consumes the top row, leaving a
 //!   single bar row (`GAUGE_HEIGHT = 2` = title row + 1 bar row, MIGRATION.md
 //!   D8). The Overview view therefore renders the title as a separate `Text`
@@ -42,7 +42,7 @@ pub(crate) struct RenderedGauge {
 }
 
 impl RenderedGauge {
-    /// Build the `height × width` cell grid, ratatui-faithfully.
+    /// Build the `height × width` cell grid, faithfully.
     fn cells(&self) -> Vec<Vec<Cell>> {
         let width = self.width;
         let height = self.height.max(1);
@@ -65,7 +65,7 @@ impl RenderedGauge {
                         let in_label =
                             row == label_row && x >= label_col && x < label_col + label_w;
                         if in_label {
-                            // Label glyph: default fg (matches ratatui's label
+                            // Label glyph: default fg (matches the original label
                             // span style), background follows filled/unfilled.
                             let bg = if x < end { self.fg } else { self.bg };
                             Cell::new(label[x - label_col], Color::Reset, bg)

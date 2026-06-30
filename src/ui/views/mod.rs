@@ -28,7 +28,7 @@ use crate::{
     },
 };
 
-/// Frequency-table label column width (ratatui `label_width = 10`, shared by the
+/// Frequency-table label column width (the original `label_width = 10`, shared by the
 /// CPU and GPU `Frequencies` tables).
 const FREQ_TABLE_LABEL_WIDTH: usize = 10;
 
@@ -74,7 +74,7 @@ pub(crate) fn text_col(content: String, width: usize, color: Color) -> AnyElemen
 }
 
 /// One row of a `Frequencies`/SoC-style 2-col table: `[label `width`][1 gap][value
-/// bold]` (ratatui `Table` default `column_spacing = 1`).
+/// bold]` (the original `Table` default `column_spacing = 1`).
 pub(crate) fn two_col_row(label: &str, value: &str, label_w: usize) -> AnyElement<'static> {
     let lbl = text_col(label.to_string(), label_w, Color::Reset);
     element! {

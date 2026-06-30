@@ -1,6 +1,6 @@
 //! Single-row line gauge (`━`, U+2501) used by the CPU/GPU rows.
 //!
-//! Matches ratatui's `LineGauge` (ratatui-widgets `gauge.rs`): an optional
+//! Matches the original `LineGauge`: an optional
 //! left label, then a one-column gap, then the bar drawn with the THICK
 //! horizontal symbol. Filled columns use `gauge_fg` as the glyph foreground,
 //! unfilled columns use `gauge_bg`; there is no background fill (unlike the
@@ -39,7 +39,7 @@ impl RenderedLineGauge {
         let filled = ((ratio * self.width as f64).floor() as usize).min(self.width);
 
         let mut row: Vec<Cell> = Vec::new();
-        // Optional label, then the one-column gap ratatui always inserts.
+        // Optional label, then the one-column gap the original always inserts.
         if let Some(label) = &self.label {
             for ch in label.chars() {
                 row.push(Cell::new(ch, Color::Reset, Color::Reset));

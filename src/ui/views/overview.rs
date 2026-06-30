@@ -1,4 +1,4 @@
-//! Overview tab (MIGRATION.md §9.3, ratatui `tab_overview.rs`).
+//! Overview tab (MIGRATION.md §9.3, the original `tab_overview.rs`).
 //!
 //! Four outer bordered panels stacked vertically:
 //! 1. CPU Clusters — E then P then S clusters, paired two-up via `chunks(2)`;
@@ -66,7 +66,7 @@ fn meter_cell(m: &Meter, width: usize, spark_height: usize, theme: Theme) -> Any
     }
     .into_any();
     // `Overflow::Hidden` clips an over-long title to the cell width, matching
-    // ratatui's `Paragraph`, which truncates at the block boundary rather than
+    // the original `Paragraph`, which truncates at the block boundary rather than
     // spilling into the neighbouring half.
     element! {
         View(flex_direction: FlexDirection::Column, width: w, overflow: Overflow::Hidden) {

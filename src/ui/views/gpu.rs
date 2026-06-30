@@ -1,4 +1,4 @@
-//! GPU tab (MIGRATION.md §9.5, ratatui `tab_gpu.rs`).
+//! GPU tab (MIGRATION.md §9.5, the original `tab_gpu.rs`).
 //!
 //! A single bordered `GPU:` block (height 4) with two inner rows — top =
 //! activity | frequency, bottom = power | peak — then a `Thermals` block and the

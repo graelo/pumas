@@ -93,7 +93,7 @@ pub(crate) struct CpuRow {
     /// Frequency gauge fill ratio.
     pub freq_ratio: f64,
     /// Frequency gauge's default label, `"{:3.0}%"`. The freq LineGauge has no
-    /// explicit label, so ratatui draws this default (MIGRATION.md D9).
+    /// explicit label, so the original draws this default (MIGRATION.md D9).
     pub freq_label: String,
     /// Frequency sparkline (last 8).
     pub freq_spark: Vec<u64>,
@@ -143,7 +143,7 @@ pub(crate) struct GpuFrame {
     /// Frequency gauge fill ratio.
     pub freq_ratio: f64,
     /// Frequency gauge's default label, `"{:3.0}%"`. The freq LineGauge has no
-    /// explicit label, so ratatui draws this default (MIGRATION.md D9).
+    /// explicit label, so the original draws this default (MIGRATION.md D9).
     pub freq_label: String,
     /// Frequency sparkline (last 8).
     pub freq_spark: Vec<u64>,
