@@ -54,6 +54,7 @@ fn run_ui(soc_info: SocInfo, args: RunConfig) -> Result<()> {
 
     let theme = Theme::from(&args.colors());
     let header = backend::frame::render_header(&soc_info);
+    let soc_rows = backend::frame::render_soc_rows(&soc_info);
 
     // Bounded(4): event-gated repaint, no free-running animation loop.
     let (tx, rx) = smol::channel::bounded::<Frame>(4);
@@ -62,7 +63,12 @@ fn run_ui(soc_info: SocInfo, args: RunConfig) -> Result<()> {
 
     smol::block_on(
         element! {
-            PumasApp(rx: Some(rx), header: Some(header), theme: theme)
+            PumasApp(
+                rx: Some(rx),
+                header: Some(header),
+                soc_rows: Some(soc_rows),
+                theme: theme,
+            )
         }
         .fullscreen(),
     )?;

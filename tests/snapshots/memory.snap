@@ -1,0 +1,27 @@
+
+ ┌ VM Statistics (Activity Monitor compatible) ───────────────────────────────────────────────────────────────────────┐
+ │Physical Memory Total: 121.84 GB                                                                                    │
+ │                                                                                                                    │
+ │═══ ACTIVITY MONITOR CALCULATION ═══                                                                                │
+ │App Memory (Anonymous): 46.88 GB                                                                                    │
+ │Wired Memory:         + 4.32 GB                                                                                     │
+ │Compressed:           + 1.62 GB                                                                                     │
+ │                      ─────────                                                                                     │
+ │Memory Used Total:      52.82 GB                                                                                    │
+ │                                                                                                                    │
+ │═══ OTHER MEMORY CATEGORIES ═══                                                                                     │
+ │Cached Files:         20.92 GB                                                                                      │
+ │Free:                 53.21 GB                                                                                      │
+ │Active:               33.15 GB                                                                                      │
+ │Inactive:             31.16 GB                                                                                      │
+ │                                                                                                                    │
+ │                                                                                                                    │
+ └────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+ ┌ Sysinfo Statistics ────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │RAM Used: 41.3 % = 52.8 GiB / 128.0 GiB (41.3%)                                                                     │
+ │Swap Used: 0.0 % = 0.0 B / 0.0 B                                                                                    │
+ │                                                                                                                    │
+ │Note: RAM Used now uses vm_stat for Activity Monitor compatibility                                                  │
+ │                                                                                                                    │
+ │                                                                                                                    │
+ └────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

@@ -243,7 +243,7 @@ pub(crate) fn render_header(soc: &SocInfo) -> RenderedHeader {
 }
 
 /// Session-static SoC tab rows (built once). Mirrors `tab_soc.rs`.
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub(crate) struct SocRows {
     /// `(left_label, right_value)` rows; right value rendered bold.
     pub rows: Vec<(String, String)>,

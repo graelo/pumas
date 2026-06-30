@@ -121,6 +121,139 @@ impl OverviewLayout {
     }
 }
 
+// ─── CPU/GPU row geometry (MIGRATION.md §9.4/§9.5) ───────────────────────────
+
+/// CPU id column width (`Constraint::Length(5)` in `tab_cpu.rs`).
+const ID_WIDTH: usize = 5;
+
+/// `freq:` label column width (`FREQUENCY_LABEL_WIDTH` in tab_cpu/tab_gpu).
+const FREQ_LABEL_WIDTH: usize = 6;
+
+/// Frequency value column width (`FREQUENCY_VALUE_WIDTH`, e.g. `"1085 MHz "`).
+const FREQ_VALUE_WIDTH: usize = 10;
+
+/// Sparkline history slot: `HISTORY_LENGTH (8) + 1` (`Constraint::Length(8+1)`).
+/// The sparkline emits exactly 8 cells; the `+1` is one trailing space before
+/// the gauge so the gauge column-aligns with ratatui (MIGRATION.md §9.4 trap 2).
+const HISTORY_SLOT: usize = 9;
+
+/// Geometry of one CPU core row (MIGRATION.md §9.4).
+///
+/// Layout: `[id 5][activity: sparkline 8+1, line_gauge][frequency: "freq:" 6,
+/// sparkline 8+1, value 10, line_gauge]`. The two halves split the post-id
+/// remainder via ratatui's `Ratio(1,2)/Ratio(1,2)`, which gives the **first**
+/// (activity) half the odd column (verified against `ratatui::Layout::split`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct CpuRowLayout {
+    /// Id column width (always [`ID_WIDTH`]).
+    pub id_w: usize,
+    /// Activity sparkline slot (always [`HISTORY_SLOT`]).
+    pub act_spark_slot: usize,
+    /// Activity line-gauge area width (`activity_half - HISTORY_SLOT`).
+    pub act_gauge_w: usize,
+    /// `freq:` label column (always [`FREQ_LABEL_WIDTH`]).
+    pub freq_label_w: usize,
+    /// Frequency sparkline slot (always [`HISTORY_SLOT`]).
+    pub freq_spark_slot: usize,
+    /// Frequency value column (always [`FREQ_VALUE_WIDTH`]).
+    pub freq_value_w: usize,
+    /// Frequency line-gauge area width
+    /// (`frequency_half - FREQ_LABEL_WIDTH - HISTORY_SLOT - FREQ_VALUE_WIDTH`).
+    pub freq_gauge_w: usize,
+}
+
+impl CpuRowLayout {
+    /// Compute the row geometry for a cluster panel of total outer `width`
+    /// (i.e. the terminal width; the rows sit inside the panel's `±1` borders).
+    pub(crate) fn new(width: usize) -> Self {
+        let content = width.saturating_sub(2); // inside the cluster L/R borders
+        let other = content.saturating_sub(ID_WIDTH);
+        // ratatui Ratio(1,2)/Ratio(1,2): the activity half takes the odd column.
+        let act_w = other.div_ceil(2);
+        let freq_w = other - act_w;
+        Self {
+            id_w: ID_WIDTH,
+            act_spark_slot: HISTORY_SLOT,
+            act_gauge_w: act_w.saturating_sub(HISTORY_SLOT),
+            freq_label_w: FREQ_LABEL_WIDTH,
+            freq_spark_slot: HISTORY_SLOT,
+            freq_value_w: FREQ_VALUE_WIDTH,
+            freq_gauge_w: freq_w.saturating_sub(FREQ_LABEL_WIDTH + HISTORY_SLOT + FREQ_VALUE_WIDTH),
+        }
+    }
+
+    /// Activity line-gauge **bar** width: ratatui fills `area - label - 1`
+    /// (label + the always-present 1-col gap; MIGRATION.md §9.4 trap 1).
+    pub(crate) fn act_bar(&self, label_len: usize) -> usize {
+        self.act_gauge_w.saturating_sub(label_len + 1)
+    }
+
+    /// Frequency line-gauge **bar** width (`freq_gauge_w - label - 1`). The freq
+    /// label is ratatui's default `"{:3.0}%"` (always 4 cols), but we derive
+    /// from the actual length for safety.
+    pub(crate) fn freq_bar(&self, label_len: usize) -> usize {
+        self.freq_gauge_w.saturating_sub(label_len + 1)
+    }
+}
+
+/// Geometry of the single GPU block (MIGRATION.md §9.5).
+///
+/// Two rows inside the block's `margin(1)`: top = activity | frequency, bottom =
+/// power | peak. Each `|` is a `Ratio(1,2)/Ratio(1,2)` split of the inner width.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct GpuLayout {
+    /// Activity sparkline slot ([`HISTORY_SLOT`]).
+    pub act_spark_slot: usize,
+    /// Activity line-gauge area width.
+    pub act_gauge_w: usize,
+    /// `freq:` label column.
+    pub freq_label_w: usize,
+    /// Frequency sparkline slot.
+    pub freq_spark_slot: usize,
+    /// Frequency value column.
+    pub freq_value_w: usize,
+    /// Frequency line-gauge area width.
+    pub freq_gauge_w: usize,
+    /// Power sparkline slot.
+    pub power_spark_slot: usize,
+    /// Power value area width (`power_half - HISTORY_SLOT`).
+    pub power_value_w: usize,
+    /// Peak text area width (the right half of the bottom row).
+    pub peak_w: usize,
+}
+
+impl GpuLayout {
+    /// Compute the GPU block geometry for a block of total outer `width`.
+    pub(crate) fn new(width: usize) -> Self {
+        let inner = width.saturating_sub(2); // inside the GPU block L/R borders
+        let act_w = inner.div_ceil(2);
+        let freq_w = inner - act_w;
+        let power_w = inner.div_ceil(2);
+        let peak_w = inner - power_w;
+        Self {
+            act_spark_slot: HISTORY_SLOT,
+            act_gauge_w: act_w.saturating_sub(HISTORY_SLOT),
+            freq_label_w: FREQ_LABEL_WIDTH,
+            freq_spark_slot: HISTORY_SLOT,
+            freq_value_w: FREQ_VALUE_WIDTH,
+            freq_gauge_w: freq_w.saturating_sub(FREQ_LABEL_WIDTH + HISTORY_SLOT + FREQ_VALUE_WIDTH),
+            power_spark_slot: HISTORY_SLOT,
+            power_value_w: power_w.saturating_sub(HISTORY_SLOT),
+            peak_w,
+        }
+    }
+
+    /// Activity line-gauge bar width (`act_gauge_w - label - 1`).
+    pub(crate) fn act_bar(&self, label_len: usize) -> usize {
+        self.act_gauge_w.saturating_sub(label_len + 1)
+    }
+
+    /// Frequency line-gauge bar width (`freq_gauge_w - label - 1`).
+    pub(crate) fn freq_bar(&self, label_len: usize) -> usize {
+        self.freq_gauge_w.saturating_sub(label_len + 1)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -186,5 +319,54 @@ mod tests {
         assert_eq!(l.mem_panel_height, 7);
         assert_eq!(l.gauge_height, 1);
         assert_eq!(l.spark_height, 3);
+    }
+
+    #[test]
+    fn cpu_row_geometry_at_120() {
+        // content = 118, other = 113, activity half = 57 (odd col), freq = 56.
+        // Verified against ratatui::Layout::split (examples/ratatui_split.rs).
+        let l = CpuRowLayout::new(120);
+        assert_eq!(l.id_w, 5);
+        assert_eq!(l.act_spark_slot, 9);
+        assert_eq!(l.act_gauge_w, 48); // 57 - 9
+        assert_eq!(l.freq_label_w, 6);
+        assert_eq!(l.freq_spark_slot, 9);
+        assert_eq!(l.freq_value_w, 10);
+        assert_eq!(l.freq_gauge_w, 31); // 56 - 6 - 9 - 10
+
+        // The whole row tiles the 118-col content area exactly.
+        let activity = l.act_spark_slot + l.act_gauge_w; // 57
+        let frequency = l.freq_label_w + l.freq_spark_slot + l.freq_value_w + l.freq_gauge_w; // 56
+        assert_eq!(l.id_w + activity + frequency, 118);
+    }
+
+    #[test]
+    fn cpu_line_gauge_bar_widths_subtract_label_and_gap() {
+        let l = CpuRowLayout::new(120);
+        // Activity label varies 4..6 cols; bar = gauge_area - label - 1.
+        assert_eq!(l.act_bar("0.0%".len()), 43); // 48 - 4 - 1
+        assert_eq!(l.act_bar("100.0%".len()), 41); // 48 - 6 - 1
+        // Freq default label "{:3.0}%" is always 4 cols.
+        assert_eq!(l.freq_bar("  0%".chars().count()), 26); // 31 - 4 - 1
+        assert_eq!(l.freq_bar("100%".chars().count()), 26);
+    }
+
+    #[test]
+    fn gpu_geometry_at_120() {
+        // inner = 118 (even): each half = 59.
+        let g = GpuLayout::new(120);
+        assert_eq!(g.act_spark_slot, 9);
+        assert_eq!(g.act_gauge_w, 50); // 59 - 9
+        assert_eq!(g.freq_gauge_w, 34); // 59 - 6 - 9 - 10
+        assert_eq!(g.power_spark_slot, 9);
+        assert_eq!(g.power_value_w, 50); // 59 - 9
+        assert_eq!(g.peak_w, 59);
+        // Top row tiles the 118-col inner exactly.
+        let activity = g.act_spark_slot + g.act_gauge_w; // 59
+        let frequency = g.freq_label_w + g.freq_spark_slot + g.freq_value_w + g.freq_gauge_w; // 59
+        assert_eq!(activity + frequency, 118);
+        // Freq bar subtracts the 4-col default label + 1 gap.
+        assert_eq!(g.freq_bar(4), 29); // 34 - 4 - 1
+        assert_eq!(g.act_bar("1.1%".len()), 45); // 50 - 4 - 1
     }
 }

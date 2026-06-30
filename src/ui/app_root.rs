@@ -4,18 +4,18 @@
 //! flag), drains the backend channel in a single `use_future`, and handles the
 //! keyboard. While no frame has arrived it shows the splash; once frames flow it
 //! renders the title bar, the tab bar, and the selected tab's view
-//! (MIGRATION.md §7.4–§7.7, §8). Phase 2A wires the Overview tab; the
-//! CPU/GPU/Memory/SoC tabs show a placeholder until Phase 2B.
+//! (MIGRATION.md §7.4–§7.7, §8). All five tabs (Overview, CPU, GPU, Memory,
+//! SoC) are wired to their real views.
 
 use iocraft::prelude::*;
 use smol::channel::Receiver;
 
 use crate::{
-    backend::frame::{Frame, RenderedHeader},
+    backend::frame::{Frame, RenderedHeader, SocRows},
     ui::{
-        components::{tab_bar::TAB_TITLES, tab_bar::tab_bar, title_bar::title_bar},
+        components::{tab_bar::tab_bar, title_bar::title_bar},
         theme::Theme,
-        views::{overview::overview, splash::splash},
+        views::{cpu::cpu, gpu::gpu, memory::memory, overview::overview, soc::soc, splash::splash},
     },
 };
 
@@ -28,6 +28,8 @@ pub(crate) struct PumasAppProps {
     pub rx: Option<Receiver<Frame>>,
     /// Session-static title-bar strings.
     pub header: Option<RenderedHeader>,
+    /// Session-static SoC-tab rows (built once, taken into state on first render).
+    pub soc_rows: Option<SocRows>,
     /// Resolved theme colors.
     pub theme: Theme,
 }
@@ -48,6 +50,10 @@ pub(crate) fn PumasApp(
     // Header is session-static: take it once into state on first render.
     let header = props.header.take();
     let header = hooks.use_state(move || header.unwrap_or_default());
+
+    // SoC rows are session-static too: take once into state.
+    let soc_rows = props.soc_rows.take();
+    let soc_rows = hooks.use_state(move || soc_rows.unwrap_or_default());
 
     // Drain the backend channel. `use_future` spawns exactly once, so taking
     // the receiver out of props here is safe (it is `Some` only on first
@@ -116,13 +122,11 @@ pub(crate) fn PumasApp(
     let active = tab.get();
     let body: AnyElement<'static> = match active {
         0 => overview(&frame.overview, w, theme),
-        n => {
-            let name = TAB_TITLES.get(n).copied().unwrap_or("");
-            element! {
-                Text(content: format!("{name} — coming in Phase 2B"), wrap: TextWrap::NoWrap)
-            }
-            .into_any()
-        }
+        1 => cpu(&frame.cpu, w, theme),
+        2 => gpu(&frame.gpu, w, theme),
+        3 => memory(&frame.memory, w, theme),
+        4 => soc(&soc_rows.read(), w, theme),
+        _ => overview(&frame.overview, w, theme),
     };
 
     let chrome = vec![

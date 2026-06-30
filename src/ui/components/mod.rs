@@ -7,9 +7,6 @@
 //! values into glyphs (see `MIGRATION.md` §5/§7).
 
 pub(crate) mod gauge;
-// `line_gauge` is consumed by the CPU/GPU tabs in Phase 2B; until then it is
-// exercised only by the snapshot tests.
-#[allow(dead_code)]
 pub(crate) mod line_gauge;
 pub(crate) mod panel;
 pub(crate) mod sparkline;

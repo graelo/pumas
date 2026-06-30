@@ -8,12 +8,8 @@
 //! line per sample instead of building a `Frame`, byte-identical to the previous
 //! implementation (MIGRATION.md §4.6).
 
-pub(crate) mod history;
-// The `Frame` sub-structs are fully constructed here but only a few fields are
-// read by the minimal Phase 1 `PumasApp`; the per-tab views consume the rest in
-// Phase 2. Allow until then.
-#[allow(dead_code)]
 pub(crate) mod frame;
+pub(crate) mod history;
 
 use std::{
     collections::HashMap,
