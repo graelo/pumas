@@ -308,11 +308,16 @@ replaces ratatui's `Color::Indexed(u8)` used in `app.rs::AppColors::color`.
 | history_fg | `history_fg` | 4 (blue) | `Color::AnsiValue(history_fg)` |
 | history_bg | `history_bg` | 7 (white) | `Color::AnsiValue(history_bg)` |
 
-Fixed (named) colors, NOT from `UiColors`:
-- Thermal pressure: `is_nominal` → `accent`, else `Color::Yellow`
-  (`tab_overview.rs:679`, `tab_gpu.rs:207`).
-- Splash logo: top-left `Color::Blue`, top-right `Color::Green`, bottom
-  `Color::Magenta`, wordmark default (`startup_screen.rs:80-85`).
+Fixed (named) colors, NOT from `UiColors`. **CRITICAL:** the original ratatui
+named colors map to the *standard* ANSI indices, but crossterm/iocraft's
+same-named `Color::*` map to the *bright* indices (8–15), which themes like
+Solarized repurpose as greys/violet. Pin the ratatui indices explicitly via
+`Color::AnsiValue(n)` — do NOT use the crossterm-named variants:
+- Thermal pressure: `is_nominal` → `accent`, else `Color::AnsiValue(3)`
+  (ratatui yellow = 3, **not** crossterm `Color::Yellow` = 11).
+- Splash logo: top-left `Color::AnsiValue(4)` (blue), top-right `Color::AnsiValue(2)`
+  (green), bottom `Color::AnsiValue(5)` (magenta), wordmark default. (ratatui
+  blue/green/magenta = 4/2/5, **not** crossterm 12/10/13.)
 - `MemLine`/`MemSpan` `ColorRole` enum → maps to {accent, gauge_fg, history_fg, default}
   per the Memory tab's per-span styling (`tab_memory.rs`).
 

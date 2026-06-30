@@ -100,7 +100,9 @@ fn thermals_panel(t: &Thermals, width: usize, theme: Theme) -> AnyElement<'stati
     let p_color = if t.is_nominal {
         theme.accent
     } else {
-        Color::Yellow
+        // ANSI index 3 (ratatui's `Color::Yellow`); the crossterm-named
+        // `Color::Yellow` is the bright index 11, which Solarized renders grey.
+        Color::AnsiValue(3)
     };
     let body = element! {
         MixedText(

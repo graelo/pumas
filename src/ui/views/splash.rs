@@ -6,6 +6,11 @@
 //! then a spacer and a centered "Starting up..." message. The whole thing is
 //! centered horizontally and vertically.
 //!
+//! Colors are pinned to the ANSI indices the original ratatui UI used
+//! (blue = 4, green = 2, magenta = 5) via [`Color::AnsiValue`]. Do NOT use the
+//! crossterm-named `Color::Blue/Green/Magenta`: those map to the *bright* indices
+//! 12/10/13, which themes like Solarized repurpose as greys/violet.
+//!
 //! The ASCII literals are copied verbatim from `startup_screen.rs:94-151`.
 //! Colors are not captured by the plain-text snapshot (MIGRATION.md §7.8); they
 //! are verified by the live smoke check.
@@ -76,13 +81,13 @@ pub(crate) fn splash(width: usize, height: usize) -> AnyElement<'static> {
             View(flex_direction: FlexDirection::Column, align_items: AlignItems::Center) {
                 View(flex_direction: FlexDirection::Row) {
                     View(width: LOGO2_TOP_LEFT_WIDTH) {
-                        Text(content: LOGO2_TOP_LEFT, color: Color::Blue, wrap: TextWrap::NoWrap)
+                        Text(content: LOGO2_TOP_LEFT, color: Color::AnsiValue(4), wrap: TextWrap::NoWrap)
                     }
                     View(width: LOGO2_TOP_RIGHT_WIDTH) {
-                        Text(content: LOGO2_TOP_RIGHT, color: Color::Green, wrap: TextWrap::NoWrap)
+                        Text(content: LOGO2_TOP_RIGHT, color: Color::AnsiValue(2), wrap: TextWrap::NoWrap)
                     }
                 }
-                Text(content: LOGO2_BOTTOM, color: Color::Magenta, wrap: TextWrap::NoWrap)
+                Text(content: LOGO2_BOTTOM, color: Color::AnsiValue(5), wrap: TextWrap::NoWrap)
                 #(blank(1))
                 Text(content: PUMAS, wrap: TextWrap::NoWrap)
             }
