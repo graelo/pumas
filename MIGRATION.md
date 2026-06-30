@@ -453,8 +453,8 @@ computed in the **frontend** from `hooks.use_terminal_size()` by a dedicated
 - panel border (±1 each edge) and inner `margin: 1` insets;
 - the fixed sub-widths used by the CPU/GPU rows (`id`=5, `freq:`=6, value=10,
   sparkline history = 8+1), with the gauge/line-gauge taking the remainder;
-- the Overview vertical block heights (`GAUGE_HEIGHT=2`, `SPARKLINE_HEIGHT=3`, GPU/ANE/Mem
-  sparkline nominal 9, Package 3).
+- the Overview vertical block heights: gauge bar = 1 row (D8), and **every Overview
+  sparkline = 3 rows** (the `Length(9)` in the doc-comments is clipped to 3; see §9.3).
 
 `layout.rs` produces per-meter `(width, height)` and the view passes them down to the
 leaf components. This keeps the backend UI-agnostic and confines all constraint logic to
@@ -517,11 +517,13 @@ final arbiter of pixel parity**, not these numbers.
   one `View(flex_direction: Row, justify_content: SpaceBetween)` with two `Text`.
 
 ### 9.2 Tab bar — `main_screen.rs:52-71` (3 rows, bordered all edges)
-- Tabs `Overview | CPU | GPU | Memory | SoC`; active tab `accent` + `Bold`; inactive
-  default. ratatui `Tabs` divider is `" | "`; first tab has a leading space.
+- Tabs `Overview │ CPU │ GPU │ Memory │ SoC`; active tab `accent` + `Bold`; inactive
+  default. **Divider is `symbols::line::VERTICAL` = `│` (U+2502), NOT ASCII `|`**, with
+  single-space padding → `" Overview │ CPU │ GPU │ Memory │ SoC "` (verified
+  ratatui-widgets-0.3.2 `tabs.rs:143-145`).
 - iocraft: `View(border_style: Single, border_edges: all)` containing a Row of `Text`
-  per tab with `" | "` separators (see gh-board `tab_bar.rs` for the highlight idiom,
-  but our divider is `|` not a background block).
+  per tab separated by ` │ ` (space + U+2502 + space). See gh-board `tab_bar.rs` for the
+  highlight idiom, but our divider is the box-drawing `│`, not a background block.
 
 ### 9.3 Overview — `tab_overview.rs`
 Vertical stack of 4 bordered blocks then `Min(0)` spacer. Block heights:
@@ -533,6 +535,17 @@ bordered: the per-cell title (cluster name, `GPU: …`, `ANE: …`, RAM/SWAP lin
 `Text` on its own row, and the gauge bar is the **single row beneath it** (D8). The Phase 0
 `panel_cluster_cell` snapshot wrapped one cell in a border purely to de-risk the border
 primitive — it is NOT the Overview's per-cell structure.
+
+**Every Overview sparkline is height 3, never 9** (resolved in Phase 2A). The doc-comments
+in `tab_overview.rs` use `Constraint::Length(9)` for the GPU/ANE/RAM/SWAP sparklines, but
+those outer blocks are sized `2 + (GAUGE_HEIGHT 2 + SPARKLINE_HEIGHT 3) = 7` → inner 5, so
+ratatui clips the `9` to the 3 inner rows left under the gauge. `layout.rs` therefore sets
+`spark_height = 3` for ALL Overview sparklines. (This retires the "nominal 9" hedge.)
+
+**Gauge `height` field & title clipping (Phase 2A):** `gauge.rs` gained a `height` field —
+`1` for Overview cells (per D8), `2` only for the Phase-0 spike goldens. Long gauge title
+text clips at the block boundary via iocraft `overflow: Overflow::Hidden`, mirroring
+ratatui's `Paragraph` truncation.
 
 | Block | Border title | Content | Frame fields |
 |---|---|---|---|
@@ -564,6 +577,17 @@ Gauge title strings (exact, reuse `units.rs`):
   (`E-Cluster:`/`P-Cluster:`/`S-Cluster:` → space-joined `{:4}` DVFM freqs), a blank row,
   and `Note: Hardware-wise, CPUs quickly shift between the above frequencies.`; right
   column **bold**. Fields: `cpu.clusters`, `cpu.freq_table`.
+- **Phase 2B layout traps (line gauges):**
+  1. **Bar width is variable.** ratatui's `LineGauge` fills `gauge_area.right - (label_end + 1)`,
+     so with our explicit-`width` component `layout.rs` must compute
+     `bar_width = gauge_slot_w - label.chars().count() - 1` **per row**. The activity label
+     `"{:.1}%"` varies (4 cols `"6.9%"` … 6 cols `"100.0%"`); the freq label `"{:3.0}%"` is
+     always 4 cols → freq `bar_width = freq_gauge_slot_w - 5`. Getting this wrong shifts the
+     bar start by a column.
+  2. **Sparkline history slot is `N+1`.** The activity/freq history slots are
+     `Constraint::Length(8+1)` = 8 data cells + **one trailing space** before the gauge.
+     Our sparkline renders exactly `data.len()` (=8) cells; `layout.rs` must add the 1-col
+     gap so the gauge starts at the same column as ratatui.
 
 ### 9.5 GPU — `tab_gpu.rs`
 - GPU block (border title `GPU: `, height 4): top row = activity (sparkline 8 + LineGauge
@@ -588,6 +612,16 @@ Gauge title strings (exact, reuse `units.rs`):
   (accent); blank; `Note: …vm_stat…` (history_fg).
 - Fields: `memory.vm_lines`, `memory.sysinfo_lines` (pre-built `MemLine`s). **VmStats
   collection moves to backend (D2).**
+- **Phase 2B traps (Memory):**
+  1. The VM block's `Physical Memory Total` uses the **vm_stat** formula
+     `(pages_free + active + inactive + wired) * page_size / 1024³` (`vm_stat.rs::total_memory`),
+     which is why the screenshot shows `121.84 GB` while the Sysinfo block shows `128.0 GiB`
+     for the same machine — do NOT substitute `sysinfo` `ram_total`.
+  2. The VM block divides by `1024³` but **labels the unit `GB`** (not GiB); the Sysinfo
+     block uses `units::bibytes1` (labels `GiB`). Keep both as-is.
+  3. Copy the label strings **byte-for-byte**, including internal padding and the `+ `
+     prefixes (`"Wired Memory:         + "`, `"Compressed:           + "`,
+     `"                      ─────────"`). Values are `"{:.2} GB"`.
 
 ### 9.7 SoC — `tab_soc.rs` (borderless 2-col table, widths 20/16)
 Rows (right col **bold**): `SoC brand name:`, `CPU cores:`, `- Efficiency cores:`,
