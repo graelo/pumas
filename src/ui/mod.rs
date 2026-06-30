@@ -21,12 +21,11 @@ pub(crate) mod tab_soc;
 
 // --- iocraft frontend -----------------------------------------------------
 pub(crate) mod app_root;
-pub(crate) mod theme;
-
-// Leaf components (gauge/sparkline/line_gauge/panel) are consumed by the tab
-// views in Phase 2; for now they are exercised only by the snapshot tests.
-#[allow(dead_code)]
 pub(crate) mod components;
+pub(crate) mod layout;
+pub(crate) mod theme;
+pub(crate) mod views;
+
 #[cfg(test)]
 mod snapshot;
 

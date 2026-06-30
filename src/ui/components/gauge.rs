@@ -4,13 +4,19 @@
 //! `gauge.rs::render_gauge`), which the dead branch did NOT match (it appended
 //! the label after the bar instead of centering it). Semantics:
 //!
-//! - The bar is `GAUGE_HEIGHT` (= 2) rows tall.
+//! - The bar is `height` rows tall. ratatui's Overview wraps the gauge in a
+//!   borderless titled `Block`, whose title consumes the top row, leaving a
+//!   single bar row (`GAUGE_HEIGHT = 2` = title row + 1 bar row, MIGRATION.md
+//!   D8). The Overview view therefore renders the title as a separate `Text`
+//!   and drives the gauge at `height = 1`. The Phase 0 de-risk snapshots used
+//!   `height = 2`.
 //! - `end = round(ratio * width)` columns are filled with `█` (full block),
 //!   foreground `gauge_fg` on background `gauge_bg`; the remaining columns are
 //!   spaces showing `gauge_bg`.
 //! - The label `"{NN}%"` (integer percent) is centered horizontally at
 //!   `label_col = (width - label_width) / 2` and vertically on row
-//!   `height / 2` (the bottom row for height 2), overlaid on the bar.
+//!   `height / 2` (the single row when height is 1, the bottom row for height
+//!   2), overlaid on the bar.
 //!
 //! Width is an explicit prop: iocraft computes flex sizes only *after* element
 //! construction, so a component cannot know its allocated width at build time.
@@ -20,9 +26,6 @@ use iocraft::prelude::*;
 
 use super::{Cell, render_grid};
 
-/// Height of the gauge bar, matching ratatui's `GAUGE_HEIGHT`.
-const GAUGE_HEIGHT: usize = 2;
-
 /// Fully-owned gauge inputs (no borrows — `'static` element output).
 #[derive(Clone, Debug)]
 pub(crate) struct RenderedGauge {
@@ -30,6 +33,8 @@ pub(crate) struct RenderedGauge {
     pub ratio: f64,
     /// Bar width in columns.
     pub width: usize,
+    /// Bar height in rows (1 for the Overview, 2 for the Phase 0 spikes).
+    pub height: usize,
     /// Filled-block foreground (gauge_fg).
     pub fg: Color,
     /// Background of the whole bar (gauge_bg).
@@ -37,22 +42,23 @@ pub(crate) struct RenderedGauge {
 }
 
 impl RenderedGauge {
-    /// Build the `GAUGE_HEIGHT × width` cell grid, ratatui-faithfully.
+    /// Build the `height × width` cell grid, ratatui-faithfully.
     fn cells(&self) -> Vec<Vec<Cell>> {
         let width = self.width;
+        let height = self.height.max(1);
         let ratio = self.ratio.clamp(0.0, 1.0);
 
         // Integer-percent label, e.g. ratio 0.066 -> "7%".
         let label: Vec<char> = format!("{}%", (ratio * 100.0).round()).chars().collect();
         let label_w = label.len().min(width);
         let label_col = (width - label_w) / 2;
-        let label_row = GAUGE_HEIGHT / 2;
+        let label_row = height / 2;
 
         // `end` = number of filled columns (no-unicode path: round).
         #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         let end = ((ratio * width as f64).round() as usize).min(width);
 
-        (0..GAUGE_HEIGHT)
+        (0..height)
             .map(|row| {
                 (0..width)
                     .map(|x| {

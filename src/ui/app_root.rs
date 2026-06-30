@@ -2,16 +2,21 @@
 //!
 //! `PumasApp` owns the UI-side state (current [`Frame`], selected tab, exit
 //! flag), drains the backend channel in a single `use_future`, and handles the
-//! keyboard. Phase 1 renders only the title bar + a raw debug dump of the
-//! incoming frame to prove the pipe; the per-tab views land in Phase 2
-//! (MIGRATION.md §7.4–§7.7, §8).
+//! keyboard. While no frame has arrived it shows the splash; once frames flow it
+//! renders the title bar, the tab bar, and the selected tab's view
+//! (MIGRATION.md §7.4–§7.7, §8). Phase 2A wires the Overview tab; the
+//! CPU/GPU/Memory/SoC tabs show a placeholder until Phase 2B.
 
 use iocraft::prelude::*;
 use smol::channel::Receiver;
 
 use crate::{
     backend::frame::{Frame, RenderedHeader},
-    ui::theme::Theme,
+    ui::{
+        components::{tab_bar::TAB_TITLES, tab_bar::tab_bar, title_bar::title_bar},
+        theme::Theme,
+        views::{overview::overview, splash::splash},
+    },
 };
 
 /// Number of tabs (Overview, CPU, GPU, Memory, SoC).
@@ -95,26 +100,36 @@ pub(crate) fn PumasApp(
     let header = header.read();
     let program_name = header.program_name.clone();
     let machine_desc = header.machine_desc.clone();
+    let w = usize::from(width);
 
-    // Body: splash while no frame, else a raw debug dump proving the pipe.
-    let body: AnyElement<'static> = match frame_state.read().as_ref() {
-        None => element! { Text(content: "Starting up…", wrap: TextWrap::NoWrap) }.into_any(),
-        Some(f) => {
-            let first_e = f
-                .overview
-                .e_meters
-                .first()
-                .map_or_else(String::new, |m| m.title.clone());
-            let dump = format!(
-                "[tab {}] {}\n{}\n{}",
-                tab.get(),
-                f.overview.cpu_clusters_title,
-                first_e,
-                f.overview.package.title,
-            );
-            element! { Text(content: dump, wrap: TextWrap::NoWrap) }.into_any()
+    // Splash full-screen until the first frame arrives (mirrors ratatui's
+    // startup screen, which replaces the whole UI — no title/tab bar).
+    let Some(frame) = frame_state.read().clone() else {
+        return element! {
+            View(width: u32::from(width), height: u32::from(height)) {
+                #(vec![splash(w, usize::from(height))])
+            }
+        }
+        .into_any();
+    };
+
+    let active = tab.get();
+    let body: AnyElement<'static> = match active {
+        0 => overview(&frame.overview, w, theme),
+        n => {
+            let name = TAB_TITLES.get(n).copied().unwrap_or("");
+            element! {
+                Text(content: format!("{name} — coming in Phase 2B"), wrap: TextWrap::NoWrap)
+            }
+            .into_any()
         }
     };
+
+    let chrome = vec![
+        title_bar(program_name, machine_desc, theme.accent, w),
+        tab_bar(active, theme.accent, w),
+        body,
+    ];
 
     element! {
         View(
@@ -122,14 +137,8 @@ pub(crate) fn PumasApp(
             width: u32::from(width),
             height: u32::from(height),
         ) {
-            View(
-                flex_direction: FlexDirection::Row,
-                justify_content: JustifyContent::SpaceBetween,
-            ) {
-                Text(content: program_name, wrap: TextWrap::NoWrap)
-                Text(content: machine_desc, color: theme.accent, wrap: TextWrap::NoWrap)
-            }
-            #(vec![body])
+            #(chrome)
         }
     }
+    .into_any()
 }

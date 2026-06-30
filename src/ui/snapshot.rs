@@ -18,7 +18,7 @@ pub(crate) fn render_to_text(mut el: AnyElement<'static>, width: usize) -> Strin
 /// Compare `actual` against the golden at `tests/snapshots/<name>.snap`.
 ///
 /// Set `UPDATE_SNAPSHOTS=1` to (re)write goldens instead of asserting.
-fn assert_snapshot(name: &str, actual: &str) {
+pub(crate) fn assert_snapshot(name: &str, actual: &str) {
     let path = format!("{}/tests/snapshots/{name}.snap", env!("CARGO_MANIFEST_DIR"));
     if std::env::var_os("UPDATE_SNAPSHOTS").is_some() {
         std::fs::write(&path, actual).expect("write golden");
@@ -99,6 +99,7 @@ mod tests {
         let g = RenderedGauge {
             ratio: 0.41,
             width: 30,
+            height: 2,
             fg: theme.gauge_fg,
             bg: theme.gauge_bg,
         };
@@ -154,6 +155,7 @@ mod tests {
             Gauge(gauge: Some(RenderedGauge {
                 ratio: 0.066,
                 width: inner,
+                height: 2,
                 fg: theme.gauge_fg,
                 bg: theme.gauge_bg,
             }))
@@ -195,6 +197,7 @@ mod tests {
             Gauge(gauge: Some(RenderedGauge {
                 ratio: 0.5,
                 width: 10,
+                height: 2,
                 fg: theme.gauge_fg,
                 bg: theme.gauge_bg,
             }))

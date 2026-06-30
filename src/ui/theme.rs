@@ -11,10 +11,6 @@ use crate::config::UiColors;
 
 /// Resolved theme colors, ready to hand to components. `Copy` so it can be
 /// passed by value into props without ceremony.
-///
-/// Only `accent` is read by the minimal Phase 1 `PumasApp`; the gauge/history
-/// colors are consumed by the leaf components in the Phase 2 tab views.
-#[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Theme {
     pub accent: Color,
