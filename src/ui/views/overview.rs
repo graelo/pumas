@@ -1,4 +1,4 @@
-//! Overview tab (MIGRATION.md §9.3, the original `tab_overview.rs`).
+//! Overview tab.
 //!
 //! Four outer bordered panels stacked vertically:
 //! 1. CPU Clusters — E then P then S clusters, paired two-up via `chunks(2)`;
@@ -6,7 +6,7 @@
 //! 3. Package + Thermals — a 70/30 split row of two panels;
 //! 4. Memory & SWAP — two halves.
 //!
-//! Only the four outer panels are bordered; the inner cells are NOT (D8). Each
+//! Only the four outer panels are bordered; the inner cells are NOT. Each
 //! cell is a plain `Text` title row, a single-row gauge bar, and a 3-row
 //! sparkline. All strings arrive pre-formatted in the [`Frame`]; all widths come
 //! from [`OverviewLayout`].
@@ -40,7 +40,7 @@ fn blank_row(height: u32) -> AnyElement<'static> {
     element! { View(height: height) }.into_any()
 }
 
-/// A single meter cell: title row + 1-row gauge + 3-row sparkline (D8). The
+/// A single meter cell: title row + 1-row gauge + 3-row sparkline. The
 /// inner cells are unbordered; only the outer panel draws a border.
 fn meter_cell(m: &Meter, width: usize, spark_height: usize, theme: Theme) -> AnyElement<'static> {
     #[expect(clippy::cast_possible_truncation)]
@@ -66,7 +66,7 @@ fn meter_cell(m: &Meter, width: usize, spark_height: usize, theme: Theme) -> Any
     }
     .into_any();
     // `Overflow::Hidden` clips an over-long title to the cell width, matching
-    // the original `Paragraph`, which truncates at the block boundary rather than
+    // the original text rendering, which truncates at the block boundary rather than
     // spilling into the neighbouring half.
     element! {
         View(flex_direction: FlexDirection::Column, width: w, overflow: Overflow::Hidden) {
@@ -161,7 +161,7 @@ fn thermals_body(t: &Thermals, theme: Theme) -> AnyElement<'static> {
     let p_color = if t.is_nominal {
         theme.accent
     } else {
-        // ANSI index 3 (ratatui's `Color::Yellow`); the crossterm-named
+        // ANSI index 3 (the standard-index yellow); the crossterm-named
         // `Color::Yellow` is the bright index 11, which Solarized renders grey.
         Color::AnsiValue(3)
     };

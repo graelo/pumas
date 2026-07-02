@@ -2,11 +2,11 @@
 //!
 //! A single OS thread owns the `powermetrics` subprocess, the sysinfo merge and
 //! all signal [`history`], and ships an owned [`Frame`] per sample over a
-//! `smol::channel`. The frontend never drives the backend (MIGRATION.md §1/§4).
+//! `smol::channel`. The frontend never drives the backend.
 //!
 //! The same streaming loop powers `run --json`: [`run_exporter`] prints one JSON
 //! line per sample instead of building a `Frame`, byte-identical to the previous
-//! implementation (MIGRATION.md §4.6).
+//! implementation.
 
 pub(crate) mod frame;
 pub(crate) mod history;
@@ -40,7 +40,7 @@ use frame::{
 };
 
 /// Overshoot keeping sparkline bars from touching the gauge above
-/// (MIGRATION.md §4.4). Applied everywhere except the Overview Package block.
+///. Applied everywhere except the Overview Package block.
 const SPARKLINE_MAX_OVERSHOOT: f32 = 1.05;
 
 /// Fixed sparkline window (in samples) for the per-core CPU/GPU rows.
@@ -292,7 +292,7 @@ fn push_cpu(history: &mut History, history_size: usize, cpu: &CpuMetrics) {
 
 /// Build an owned [`Frame`] from the current `Metrics` + signal history. Every
 /// title/label string is formatted here (reusing [`units`]); the frontend does
-/// no formatting (MIGRATION.md §4).
+/// no formatting.
 fn build_frame(metrics: &Metrics, soc: &SocInfo, history: &History) -> Frame {
     Frame {
         overview: build_overview(metrics, soc, history),
@@ -488,7 +488,7 @@ fn cpu_row(cpu: &CpuMetrics, history: &History) -> CpuRow {
     }
 }
 
-/// CPU DVFM frequency table (mirrors `tab_cpu::draw_freq_table`).
+/// CPU DVFM frequency table.
 fn cpu_freq_table(metrics: &Metrics) -> FreqTable {
     let e = first_cluster_freqs(&metrics.e_clusters);
     let p = first_cluster_freqs(&metrics.p_clusters);
@@ -571,8 +571,8 @@ fn build_gpu(metrics: &Metrics, history: &History) -> GpuFrame {
     }
 }
 
-/// Build the Memory tab lines. `vm_stat` is collected here (D2), not on the UI
-/// thread; mirrors `tab_memory.rs`.
+/// Build the Memory tab lines. `vm_stat` is collected here, not on the UI
+/// thread.
 fn build_memory(metrics: &Metrics) -> MemoryFrame {
     let vm_lines = match VmStats::collect() {
         Ok(vm) => {
@@ -715,7 +715,7 @@ mod tests {
     }
 
     /// The Frame builder formats the expected title strings and applies the
-    /// Package "no overshoot" exception (MIGRATION.md §4.4).
+    /// Package "no overshoot" exception.
     #[test]
     fn frame_titles_and_package_spark_max_rule() {
         let soc = test_soc();
@@ -754,7 +754,7 @@ mod tests {
                 < (SPARKLINE_MAX_OVERSHOOT * soc.max_package_w as f32) as u64
         );
 
-        // The freq LineGauge default label is built (D9): MHz value + "{:3.0}%".
+        // The freq line-gauge default label is built: MHz value + "{:3.0}%".
         let cpu0 = &frame.cpu.clusters[0].cpus[0];
         assert!(
             cpu0.freq_value.ends_with("MHz"),

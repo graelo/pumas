@@ -1,6 +1,6 @@
-//! Memory tab (MIGRATION.md §9.6, the original `tab_memory.rs`).
+//! Memory tab.
 //!
-//! Two bordered text blocks inside a `margin(1)` inset: the Activity-Monitor-
+//! Two bordered text blocks inside a 1-cell margin inset: the Activity-Monitor-
 //! compatible `VM Statistics` block (height 18) and the `Sysinfo Statistics`
 //! block (height 8). Every line arrives pre-formatted and pre-colored as a
 //! [`MemLine`] of [`MemSpan`]s; the view only maps each span's [`ColorRole`] to
@@ -21,7 +21,7 @@ const VM_INNER_ROWS: usize = 16;
 /// Inner rows of the `Sysinfo Statistics` block (`8 - 2` borders).
 const SYSINFO_INNER_ROWS: usize = 6;
 
-/// Map a [`ColorRole`] to its concrete theme color (MIGRATION.md §6).
+/// Map a [`ColorRole`] to its concrete theme color.
 fn role_color(role: ColorRole, theme: Theme) -> Color {
     match role {
         ColorRole::Accent => theme.accent,
@@ -66,7 +66,7 @@ fn mem_block(
 
 /// Render the full Memory tab at `width`.
 pub(crate) fn memory(f: &MemoryFrame, width: usize, theme: Theme) -> AnyElement<'static> {
-    // the original applies `margin(1)`: a 1-col left/right inset and a 1-row top
+    // the original applies a 1-cell margin: a 1-col left/right inset and a 1-row top
     // inset; the blocks therefore render at `width - 2`.
     let inner = width.saturating_sub(2);
     let vm = mem_block(
@@ -96,9 +96,9 @@ mod tests {
     use super::*;
     use crate::backend::frame::MemSpan;
 
-    /// Color parity (D6): an `Accent`-role span renders with the theme accent
+    /// Color parity: an `Accent`-role span renders with the theme accent
     /// foreground. Plain-text snapshots cannot see color, so we inspect the
-    /// `Canvas` cell directly (MIGRATION.md §7.8).
+    /// `Canvas` cell directly.
     #[test]
     fn mem_span_role_maps_to_theme_color() {
         let theme = Theme::default();

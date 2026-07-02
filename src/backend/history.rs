@@ -2,7 +2,7 @@
 //!
 //! `Signal<T>` is the metric ring buffer. `History` and
 //! `HistoryExt::get_or_default` give the collector thread sole ownership of all
-//! history state so the frontend holds none (MIGRATION.md §4.1).
+//! history state so the frontend holds none.
 
 use std::collections::HashMap;
 

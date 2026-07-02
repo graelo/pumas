@@ -1,7 +1,7 @@
-//! Multi-row vertical sparkline (`▁▂▃▄▅▆▇█`), matching the original `Sparkline`.
+//! Multi-row vertical sparkline (`▁▂▃▄▅▆▇█`), matching the original sparkline.
 //!
-//! The dead branch used only 4 glyphs on a single row; this rebuilds the full
-//! 8-level (`NINE_LEVELS`) multi-row bars per `MIGRATION.md` §5.
+//! The earlier attempt used only 4 glyphs on a single row; this rebuilds the
+//! full 8-level multi-row bars.
 //!
 //! Algorithm: one column per data point, `height` rows tall. For each column
 //! value `v` (clamped to `max`), the total bar height in eighths is
@@ -16,7 +16,7 @@ use iocraft::prelude::*;
 
 use super::{Cell, render_grid};
 
-/// `NINE_LEVELS`: index 0 = empty, 1..=8 = increasing block heights.
+/// Levels: index 0 = empty, 1..=8 = increasing block heights.
 const BARS: [char; 9] = [' ', '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
 
 /// Fully-owned sparkline inputs (owned `Vec<u64>`, no borrows).

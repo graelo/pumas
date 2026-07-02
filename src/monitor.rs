@@ -2,8 +2,7 @@
 //!
 //! `run` branches on `--json`: the JSON path streams metrics to stdout with no
 //! UI or channel; the UI path spawns the backend collector on its own OS thread
-//! and runs the iocraft [`PumasApp`] on `smol` (no tokio anywhere — MIGRATION.md
-//! §7.7).
+//! and runs the iocraft [`PumasApp`] on `smol` (no tokio anywhere).
 
 use std::{io::Write, thread};
 
@@ -83,7 +82,7 @@ fn run_ui(soc_info: SocInfo, args: RunConfig) -> Result<()> {
 }
 
 /// Install a panic hook that appends to a log file, since the fullscreen TUI
-/// swallows stderr (MIGRATION.md §7.7).
+/// swallows stderr.
 fn install_panic_hook() {
     let default_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {

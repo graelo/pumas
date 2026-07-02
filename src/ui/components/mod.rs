@@ -4,7 +4,7 @@
 //! `Option<Rendered*>` prop carrying fully-owned data (no borrows), taken with
 //! `props.take()`, returning `impl Into<AnyElement<'static>>`. None of these
 //! components compute history or formatting — they only turn already-prepared
-//! values into glyphs (see `MIGRATION.md` §5/§7).
+//! values into glyphs.
 
 pub(crate) mod gauge;
 pub(crate) mod line_gauge;

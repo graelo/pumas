@@ -1,15 +1,12 @@
-//! Tab bar (MIGRATION.md §9.2, the original `main_screen.rs:52-71`).
+//! Tab bar.
 //!
 //! A `View` bordered on all edges (3 rows) whose single inner row holds the
-//! five tab labels. Mirrors the original `Tabs` rendering exactly: each tab is
+//! five tab labels. Each tab is
 //! `padding_left` +
-//! title + `padding_right` (both a single space), tabs separated by the default
-//! divider `symbols::line::VERTICAL` (`│`). The active title is accent + bold;
+//! title + `padding_right` (both a single space), tabs separated by the
+//! `│` (U+2502) divider. The active title is accent + bold;
 //! the surrounding padding/divider stay default. The net inner string is
 //! `" Overview │ CPU │ GPU │ Memory │ SoC "`.
-//!
-//! NOTE: MIGRATION.md §9.2 described the divider as `" | "` (ASCII pipe); the
-//! actual default is the box-drawing `│` (U+2502). We follow the code.
 
 use iocraft::prelude::*;
 

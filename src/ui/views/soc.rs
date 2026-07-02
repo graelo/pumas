@@ -1,4 +1,4 @@
-//! SoC tab (MIGRATION.md §9.7, the original `tab_soc.rs`).
+//! SoC tab.
 //!
 //! A borderless 2-column table (label width 20, value width 16, the original default
 //! `column_spacing = 1`), right column bold. The rows are session-static —
@@ -12,7 +12,7 @@ use crate::{
     ui::{theme::Theme, views::two_col_row},
 };
 
-/// SoC table label column width (the original `Constraint::Length(20)`).
+/// SoC table label column width (20 columns).
 const SOC_LABEL_WIDTH: usize = 20;
 
 /// Render the SoC tab at `width`.

@@ -4,7 +4,7 @@
 //! flag), drains the backend channel in a single `use_future`, and handles the
 //! keyboard. While no frame has arrived it shows the splash; once frames flow it
 //! renders the title bar, the tab bar, and the selected tab's view
-//! (MIGRATION.md §7.4–§7.7, §8). All five tabs (Overview, CPU, GPU, Memory,
+//!. All five tabs (Overview, CPU, GPU, Memory,
 //! SoC) are wired to their real views.
 
 use iocraft::prelude::*;
@@ -69,7 +69,7 @@ pub(crate) fn PumasApp(
         should_exit.set(true);
     });
 
-    // Keyboard: quit + tab navigation (MIGRATION.md §7.5).
+    // Keyboard: quit + tab navigation.
     hooks.use_terminal_events(move |event| {
         if let TerminalEvent::Key(KeyEvent {
             code,
@@ -98,7 +98,7 @@ pub(crate) fn PumasApp(
         }
     });
 
-    // Exit at render time, never inside the event closure (MIGRATION.md §7.6).
+    // Exit at render time, never inside the event closure.
     if should_exit.get() {
         system.exit();
     }

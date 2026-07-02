@@ -5,7 +5,7 @@
 //! ANSI — see `canvas.rs::write_impl(.., false, ..)`).
 //!
 //! ⚠️ Plain-text snapshots capture **layout and glyphs only, NOT color**
-//! (MIGRATION.md §10 D6). Color parity is verified separately by
+//!. Color parity is verified separately by
 //! [`tests::gauge_and_sparkline_colors`], which inspects `Canvas` cell styles.
 
 use iocraft::prelude::*;
@@ -186,7 +186,7 @@ mod tests {
         assert_snapshot("panel_cluster_cell", &render_to_text(p, 62));
     }
 
-    // -- Color parity (D6): inspect Canvas cell styles, not plain text ------
+    // -- Color parity: inspect Canvas cell styles, not plain text ------
 
     #[test]
     fn gauge_and_sparkline_colors() {

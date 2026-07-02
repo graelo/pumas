@@ -1,10 +1,10 @@
 //! Single-row line gauge (`━`, U+2501) used by the CPU/GPU rows.
 //!
-//! Matches the original `LineGauge`: an optional
+//! A single-row ratio bar: an optional
 //! left label, then a one-column gap, then the bar drawn with the THICK
 //! horizontal symbol. Filled columns use `gauge_fg` as the glyph foreground,
 //! unfilled columns use `gauge_bg`; there is no background fill (unlike the
-//! block `Gauge`). Fill count is `floor(ratio * width)`.
+//! block gauge). Fill count is `floor(ratio * width)`.
 //!
 //! Activity rows pass a `"{:.1}%"` label; frequency rows pass `None` (just the
 //! leading gap + line). Width is the number of `━` cells, an explicit prop for
@@ -14,7 +14,7 @@ use iocraft::prelude::*;
 
 use super::{Cell, render_grid};
 
-/// THICK horizontal line symbol (`symbols::line::THICK.horizontal`).
+/// THICK horizontal line symbol (`━`).
 const LINE: char = '━';
 
 /// Fully-owned line-gauge inputs.

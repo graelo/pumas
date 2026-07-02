@@ -1,4 +1,4 @@
-//! GPU tab (MIGRATION.md §9.5, the original `tab_gpu.rs`).
+//! GPU tab.
 //!
 //! A single bordered `GPU:` block (height 4) with two inner rows — top =
 //! activity | frequency, bottom = power | peak — then a `Thermals` block and the
@@ -100,7 +100,7 @@ fn thermals_panel(t: &Thermals, width: usize, theme: Theme) -> AnyElement<'stati
     let p_color = if t.is_nominal {
         theme.accent
     } else {
-        // ANSI index 3 (ratatui's `Color::Yellow`); the crossterm-named
+        // ANSI index 3 (the standard-index yellow); the crossterm-named
         // `Color::Yellow` is the bright index 11, which Solarized renders grey.
         Color::AnsiValue(3)
     };

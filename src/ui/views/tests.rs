@@ -2,7 +2,7 @@
 //!
 //! The fixture mirrors the M5 Max in `~/Downloads/screenshots/2.tab-overview.png`
 //! (two P-clusters paired + a single S-cluster, no separate E-clusters). All
-//! snapshots capture **glyph/layout only, not color** (MIGRATION.md §7.8); color
+//! snapshots capture **glyph/layout only, not color**; color
 //! parity is guarded by `snapshot::tests::gauge_and_sparkline_colors` and the
 //! live smoke check.
 

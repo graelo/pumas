@@ -1,4 +1,4 @@
-//! Frontend geometry for the tab views (MIGRATION.md §7.9).
+//! Frontend geometry for the tab views.
 //!
 //! iocraft cannot expose a flex-allocated width at element-*build* time, so the
 //! leaf widgets (gauge/sparkline/line_gauge) take explicit dimensions. This
@@ -11,26 +11,25 @@
 
 use crate::backend::frame::OverviewFrame;
 
-/// 2-column gap between paired halves (the original `Constraint::Length(2)` in
-/// `tab_overview.rs`).
+/// 2-column gap between paired halves.
 pub(crate) const GAP: usize = 2;
 
-/// the original `GAUGE_HEIGHT`: the borderless titled `Block` consumes its top row
+/// Gauge cell height: the borderless titled block consumes its top row
 /// for the title, leaving a single bar row, so this vertical budget is
-/// `title row + 1 bar row` (MIGRATION.md D8).
+/// `title row + 1 bar row`.
 const GAUGE_HEIGHT: usize = 2;
 
-/// the original `SPARKLINE_HEIGHT`.
+/// Sparkline height.
 const SPARKLINE_HEIGHT: usize = 3;
 
-/// the original `CLUSTER_SPACING`: a blank row between stacked cluster blocks.
+/// A blank row between stacked cluster blocks.
 const CLUSTER_SPACING: usize = 1;
 
-/// the original `PKG_TEXT_HEIGHT`: the Package block's title-text row.
+/// The Package block's title-text row.
 const PKG_TEXT_HEIGHT: usize = 1;
 
 /// Number of horizontal blocks for `n` clusters: `ceil(n / 2)` (the clusters
-/// are paired two-up). Mirrors the original `num_blocks_for`.
+/// are paired two-up).
 pub(crate) fn num_blocks_for(n: usize) -> usize {
     n.div_ceil(2)
 }
@@ -56,8 +55,7 @@ pub(crate) struct OverviewLayout {
     pub half_width: usize,
     /// Gap between the two halves of a paired row.
     pub gap: usize,
-    /// Gauge bar height inside a cell (1 row — the title is a separate `Text`,
-    /// MIGRATION.md D8).
+    /// Gauge bar height inside a cell (1 row — the title is a separate `Text`).
     pub gauge_height: usize,
     /// Effective sparkline height. The original GPU/ANE/RAM/SWAP sparklines request
     /// a nominal 9 rows but the outer block is only sized for
@@ -121,28 +119,28 @@ impl OverviewLayout {
     }
 }
 
-// ─── CPU/GPU row geometry (MIGRATION.md §9.4/§9.5) ───────────────────────────
+// ─── CPU/GPU row geometry ───────────────────────────
 
-/// CPU id column width (`Constraint::Length(5)` in `tab_cpu.rs`).
+/// CPU id column width (5 columns).
 const ID_WIDTH: usize = 5;
 
-/// `freq:` label column width (`FREQUENCY_LABEL_WIDTH` in tab_cpu/tab_gpu).
+/// `freq:` label column width (6 columns).
 const FREQ_LABEL_WIDTH: usize = 6;
 
-/// Frequency value column width (`FREQUENCY_VALUE_WIDTH`, e.g. `"1085 MHz "`).
+/// Frequency value column width (10 columns, e.g. `"1085 MHz "`).
 const FREQ_VALUE_WIDTH: usize = 10;
 
-/// Sparkline history slot: `HISTORY_LENGTH (8) + 1` (`Constraint::Length(8+1)`).
+/// Sparkline history slot: 8 data cells + 1 trailing space.
 /// The sparkline emits exactly 8 cells; the `+1` is one trailing space before
-/// the gauge so the gauge column-aligns with the original (MIGRATION.md §9.4 trap 2).
+/// the gauge so the gauge column-aligns with the original.
 const HISTORY_SLOT: usize = 9;
 
-/// Geometry of one CPU core row (MIGRATION.md §9.4).
+/// Geometry of one CPU core row.
 ///
 /// Layout: `[id 5][activity: sparkline 8+1, line_gauge][frequency: "freq:" 6,
 /// sparkline 8+1, value 10, line_gauge]`. The two halves split the post-id
-/// remainder via the original `Ratio(1,2)/Ratio(1,2)`, which gives the **first**
-/// (activity) half the odd column (verified against the original `Layout::split`).
+/// remainder via a 1:2 / 1:2 split, which gives the **first**
+/// (activity) half the odd column (verified empirically).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct CpuRowLayout {
     /// Id column width (always [`ID_WIDTH`]).
@@ -168,7 +166,7 @@ impl CpuRowLayout {
     pub(crate) fn new(width: usize) -> Self {
         let content = width.saturating_sub(2); // inside the cluster L/R borders
         let other = content.saturating_sub(ID_WIDTH);
-        // the original Ratio(1,2)/Ratio(1,2): the activity half takes the odd column.
+        // 1:2 / 1:2 split: the activity half takes the odd column.
         let act_w = other.div_ceil(2);
         let freq_w = other - act_w;
         Self {
@@ -182,8 +180,8 @@ impl CpuRowLayout {
         }
     }
 
-    /// Activity line-gauge **bar** width: the original fills `area - label - 1`
-    /// (label + the always-present 1-col gap; MIGRATION.md §9.4 trap 1).
+    /// Activity line-gauge **bar** width: fills `area - label - 1`
+    /// (label + the always-present 1-col gap).
     pub(crate) fn act_bar(&self, label_len: usize) -> usize {
         self.act_gauge_w.saturating_sub(label_len + 1)
     }
@@ -196,10 +194,10 @@ impl CpuRowLayout {
     }
 }
 
-/// Geometry of the single GPU block (MIGRATION.md §9.5).
+/// Geometry of the single GPU block.
 ///
-/// Two rows inside the block's `margin(1)`: top = activity | frequency, bottom =
-/// power | peak. Each `|` is a `Ratio(1,2)/Ratio(1,2)` split of the inner width.
+/// Two rows inside the block's 1-cell margin: top = activity | frequency, bottom =
+/// power | peak. Each `|` is a 1:2 / 1:2 split of the inner width.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct GpuLayout {
     /// Activity sparkline slot ([`HISTORY_SLOT`]).
@@ -324,7 +322,7 @@ mod tests {
     #[test]
     fn cpu_row_geometry_at_120() {
         // content = 118, other = 113, activity half = 57 (odd col), freq = 56.
-        // Verified against the original `Layout::split` (MIGRATION.md §9.4).
+        // Verified empirically.
         let l = CpuRowLayout::new(120);
         assert_eq!(l.id_w, 5);
         assert_eq!(l.act_spark_slot, 9);

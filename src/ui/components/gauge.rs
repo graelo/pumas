@@ -1,13 +1,13 @@
 //! Block-bar gauge with a centered `NN%` label (Overview tab).
 //!
-//! Faithful re-implementation of the original `Gauge` widget
-//! (`render_gauge`), which the dead branch did NOT match (it appended
-//! the label after the bar instead of centering it). Semantics:
+//! Faithful re-implementation of the original gauge, which the earlier
+//! attempt did NOT match (it appended the label after the bar instead of
+//! centering it). Semantics:
 //!
 //! - The bar is `height` rows tall. The original Overview wraps the gauge in a
-//!   borderless titled `Block`, whose title consumes the top row, leaving a
-//!   single bar row (`GAUGE_HEIGHT = 2` = title row + 1 bar row, MIGRATION.md
-//!   D8). The Overview view therefore renders the title as a separate `Text`
+//!   borderless titled block, whose title consumes the top row, leaving a
+//!   single bar row (`GAUGE_HEIGHT = 2` = title row + 1 bar row). The Overview
+//!   view therefore renders the title as a separate `Text`
 //!   and drives the gauge at `height = 1`. The Phase 0 de-risk snapshots used
 //!   `height = 2`.
 //! - `end = round(ratio * width)` columns are filled with `█` (full block),

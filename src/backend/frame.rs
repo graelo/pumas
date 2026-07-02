@@ -1,4 +1,4 @@
-//! The `Frame` data-plane contract (MIGRATION.md §4).
+//! The `Frame` data-plane contract.
 //!
 //! A `Frame` is one owned, `Clone` snapshot the collector ships to the frontend
 //! per sample. It carries everything the UI needs **already prepared**: every
@@ -7,7 +7,7 @@
 //! history math and no string formatting.
 //!
 //! Widths/heights are deliberately absent — those are a frontend concern
-//! (MIGRATION.md §7.9). The sparkline `spark` vectors carry data only; the view
+//!. The sparkline `spark` vectors carry data only; the view
 //! trims/scales to its allocated geometry.
 
 use crate::{modules::soc::SocInfo, units};
@@ -25,7 +25,7 @@ pub(crate) struct Meter {
     pub ratio: f64,
     /// Sparkline data (full history for Overview; last-N where a tab fixes N).
     pub spark: Vec<u64>,
-    /// Sparkline scaling ceiling, overshoot already applied (MIGRATION.md §4.4).
+    /// Sparkline scaling ceiling, overshoot already applied.
     pub spark_max: u64,
 }
 
@@ -93,7 +93,7 @@ pub(crate) struct CpuRow {
     /// Frequency gauge fill ratio.
     pub freq_ratio: f64,
     /// Frequency gauge's default label, `"{:3.0}%"`. The freq LineGauge has no
-    /// explicit label, so the original draws this default (MIGRATION.md D9).
+    /// explicit label, so the original draws this default.
     pub freq_label: String,
     /// Frequency sparkline (last 8).
     pub freq_spark: Vec<u64>,
@@ -143,7 +143,7 @@ pub(crate) struct GpuFrame {
     /// Frequency gauge fill ratio.
     pub freq_ratio: f64,
     /// Frequency gauge's default label, `"{:3.0}%"`. The freq LineGauge has no
-    /// explicit label, so the original draws this default (MIGRATION.md D9).
+    /// explicit label, so the original draws this default.
     pub freq_label: String,
     /// Frequency sparkline (last 8).
     pub freq_spark: Vec<u64>,
@@ -164,7 +164,7 @@ pub(crate) struct GpuFrame {
 }
 
 /// Theme color role for a [`MemSpan`] (mapped to a concrete color in the
-/// frontend theme, MIGRATION.md §6).
+/// frontend theme).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum ColorRole {
     /// Accent color.
@@ -193,7 +193,7 @@ pub(crate) struct MemLine {
     pub spans: Vec<MemSpan>,
 }
 
-/// The Memory tab snapshot. `vm_stat` is collected in the backend (D2), so the
+/// The Memory tab snapshot. `vm_stat` is collected in the backend, so the
 /// lines arrive pre-formatted and pre-colored.
 #[derive(Clone)]
 pub(crate) struct MemoryFrame {
@@ -227,8 +227,7 @@ pub(crate) struct RenderedHeader {
     pub machine_desc: String,
 }
 
-/// Build the session-static header from the SoC info (mirrors
-/// `main_screen.rs` title-line formatting).
+/// Build the session-static header from the SoC info.
 pub(crate) fn render_header(soc: &SocInfo) -> RenderedHeader {
     RenderedHeader {
         program_name: format!("Pumas v{}", env!("CARGO_PKG_VERSION")),
@@ -242,7 +241,7 @@ pub(crate) fn render_header(soc: &SocInfo) -> RenderedHeader {
     }
 }
 
-/// Session-static SoC tab rows (built once). Mirrors `tab_soc.rs`.
+/// Session-static SoC tab rows (built once).
 #[derive(Clone, Default)]
 pub(crate) struct SocRows {
     /// `(left_label, right_value)` rows; right value rendered bold.

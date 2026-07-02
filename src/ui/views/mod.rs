@@ -38,7 +38,7 @@ const FREQ_TABLE_INNER_ROWS: usize = 5;
 
 /// A single-row sparkline confined to its fixed `slot` column (8 data cells +
 /// the trailing gap), so the following gauge column-aligns regardless of data
-/// length (MIGRATION.md §9.4 trap 2).
+/// length.
 pub(crate) fn spark_slot(
     data: Vec<u64>,
     max: u64,
@@ -74,7 +74,7 @@ pub(crate) fn text_col(content: String, width: usize, color: Color) -> AnyElemen
 }
 
 /// One row of a `Frequencies`/SoC-style 2-col table: `[label `width`][1 gap][value
-/// bold]` (the original `Table` default `column_spacing = 1`).
+/// bold]` (a 1-column gap).
 pub(crate) fn two_col_row(label: &str, value: &str, label_w: usize) -> AnyElement<'static> {
     let lbl = text_col(label.to_string(), label_w, Color::Reset);
     element! {

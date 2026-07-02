@@ -1,4 +1,4 @@
-//! Top title bar (MIGRATION.md §9.1, the original `main_screen.rs:31-50`).
+//! Top title bar.
 //!
 //! A single row: the program name (`Pumas v{version}`) on the left in the
 //! default color, and the machine description (`{brand} (cores: …)`) on the

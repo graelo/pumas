@@ -1,4 +1,4 @@
-//! Startup splash (MIGRATION.md §9.8, the original `startup_screen.rs`).
+//! Startup splash.
 //!
 //! Shown while the backend has not yet shipped a `Frame`. The 40×17 logo is
 //! built from three colored regions — top-left (blue, 15w), top-right (green,
@@ -6,13 +6,13 @@
 //! then a spacer and a centered "Starting up..." message. The whole thing is
 //! centered horizontally and vertically.
 //!
-//! Colors are pinned to the ANSI indices the original ratatui UI used
+//! Colors are pinned to the ANSI indices the original UI used
 //! (blue = 4, green = 2, magenta = 5) via [`Color::AnsiValue`]. Do NOT use the
 //! crossterm-named `Color::Blue/Green/Magenta`: those map to the *bright* indices
 //! 12/10/13, which themes like Solarized repurpose as greys/violet.
 //!
-//! The ASCII literals are copied verbatim from `startup_screen.rs:94-151`.
-//! Colors are not captured by the plain-text snapshot (MIGRATION.md §7.8); they
+//! The ASCII literals are copied verbatim from the original logo art.
+//! Colors are not captured by the plain-text snapshot; they
 //! are verified by the live smoke check.
 
 use iocraft::prelude::*;

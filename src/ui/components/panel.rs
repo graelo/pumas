@@ -1,7 +1,7 @@
 //! Bordered panel with an inline border title (`┌ Title ──┐`).
 //!
 //! iocraft `View` has native border props but no `Block::title` equivalent, so
-//! the title is composed manually (MIGRATION.md §7.2): the panel is a `Column`
+//! the title is composed manually: the panel is a `Column`
 //! whose first row is the top-border line (`┌` + title + `─`-fill + `┐`) and
 //! whose second child is a `View` with native borders on every edge *except*
 //! Top. The left/right `│` and the bottom `└──┘` are drawn natively; only the
