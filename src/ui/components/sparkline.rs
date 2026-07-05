@@ -1,7 +1,4 @@
-//! Multi-row vertical sparkline (`▁▂▃▄▅▆▇█`), matching the original sparkline.
-//!
-//! The earlier attempt used only 4 glyphs on a single row; this rebuilds the
-//! full 8-level multi-row bars.
+//! Multi-row vertical sparkline (`▁▂▃▄▅▆▇█`), 8 levels per row.
 //!
 //! Algorithm: one column per data point, `height` rows tall. For each column
 //! value `v` (clamped to `max`), the total bar height in eighths is

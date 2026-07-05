@@ -2,8 +2,8 @@
 //!
 //! Each view is a plain function that turns an owned `Frame` sub-struct plus the
 //! frontend [`OverviewLayout`](crate::ui::layout) geometry into an
-//! `AnyElement<'static>`. Phase 2A landed the splash and Overview tab; Phase 2B
-//! adds the CPU, GPU, Memory and SoC tabs.
+//! `AnyElement<'static>`. One module per tab: splash, Overview, CPU, GPU, Memory
+//! and SoC.
 
 pub(crate) mod cpu;
 pub(crate) mod gpu;

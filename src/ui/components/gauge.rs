@@ -1,15 +1,12 @@
 //! Block-bar gauge with a centered `NN%` label (Overview tab).
 //!
-//! Faithful re-implementation of the original gauge, which the earlier
-//! attempt did NOT match (it appended the label after the bar instead of
-//! centering it). Semantics:
+//! Semantics:
 //!
-//! - The bar is `height` rows tall. The original Overview wraps the gauge in a
+//! - The bar is `height` rows tall. The Overview wraps the gauge in a
 //!   borderless titled block, whose title consumes the top row, leaving a
 //!   single bar row (`GAUGE_HEIGHT = 2` = title row + 1 bar row). The Overview
-//!   view therefore renders the title as a separate `Text`
-//!   and drives the gauge at `height = 1`. The Phase 0 de-risk snapshots used
-//!   `height = 2`.
+//!   view therefore renders the title as a separate `Text` and drives the gauge
+//!   at `height = 1`.
 //! - `end = round(ratio * width)` columns are filled with `█` (full block),
 //!   foreground `gauge_fg` on background `gauge_bg`; the remaining columns are
 //!   spaces showing `gauge_bg`.
@@ -20,7 +17,7 @@
 //!
 //! Width is an explicit prop: iocraft computes flex sizes only *after* element
 //! construction, so a component cannot know its allocated width at build time.
-//! The frontend (Phase 2) derives the width from the terminal size + layout.
+//! The frontend derives the width from the terminal size + layout.
 
 use iocraft::prelude::*;
 
@@ -33,7 +30,7 @@ pub(crate) struct RenderedGauge {
     pub ratio: f64,
     /// Bar width in columns.
     pub width: usize,
-    /// Bar height in rows (1 for the Overview, 2 for the Phase 0 spikes).
+    /// Bar height in rows (1 for the Overview; 2 for a title-less two-row bar).
     pub height: usize,
     /// Filled-block foreground (gauge_fg).
     pub fg: Color,

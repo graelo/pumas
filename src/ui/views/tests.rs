@@ -1,4 +1,4 @@
-//! Phase 2A snapshot tests: chrome (title bar, tab bar), splash, and Overview.
+//! Snapshot tests: chrome (title bar, tab bar), splash, and Overview.
 //!
 //! The fixture mirrors the M5 Max in `~/Downloads/screenshots/2.tab-overview.png`
 //! (two P-clusters paired + a single S-cluster, no separate E-clusters). All
