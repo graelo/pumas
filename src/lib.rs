@@ -292,14 +292,13 @@
 //! [MIT license]: http://opensource.org/licenses/MIT
 //! [asitop]: https://github.com/tlkh/asitop
 
-mod app;
+mod backend;
 pub mod config;
 pub mod error;
 mod metric_key;
 mod metrics;
 mod modules;
 pub mod monitor;
-mod signal;
 mod ui;
 mod units;
 

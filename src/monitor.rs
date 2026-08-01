@@ -1,64 +1,33 @@
-//! The monitor main loop.
+//! The monitor entry point.
+//!
+//! `run` branches on `--json`: the JSON path streams metrics to stdout with no
+//! UI or channel; the UI path spawns the backend collector on its own OS thread
+//! and runs the iocraft [`PumasApp`] on `smol` (no tokio anywhere).
 
-use std::{
-    io::{self, BufRead, BufReader, Write},
-    process,
-    sync::mpsc,
-    thread,
-    time::Duration,
-};
+use std::{io::Write, thread};
 
-use ratatui::{
-    Terminal,
-    backend::{Backend, TermionBackend},
-};
-use termion::{
-    event::Key,
-    input::{MouseTerminal, TermRead},
-    raw::IntoRawMode,
-    screen::IntoAlternateScreen,
-};
+use iocraft::prelude::*;
 
 use crate::{
     Result,
-    app::App,
+    backend::{self, frame::Frame},
     config::RunConfig,
     error::Error as CrateError,
-    metrics,
-    modules::{powermetrics, soc::SocInfo, sysinfo},
-    ui,
+    modules::soc::SocInfo,
+    ui::{app_root::PumasApp, theme::Theme},
 };
 
-/// Launch the main loop.
+/// Launch the monitor.
 ///
-/// If `json` is false (default), configure the App struct and run the main loop which updates
-/// the UI, otherwise run the main loop and export metrics as JSON.
-///
+/// In UI mode, build the frame channel, spawn the collector thread, and run the
+/// fullscreen `PumasApp`. In JSON mode, run the exporter loop directly.
 pub fn run(args: RunConfig) -> Result<()> {
     let soc_info = SocInfo::new()?;
 
-    let result = match args.json {
-        true => main_exporter_loop(soc_info, Duration::from_millis(args.sample_rate_ms as u64)),
-        false => {
-            let stdout = io::stdout().into_raw_mode()?.into_alternate_screen()?;
-            let stdout = MouseTerminal::from(stdout);
-
-            let backend = TermionBackend::new(stdout);
-            let mut terminal = Terminal::new(backend)?;
-
-            let app = App::new(soc_info, args.colors(), args.history_size);
-
-            let result = main_ui_loop(
-                &mut terminal,
-                app,
-                Duration::from_millis(args.sample_rate_ms as u64),
-            );
-
-            drop(terminal);
-            io::stdout().flush().ok();
-
-            result
-        }
+    let result = if args.json {
+        backend::run_exporter(soc_info, args)
+    } else {
+        run_ui(soc_info, args)
     };
 
     if let Err(err) = result {
@@ -76,270 +45,55 @@ pub fn run(args: RunConfig) -> Result<()> {
     Ok(())
 }
 
-enum Event {
-    Input(Key),
-    // Tick,
-    Metrics(metrics::Metrics),
-    Error(CrateError),
-}
+/// Run the iocraft UI: spawn the collector, render `PumasApp` fullscreen, then
+/// surface the collector's result (so the sudo hint still prints when
+/// powermetrics exits non-zero before any frame arrives).
+fn run_ui(soc_info: SocInfo, args: RunConfig) -> Result<()> {
+    install_panic_hook();
 
-/// Start the event stream sources and launch the UI event loop.
-fn main_ui_loop<B: Backend>(
-    terminal: &mut Terminal<B>,
-    mut app: App,
-    tick_rate: Duration,
-) -> Result<()>
-where
-    CrateError: From<B::Error>,
-{
-    let events = start_event_threads(tick_rate);
+    let theme = Theme::from(&args.colors());
+    let header = backend::frame::render_header(&soc_info);
+    let soc_rows = backend::frame::render_soc_rows(&soc_info);
 
-    loop {
-        terminal.draw(|f| ui::draw(f, &mut app))?;
+    // Bounded(4): event-gated repaint, no free-running animation loop.
+    let (tx, rx) = smol::channel::bounded::<Frame>(4);
 
-        match events.recv() {
-            Ok(Event::Input(key)) => match key {
-                Key::Esc => app.on_key('q'),
-                // Key::Up => app.on_up(),
-                // Key::Down => app.on_down(),
-                Key::Left | Key::BackTab => app.on_left(),
-                Key::Right | Key::Char('\t') => app.on_right(),
-                Key::Char(c) => app.on_key(c),
-                Key::Ctrl(c) => app.on_ctrl(c),
-                _ => {}
-            },
-            Ok(Event::Metrics(metrics)) => app.on_metrics(metrics),
-            Ok(Event::Error(err)) => return Err(err),
-            Err(_) => break,
+    let collector = thread::spawn(move || backend::run_collector(soc_info, args, tx));
+
+    smol::block_on(
+        element! {
+            PumasApp(
+                rx: Some(rx),
+                header: Some(header),
+                soc_rows: Some(soc_rows),
+                theme: theme,
+            )
         }
-        if app.should_quit {
-            return Ok(());
-        }
+        .fullscreen(),
+    )?;
+
+    // The UI has exited (user quit, or the collector closed the channel).
+    // Joining yields the collector's `Result`; an `Err` here drives the
+    // post-run sudo-hint handling in `run`.
+    match collector.join() {
+        Ok(res) => res,
+        Err(_) => Ok(()), // collector panicked; the panic hook already logged it
     }
-
-    Ok(())
 }
 
-/// Start the event stream sources and export metrics as JSON.
-fn main_exporter_loop(soc_info: SocInfo, tick_rate: Duration) -> Result<()> {
-    let events = start_event_threads(tick_rate);
-
-    loop {
-        match events.recv() {
-            Ok(Event::Metrics(metrics)) => export(&soc_info, metrics),
-            Ok(Event::Error(err)) => return Err(err),
-            Ok(_) => {}
-            Err(_) => break,
-        }
-    }
-
-    Ok(())
-}
-
-fn export(soc_info: &SocInfo, metrics: metrics::Metrics) {
-    let json = serde_json::json!({
-        "soc": soc_info,
-        "metrics": metrics,
-    });
-    println!("{}", json);
-}
-
-/// Run event threads.
-fn start_event_threads(tick_rate: Duration) -> mpsc::Receiver<Event> {
-    let (tx, rx) = mpsc::channel();
-
-    let tx_keys = tx.clone();
-    thread::spawn(move || {
-        let stdin = io::stdin();
-        for key in stdin.keys().flatten() {
-            if let Err(err) = tx_keys.send(Event::Input(key)) {
-                eprintln!("{}", err);
-                return;
-            }
-        }
-    });
-
-    // let tx_tick = tx.clone();
-    // thread::spawn(move || loop {
-    //     if let Err(err) = tx_tick.send(Event::Tick) {
-    //         eprintln!("{}", err);
-    //         break;
-    //     }
-    //     thread::sleep(tick_rate);
-    // });
-
-    thread::spawn(move || {
-        if let Err(err) = stream_metrics(tick_rate, tx.clone())
-            && let Err(send_err) = tx.send(Event::Error(err))
+/// Install a panic hook that appends to a log file, since the fullscreen TUI
+/// swallows stderr.
+fn install_panic_hook() {
+    let default_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let path = std::env::temp_dir().join("pumas-panic.log");
+        if let Ok(mut file) = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&path)
         {
-            eprintln!("failed to send error event: {send_err}");
+            let _ = writeln!(file, "{info}");
         }
-    });
-
-    rx
+        default_hook(info);
+    }));
 }
-
-/// Stream metrics and send them to the event loop.
-///
-/// This function starts the powermetrics tool in streaming mode with the configured sampling
-/// period (0.5 sec by default), so that it outputs entire plist messages at each period.
-///
-/// When a plist message is complete, this function also gathers CPU usage from the sysinfo crate
-/// for more accurate per-core usage (powermetrics is half-broken on M2 chips).
-///
-/// This function will run in a separate thread and stream data for the entire duration of the app.
-///
-/// # Note
-///
-/// Powermetrics outputs a plist file, but it is not valid XML, so we fix the issues before sending
-/// them to the plist parser.
-fn stream_metrics(tick_rate: Duration, tx: mpsc::Sender<Event>) -> Result<()> {
-    let sample_rate_ms = format!("{}", tick_rate.as_millis());
-
-    let binary = "/usr/bin/powermetrics";
-    let args = vec![
-        "--sample-rate",
-        sample_rate_ms.as_str(),
-        // "--sample-count",
-        // "10",
-        "--samplers",
-        "cpu_power,gpu_power,thermal",
-        "-f",
-        "plist",
-    ];
-
-    let mut cmd = process::Command::new(binary)
-        .args(&args)
-        .stdout(process::Stdio::piped())
-        .stderr(process::Stdio::piped())
-        .spawn()
-        .map_err(CrateError::PowermetricsSpawn)?;
-
-    let stdout = cmd.stdout.as_mut().ok_or(CrateError::PowermetricsStdout)?;
-    let stdout_reader = BufReader::new(stdout);
-    let stdout_lines = stdout_reader.lines();
-
-    let mut buffer = powermetrics::Buffer::new();
-    let mut system_state = sysinfo::SystemState::new();
-
-    // Main loop.
-    //
-    // Read the lines of the plist messages from powermetrics, one by one, for the entire duration
-    // of the app.
-    //
-    // When the last line of a plist message is read: build the `powermetrics::Metrics` struct and
-    // gather CPU usage and Memory from sysinfo.
-    //
-    // Finally, send metrics to the event loop.
-    //
-    for line in stdout_lines.map_while(std::result::Result::<String, std::io::Error>::ok) {
-        if line != "</plist>" {
-            buffer.append_line(line);
-        } else {
-            buffer.append_last_line(line);
-            let text = buffer.finalize();
-
-            let power_metrics = match metrics::Metrics::from_bytes(text.as_bytes()) {
-                Ok(metrics) => metrics,
-                Err(err) => {
-                    eprintln!("{err}");
-                    cmd.kill().map_err(CrateError::PowermetricsKill)?;
-                    break;
-                }
-            };
-
-            let sysinfo_metrics = system_state.latest_metrics();
-
-            let metrics = match power_metrics.merge_sysinfo_metrics(sysinfo_metrics) {
-                Ok(metrics) => metrics,
-                Err(err) => {
-                    eprintln!("{err}");
-                    cmd.kill().map_err(CrateError::PowermetricsKill)?;
-                    break;
-                }
-            };
-
-            if let Err(err) = tx.send(Event::Metrics(metrics)) {
-                eprintln!("{err}");
-                cmd.kill().map_err(CrateError::PowermetricsKill)?;
-                break;
-            }
-        }
-    }
-
-    let status = cmd.wait()?;
-    if !status.success() && status.code().is_some() {
-        let mut err_msg = String::new();
-        if let Some(mut stderr) = cmd.stderr.take() {
-            use std::io::Read;
-            stderr.read_to_string(&mut err_msg).ok();
-        }
-        return Err(CrateError::PowermetricsNonZeroExit(
-            status,
-            err_msg.trim().to_string(),
-        ));
-    }
-
-    Ok(())
-}
-
-// pub fn exec_stream<P: AsRef<Path>>(binary: P, args: Vec<&'static str>) {
-//     let mut cmd = process::Command::new(binary.as_ref())
-//         .args(&args)
-//         .stdout(process::Stdio::piped())
-//         .spawn()
-//         .unwrap();
-//
-//     {
-//         let stdout = cmd.stdout.as_mut().unwrap();
-//         let stdout_reader = BufReader::new(stdout);
-//         let stdout_lines = stdout_reader.lines();
-//
-//         let mut buffer: Vec<String> = vec![];
-//         for line in stdout_lines.flatten() {
-//             if line != "</plist>" {
-//                 // Process all lines but the last.
-//                 if line.starts_with(char::from(0)) {
-//                     // Trim the leading null character if present (happens only on the 1st line).
-//                     let line = line.trim_start_matches(char::from(0)).to_string();
-//                     buffer.push(line);
-//                 } else {
-//                     buffer.push(line);
-//                 }
-//             } else {
-//                 // Process the last line.
-//                 buffer.push(line);
-//
-//                 // Fix a powermetrics bug by removing the last `idle_ratio` line (n-5)th line.
-//                 let pos = buffer
-//                     .iter()
-//                     .rev()
-//                     .take(10)
-//                     .position(|line| line.starts_with("<key>idle_ratio</key>"));
-//                 if let Some(pos) = pos {
-//                     buffer.remove(buffer.len() - pos - 1);
-//                 }
-//
-//                 let text = buffer.join("\n");
-//                 buffer.clear();
-//                 if false {
-//                     println!("{}", text);
-//                     println!("--");
-//                 } else {
-//                     let powermetrics = match Metrics::from_bytes(text.as_bytes()) {
-//                         Ok(metrics) => metrics,
-//                         Err(err) => {
-//                             eprintln!("{err}");
-//                             eprintln!("{:?}", text.as_bytes());
-//                             cmd.kill().unwrap();
-//                             break;
-//                         }
-//                     };
-//                     println!("{}", powermetrics.cpu_mw);
-//                 }
-//             }
-//         }
-//     }
-//
-//     cmd.wait().unwrap();
-// }

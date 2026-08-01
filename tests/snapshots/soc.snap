@@ -1,0 +1,8 @@
+SoC brand name:      Apple M5 Max
+CPU cores:           18
+- Efficiency cores:  12
+- Performance cores: 6
+GPU cores:           40
+Max CPU power:       78 W
+Max GPU power:       75 W
+Max ANE power:       12 W

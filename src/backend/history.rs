@@ -1,7 +1,16 @@
-//! A signal is a collection of points that can be used to draw a line graph.
+//! Signal ring buffer + signal history (backend-owned).
+//!
+//! `Signal<T>` is the metric ring buffer. `History` and
+//! `HistoryExt::get_or_default` give the collector thread sole ownership of all
+//! history state so the frontend holds none.
+
+use std::collections::HashMap;
 
 use num_traits::{Bounded, Num, cast::ToPrimitive};
 
+use crate::metric_key::MetricKey;
+
+/// A signal is a collection of points that can be used to draw a line graph.
 pub(crate) struct Signal<T>
 where
     T: Num,
@@ -34,7 +43,11 @@ impl<T: Num + ToPrimitive + PartialOrd + Copy> Signal<T> {
 }
 
 impl<T: Num> Signal<T> {
-    fn as_slice(&self) -> &[u64] {
+    /// Return the full contiguous backing slice.
+    ///
+    /// `push` calls `make_contiguous`, so the first slice of the deque is the
+    /// entire history.
+    pub(crate) fn as_slice(&self) -> &[u64] {
         self.points.as_slices().0
     }
 
@@ -46,6 +59,26 @@ impl<T: Num> Signal<T> {
         } else {
             &self.as_slice()[len - n..]
         }
+    }
+}
+
+/// History of all signals, keyed by [`MetricKey`] (formerly `app::History`).
+pub(crate) type History = HashMap<MetricKey, Signal<f32>>;
+
+/// Default empty signal for safe history access.
+static DEFAULT_SIGNAL: std::sync::LazyLock<Signal<f32>> =
+    std::sync::LazyLock::new(|| Signal::with_capacity(0, 0.0));
+
+/// Extension trait for safe history access.
+pub(crate) trait HistoryExt {
+    /// Returns a reference to the signal for the given key, or a default empty
+    /// signal if not found.
+    fn get_or_default(&self, key: &MetricKey) -> &Signal<f32>;
+}
+
+impl HistoryExt for History {
+    fn get_or_default(&self, key: &MetricKey) -> &Signal<f32> {
+        self.get(key).unwrap_or(&DEFAULT_SIGNAL)
     }
 }
 
