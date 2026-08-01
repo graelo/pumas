@@ -19,7 +19,8 @@
       "matchManagers": [
         "github-actions"
       ],
-      "pinDigests": true
+      "pinDigests": true,
+      "automerge": true
     },
     {
       "description": "Group all patch updates into one PR",
@@ -35,6 +36,14 @@
         "minor"
       ],
       "groupName": "minor updates",
+      "automerge": true
+    },
+    {
+      "description": "Group all major updates into one PR",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "groupName": "major updates",
       "automerge": true
     }
   ]
