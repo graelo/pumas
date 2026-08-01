@@ -54,7 +54,7 @@ jobs:
           cargo clippy --locked --all-targets -- -D warnings
 
       - name: Install convco
-        uses: taiki-e/install-action@7572810d7dd469b651bb7793945692cf78da5dd7 # v2.85.0
+        uses: taiki-e/install-action@18b1216eba7f8039b0f8d131d5473787f0edce68 # v2.85.3
         with:
           tool: convco@0.7.0
 
@@ -94,7 +94,7 @@ jobs:
           persist-credentials: false
       - name: Filter changed paths
         id: filter
-        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
+        uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4.0.2
         with:
           filters: |
             cargo_lock:
