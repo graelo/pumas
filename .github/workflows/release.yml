@@ -184,6 +184,7 @@ jobs:
 
           # Tap the formula repo so `brew bump-formula-pr` can locate it by name.
           brew tap "${TAP_REPO}"
+          brew trust "${TAP_REPO}"
 
           # Configure git to push using the app token, and set the bot identity
           # so the commit is attributed to ${BOT_NAME}.
