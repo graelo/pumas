@@ -1,5 +1,5 @@
-# Scheduled Renovate run via GitHub App token.
-# Runs twice monthly on the 2nd and 4th Fridays at 19:00 UTC.
+# Runs Renovate to check for dependency updates.
+# Runs twice monthly on the 1st and 15th at 19:00 UTC, or manually via workflow_dispatch.
 #
 # Local:
 #   act workflow_dispatch -W .github/workflows/schedule-renovate.yml
@@ -9,8 +9,7 @@ name: 'Schedule: Renovate'
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 19 8-14 * 5'   # 2nd Friday (days 8-14) at 19:00 UTC
-    - cron: '0 19 22-28 * 5'  # 4th Friday (days 22-28) at 19:00 UTC
+    - cron: '0 19 1,15 * *'
 
 permissions: {}
 
@@ -27,6 +26,7 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+
     steps:
       - name: Generate GitHub App token
         id: app-token
