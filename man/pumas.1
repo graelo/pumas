@@ -1,0 +1,120 @@
+.TH PUMAS 1 "2026-08-20" "pumas 0.5.0" "User Commands"
+.SH NAME
+pumas \- power usage monitor for Apple Silicon
+.SH SYNOPSIS
+.B pumas
+.RI [ OPTIONS ]
+.I COMMAND
+.SH DESCRIPTION
+.B pumas
+is a power usage monitor for Apple Silicon Macs. It displays CPU, GPU, ANE,
+memory, frequency, and package power metrics collected from macOS utilities.
+.PP
+The
+.B run
+command requires
+.BR sudo
+because macOS's
+.B powermetrics
+utility requires root access.
+.SH COMMANDS
+.TP
+.B run
+Run the power usage monitor.
+.TP
+.B generate-completion
+Print a shell completion script to stdout. Requires a shell argument such as
+.BR bash ,
+.BR fish ,
+.BR powershell ,
+.BR elvish , or
+.BR zsh .
+.SH OPTIONS
+.TP
+.BR \\-h ", " \\-\-help
+Print help.
+.TP
+.BR \\-V ", " \\-\-version
+Print version.
+.SH RUN OPTIONS
+Options for the
+.B run
+command.
+.TP
+.BI \\-i " SAMPLE_RATE_MS" ", " \\-\-sample-rate " SAMPLE_RATE_MS"
+Update rate in milliseconds. The minimum is 100; the default is 1000.
+PowerMetrics samples at this rate.
+.TP
+.BI \\-\-history-size " HISTORY_SIZE"
+Number of recent samples to keep in history for each metric. The default is
+128.
+.TP
+.BI \\-\-accent-color " COLOR"
+ANSI color code for labels. The default is 2 (green).
+.TP
+.BI \\-\-gauge-fg-color " COLOR"
+ANSI color code for the gauge foreground. The default is 2 (green).
+.TP
+.BI \\-\-gauge-bg-color " COLOR"
+ANSI color code for the gauge background. The default is 7 (white).
+.TP
+.BI \\-\-history-fg-color " COLOR"
+ANSI color code for history graphs. The default is 4 (blue).
+.TP
+.BI \\-\-history-bg-color " COLOR"
+ANSI color code for history graph backgrounds. The default is 7 (white).
+.TP
+.BR \\-\-json
+Print metrics to stdout as newline-delimited JSON instead of running the UI.
+.SH EXAMPLES
+Run the interactive monitor:
+.PP
+.RS
+.nf
+sudo pumas run
+.fi
+.RE
+.PP
+Stream metrics and select a value with
+.BR jq :
+.PP
+.RS
+.nf
+sudo pumas run --json | jq '.metrics.e_clusters[0].cpus[2].active_ratio'
+.fi
+.RE
+.PP
+Generate completions for Zsh:
+.PP
+.RS
+.nf
+pumas generate-completion zsh > _pumas
+.fi
+.RE
+.SH INTERACTIVE CONTROLS
+Use the arrow keys to switch between tabs. Press
+.BR Esc ,
+.BR q ,
+.BR x , or
+.B Ctrl-C
+ to quit.
+.SH EXIT STATUS
+.TP
+.B 0
+The command completed successfully.
+.TP
+.B non-zero
+An error occurred while parsing arguments, collecting metrics, or running the
+monitor.
+.SH FILES
+.TP
+.I schema/schema.json
+JSON schema for export mode.
+.TP
+.I schema/sample-output.json
+Example output for export mode.
+.SH SEE ALSO
+.BR powermetrics (1),
+.BR jq (1)
+.SH AUTHORS
+graelo <https://github.com/graelo/pumas>
