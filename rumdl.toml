@@ -17,3 +17,7 @@ line-length = 80
 code-blocks = false
 tables = false
 reflow = true
+
+[MD060]
+enabled = true
+style = "aligned"
