@@ -13,7 +13,7 @@ The UI is a **one-directional backend → frontend data plane**. A backend threa
 gathers and prepares everything; the frontend only lays out and draws. The
 frontend never drives the backend.
 
-```
+```text
 bin/pumas.rs ── CLI parse ──▶ monitor::run(args)
                                    │
                     args.json ─────┴───── UI mode
@@ -35,29 +35,30 @@ bin/pumas.rs ── CLI parse ──▶ monitor::run(args)
 1. **`src/bin/pumas.rs`** — entry point; parses CLI args and dispatches to
    `monitor::run()`.
 2. **`src/monitor.rs`** — `run()` branches on `--json`. JSON mode calls
-   `backend::run_exporter` directly. UI mode (`run_ui`) builds the frame channel,
-   spawns the collector on its own OS thread, and runs the fullscreen frontend via
-   `smol::block_on(PumasApp.fullscreen())`.
+    `backend::run_exporter` directly. UI mode (`run_ui`) builds the frame
+    channel, spawns the collector on its own OS thread, and runs the fullscreen
+    frontend via `smol::block_on(PumasApp.fullscreen())`.
 3. **`src/backend/`** — the collector thread streams `powermetrics`, merges
-   `sysinfo`, owns all metric history, and ships each sample as one owned, `Clone`
-   `Frame` over a bounded `smol::channel`.
-4. **`src/ui/`** — the frontend renders `Frame`s. It holds no history and does no
-   string formatting or scaling; every string is pre-formatted and every sparkline
-   slice pre-computed in the backend. iocraft re-renders on state change, so a new
-   frame (≈1/s) or a keypress drives the repaint — there is no free-running
-   animation loop.
+    `sysinfo`, owns all metric history, and ships each sample as one owned,
+    `Clone` `Frame` over a bounded `smol::channel`.
+4. **`src/ui/`** — the frontend renders `Frame`s. It holds no history and does
+    no string formatting or scaling; every string is pre-formatted and every
+    sparkline slice pre-computed in the backend. iocraft re-renders on state
+    change, so a new frame (≈1/s) or a keypress drives the repaint — there is no
+    free-running animation loop.
 
 ### The `Frame` contract
 
-`Frame` (`src/backend/frame.rs`) is the single snapshot type crossing the channel.
-It carries per-tab sub-structs (`OverviewFrame`, `CpuFrame`, `GpuFrame`,
-`MemoryFrame`) with everything **already prepared**: formatted labels, gauge
-ratios, and sparkline data plus its scaling ceiling. Geometry (widths/heights) is
-deliberately absent — that is a frontend concern derived from terminal size.
+`Frame` (`src/backend/frame.rs`) is the single snapshot type crossing the
+channel. It carries per-tab sub-structs (`OverviewFrame`, `CpuFrame`,
+`GpuFrame`, `MemoryFrame`) with everything **already prepared**: formatted
+labels, gauge ratios, and sparkline data plus its scaling ceiling. Geometry
+(widths/heights) is deliberately absent — that is a frontend concern derived
+from terminal size.
 
 Session-static data (the title-bar header and SoC-tab rows) is built once via
-`render_header` / `render_soc_rows` and passed to `PumasApp` as props, not carried
-per-frame.
+`render_header` / `render_soc_rows` and passed to `PumasApp` as props, not
+carried per-frame.
 
 ## Module structure
 
@@ -102,10 +103,10 @@ channel; `monitor::run` branches on `args.json` up front.
 ## Why this shape
 
 - **One collector thread, one channel.** Blocking `powermetrics`/`sysinfo`/
-  `vm_stat` I/O lives on a plain OS thread and pushes owned frames; the UI never
-  blocks on I/O. No shared-state locking, no request/response protocol — the flow
-  is strictly one-directional.
-- **Backend owns history and formatting.** The frontend is a pure function of the
-  latest `Frame` plus terminal size, which keeps the render path trivial and makes
-  views testable headlessly (render to a `Canvas`, compare text) without `sudo` or
-  live `powermetrics`.
+    `vm_stat` I/O lives on a plain OS thread and pushes owned frames; the UI
+    never blocks on I/O. No shared-state locking, no request/response protocol —
+    the flow is strictly one-directional.
+- **Backend owns history and formatting.** The frontend is a pure function of
+    the latest `Frame` plus terminal size, which keeps the render path trivial
+    and makes views testable headlessly (render to a `Canvas`, compare text)
+    without `sudo` or live `powermetrics`.

@@ -8,18 +8,16 @@
 
 ![logo](./images/pumas-logo.svg)
 
-<!-- cargo-sync-readme start -->
-
 A nvtop-inspired command line tool for Apple Silicon Macs: aka M1, M2, ... This
 is basically a reimplemented version of [asitop] in Rust.
 
 | Type        | Metrics                      | Available | Comments                                                  |
-| ---         | ---                          | ---       | ---                                                       |
+| ----------- | ---------------------------- | --------- | --------------------------------------------------------- |
 | Utilization | CPU Clusters, GPU, ANE       | ✓         | History & current values. ANE util. is measured via power |
 | Power       | CPU, GPU, ANE, total package | ✓         | History & current values                                  |
 | Frequency   | CPU Clusters, GPU            | ✓         | Current avg. values                                       |
 | Frequency   | CPU Clusters, GPU            | missing   | Residency distrib. histograms                             |
-| Memory      | RAM & Swap: size and usage   | ✓         | Activity Monitor compatible memory accounting via vm_stat  |
+| Memory      | RAM & Swap: size and usage   | ✓         | Activity Monitor compatible memory accounting via vm_stat |
 
 To gather data, Pumas uses both the macOS built-in `powermetrics` utility, and
 the `sysinfo` crate (same data as `htop`).
@@ -253,7 +251,8 @@ Thanks to user @woshiniming007 for the suggestion!
 
 #### Security considerations
 
-- You should limit the commands you allow to run without password to the minimum necessary.
+- You should limit the commands you allow to run without password to the
+    minimum necessary.
 - You should use a drop-in file to avoid modifying `/etc/sudoers` directly.
 
 ## Source of metrics
@@ -287,7 +286,16 @@ official source for it on the system:
 
 `vm_stat` is used to measure the following:
 
-- Memory statistics compatible with Activity Monitor (anonymous, wired, compressed pages)
+- Memory statistics compatible with Activity Monitor (anonymous, wired,
+    compressed pages)
+
+## Development
+
+The `Makefile` is the canonical definition of local verification tasks. Run
+`make check` before pushing and `make check-all` before opening a pull request;
+run `make help` to list all available targets.
+
+The installed command is documented in the [`pumas` manpage](man/pumas.1).
 
 ## License
 
@@ -301,5 +309,3 @@ be licensed as MIT, without any additional terms or conditions.
 
 [MIT license]: http://opensource.org/licenses/MIT
 [asitop]: https://github.com/tlkh/asitop
-
-<!-- cargo-sync-readme end -->

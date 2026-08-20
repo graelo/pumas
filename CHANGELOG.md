@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `pumas(1)` manpage documenting the command-line interface.
+
+### Changed
+
+- Consolidate local verification onto the `Makefile`, with `make check` as the
+  pre-push gate and `make check-all` as the pre-PR gate.
+- Make `README.md` the source of end-user documentation and keep crate-level
+  rustdocs concise instead of duplicating the README in `src/lib.rs`.
+- Enforce aligned Markdown tables with rumdl's `MD060` rule.
+
 ## [0.5.0] - 2026-04-14
 
 ### Added
@@ -236,6 +250,7 @@ Initial packaged release.
 
 Initial release.
 
+[Unreleased]: https://github.com/graelo/pumas/compare/v0.5.0...HEAD
 [0.5.0]: https://github.com/graelo/pumas/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/graelo/pumas/compare/v0.3.4...v0.4.0
 [0.3.4]: https://github.com/graelo/pumas/compare/v0.3.3...v0.3.4
