@@ -30,7 +30,7 @@ serde = { version = "1", features = ["derive"] }
 si-scale = "0.3"
 
 # ui
-iocraft = "0.8"
+iocraft = "0.9"
 smol = "2"
 
 #
