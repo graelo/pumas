@@ -14,7 +14,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+*'
+      - "v[0-9]+.[0-9]+.[0-9]+*"
 
 permissions: {}
 
@@ -27,7 +27,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read
-      id-token: write           # build provenance
+      id-token: write # build provenance
       attestations: write
     defaults:
       run:
@@ -110,7 +110,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: release
     permissions:
-      contents: write           # gh release create
+      contents: write # gh release create
     needs:
       - prepare-artifacts
     steps:
@@ -159,8 +159,8 @@ jobs:
     env:
       TAP_REPO: graelo/homebrew-tap
       FORMULA_NAME: pumas
-      BOT_NAME: 'graelo-ci-bot[bot]'
-      BOT_USER_ID: '274240725'
+      BOT_NAME: "graelo-ci-bot[bot]"
+      BOT_USER_ID: "274240725"
       REPO_URL: ${{ github.server_url }}/${{ github.repository }}
     steps:
       - name: Generate GitHub App token
@@ -182,8 +182,9 @@ jobs:
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           echo "/home/linuxbrew/.linuxbrew/bin" >> "${GITHUB_PATH}"
 
-          # Tap the formula repo so `brew bump-formula-pr` can locate it by name.
-          brew tap "${TAP_REPO}"
+          # Trust the tap before Homebrew evaluates it, then tap it so
+          # `brew bump-formula-pr` can locate it by name.
+          brew trust --tap "${TAP_REPO}"
           brew trust "${TAP_REPO}"
 
           # Configure git to push using the app token, and set the bot identity
@@ -196,9 +197,9 @@ jobs:
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ steps.app-token.outputs.token }}
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          HOMEBREW_NO_AUTO_UPDATE: '1'
-          HOMEBREW_NO_ANALYTICS: '1'
-          HOMEBREW_NO_ENV_HINTS: '1'
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+          HOMEBREW_NO_ANALYTICS: "1"
+          HOMEBREW_NO_ENV_HINTS: "1"
           TAG_NAME: ${{ github.ref_name }}
         run: |
           brew bump-formula-pr \
