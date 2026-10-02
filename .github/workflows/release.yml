@@ -122,7 +122,7 @@ jobs:
           persist-credentials: false
 
       - name: Install convco
-        uses: taiki-e/install-action@742a3317eac7bd62f91cd888b4eead5e784ba833 # v2.87.1
+        uses: taiki-e/install-action@83ac0ad63c0167e6f06796fab0fce28db1bf3db0 # v2.87.22
         with:
           tool: convco@0.7.0
 
