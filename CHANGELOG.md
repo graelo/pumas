@@ -24,6 +24,9 @@ and this project adheres to
 - Enforce aligned Markdown tables with rumdl's `MD060` rule.
 - Remove the `homepage` field from `Cargo.toml` because it duplicates the
   `repository` field, which Cargo 1.101 rejects.
+- Remove the stale `[build-dependencies]` section from `Cargo.toml` (the crate
+  has no `build.rs`; `clap` and `clap_complete` are regular dependencies),
+  which newer Cargo versions flag as unused build dependencies.
 
 ## [0.5.0] - 2026-04-14
 

@@ -40,10 +40,6 @@ sysinfo = "0.39"
 [dev-dependencies]
 assert_approx_eq = "1.1.0"
 
-[build-dependencies]
-clap = { version = "4.2.1", features = ["derive"] }
-clap_complete = "4.2.0"
-
 [profile.release]
 # Enable link-time optimization (LTO). It’s a kind of whole-program or
 # inter-module optimization as it runs as the very last step when linking the
