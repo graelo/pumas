@@ -14,6 +14,9 @@ and this project adheres to
 
 ### Changed
 
+- Switch GitHub Actions Rust setup from `dtolnay/rust-toolchain` to
+  `actions-rust-lang/setup-rust-toolchain@v2.0.0` (playbook v1.9), and remove
+  the now-unneeded `.github/zizmor.yml` superfluous-action suppressions.
 - Consolidate local verification onto the `Makefile`, with `make check` as the
   pre-push gate and `make check-all` as the pre-PR gate.
 - Make `README.md` the source of end-user documentation and keep crate-level

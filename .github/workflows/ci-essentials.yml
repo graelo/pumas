@@ -28,10 +28,11 @@ jobs:
           persist-credentials: false
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # master
+        uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
         with:
           toolchain: stable
           components: rustfmt, clippy
+          cache: false
 
       - name: Cache crates
         if: github.event_name == 'pull_request'
@@ -104,7 +105,6 @@ jobs:
               - '.github/workflows/**'
               - '.github/actions/**'
               - '.github/poutine.yml'
-              - '.github/zizmor.yml'
               - 'renovate.json'
 
   cargo-audit:

@@ -3,7 +3,7 @@ skip:
   # "verified creator" badge.
   - rule: github_action_from_unverified_creator_used
     purl:
-      - pkg:githubactions/dtolnay/rust-toolchain
+      - pkg:githubactions/actions-rust-lang/setup-rust-toolchain
       - pkg:githubactions/dorny/paths-filter
       - pkg:githubactions/zizmorcore/zizmor-action
       - pkg:githubactions/boostsecurityio/poutine-action
