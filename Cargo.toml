@@ -7,7 +7,6 @@ description = "A power usage monitor for Apple Silicon."
 readme = "README.md"
 
 documentation = "https://docs.rs/pumas"
-homepage = "https://github.com/graelo/pumas"
 repository = "https://github.com/graelo/pumas"
 license = "MIT"
 
@@ -40,10 +39,6 @@ sysinfo = "0.39"
 
 [dev-dependencies]
 assert_approx_eq = "1.1.0"
-
-[build-dependencies]
-clap = { version = "4.2.1", features = ["derive"] }
-clap_complete = "4.2.0"
 
 [profile.release]
 # Enable link-time optimization (LTO). It’s a kind of whole-program or
