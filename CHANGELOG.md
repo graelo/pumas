@@ -22,6 +22,8 @@ and this project adheres to
 - Make `README.md` the source of end-user documentation and keep crate-level
   rustdocs concise instead of duplicating the README in `src/lib.rs`.
 - Enforce aligned Markdown tables with rumdl's `MD060` rule.
+- Remove the `homepage` field from `Cargo.toml` because it duplicates the
+  `repository` field, which Cargo 1.101 rejects.
 
 ## [0.5.0] - 2026-04-14
 

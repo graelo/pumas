@@ -7,7 +7,6 @@ description = "A power usage monitor for Apple Silicon."
 readme = "README.md"
 
 documentation = "https://docs.rs/pumas"
-homepage = "https://github.com/graelo/pumas"
 repository = "https://github.com/graelo/pumas"
 license = "MIT"
 
