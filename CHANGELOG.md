@@ -14,6 +14,8 @@ and this project adheres to
 
 ### Changed
 
+- Deny cargo build warnings (e.g. `cargo::unused_dependencies`) locally via
+  `.cargo/config.toml`, mirroring the CI's `CARGO_BUILD_WARNINGS` setting.
 - Switch GitHub Actions Rust setup from `dtolnay/rust-toolchain` to
   `actions-rust-lang/setup-rust-toolchain@v2.0.0` (playbook v1.9), and remove
   the now-unneeded `.github/zizmor.yml` superfluous-action suppressions.

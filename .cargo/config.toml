@@ -1,0 +1,4 @@
+# Deny cargo warnings (e.g. `cargo::unused_dependencies`) the same way the
+# CI does via actions-rust-lang/setup-rust-toolchain's CARGO_BUILD_WARNINGS.
+[build]
+warnings = "deny"
