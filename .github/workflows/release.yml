@@ -93,14 +93,14 @@ jobs:
             ${{ env.ARCHIVE_FILE }}
 
       - name: Upload – binary
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ env.STANDALONE }}
           path: ${{ env.STANDALONE }}
           retention-days: 1
 
       - name: Upload – archive
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ env.ARCHIVE_FILE }}
           path: ${{ env.ARCHIVE_FILE }}
@@ -123,7 +123,7 @@ jobs:
           persist-credentials: false
 
       - name: Install convco
-        uses: taiki-e/install-action@83ac0ad63c0167e6f06796fab0fce28db1bf3db0 # v2.87.22
+        uses: taiki-e/install-action@1168f6810a3cb30a3514bf5756a3b7f0422c6df8 # v2.87.28
         with:
           tool: convco@0.7.0
 
@@ -131,7 +131,7 @@ jobs:
         run: convco changelog -c .convco --max-versions 1 --include-hidden-sections > CHANGELOG.md
 
       - name: Download artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           path: artifacts
           merge-multiple: true

@@ -581,9 +581,9 @@ dependencies = [
 
 [[package]]
 name = "iocraft"
-version = "0.9.1"
+version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41b8c1ddc08a912247397bef7b99f9ed409eecc711557f5523fe362d880d6f98"
+checksum = "39264184585824b7c1ea33a63699a37c964ba590036981a5c04ceeb96afd259d"
 dependencies = [
  "bitflags",
  "crossterm",
@@ -597,9 +597,9 @@ dependencies = [
 
 [[package]]
 name = "iocraft-macros"
-version = "0.2.4"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e8c51048da5618a10af1135e9e474700f19946f456c857ae0b12ebff2a91b4d"
+checksum = "6e938637cb8e9a299dded6c51cc22003483ef8ec0928ba37d2bc5a3260afc764"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -984,9 +984,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.151"
+version = "1.0.154"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c841b55ecdae098c80dcae9cf767f6f8a0c2cdb3416bbef72181df4d0fe73f14"
+checksum = "e7e9cc8b1b85264074fbcc02a88680c4096b1e47df8f739dceb03bf482f04bd6"
 dependencies = [
  "itoa",
  "memchr",
@@ -997,9 +997,9 @@ dependencies = [
 
 [[package]]
 name = "si-scale"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa6635fb52805fa49a5798346e553cda9fd7990da8fbb2b3b2b9cf26589b4571"
+checksum = "308de7cbaf6decd2cf55e9a153bf01567ff766cc8506d4940c779d24734c04b4"
 
 [[package]]
 name = "signal-hook"
