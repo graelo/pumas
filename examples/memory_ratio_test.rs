@@ -37,7 +37,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test sysinfo total memory
     use sysinfo::{MemoryRefreshKind, System};
-    let mut system = System::new();
+    let mut system = System::new().expect("failed to initialize sysinfo");
     system.refresh_memory_specifics(MemoryRefreshKind::everything());
     let sysinfo_total = system.total_memory();
 

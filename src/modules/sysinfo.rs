@@ -32,15 +32,15 @@ pub(crate) struct SystemState {
 
 impl SystemState {
     pub(crate) fn new() -> Self {
-        let mut system = System::new();
-        system.refresh_cpu_specifics(CpuRefreshKind::default().with_cpu_usage());
+        let mut system = System::new().expect("failed to initialize the sysinfo collector");
+        system.refresh_cpu_specifics(CpuRefreshKind::nothing().with_usage());
         system.refresh_memory_specifics(MemoryRefreshKind::everything());
         Self { system }
     }
 
     pub(crate) fn latest_metrics(&mut self) -> Metrics {
         self.system
-            .refresh_cpu_specifics(CpuRefreshKind::default().with_cpu_usage());
+            .refresh_cpu_specifics(CpuRefreshKind::nothing().with_usage());
         self.system
             .refresh_memory_specifics(MemoryRefreshKind::default().with_ram());
         self.system
@@ -52,7 +52,7 @@ impl SystemState {
             .iter()
             .map(|cpu| CpuMetrics {
                 id: cpu.name().parse::<u16>().unwrap_or(0).saturating_sub(1),
-                active_ratio: cpu.cpu_usage() / 100.0_f32,
+                active_ratio: cpu.usage() / 100.0_f32,
             })
             .collect();
 
